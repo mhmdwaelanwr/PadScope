@@ -1,0 +1,36 @@
+{
+  "id": "marvo-gt84",
+  "name": "Marvo GT-84",
+  "category": "DS4-style clone",
+  "manufacturer": "Marvo",
+  "status": "community-research-needed",
+  "connections": [
+    "USB",
+    "Bluetooth"
+  ],
+  "knownBehavior": {
+    "input": "works in some games and DS4-like modes",
+    "rumble": "reported to work over USB in some cases; Bluetooth support unknown",
+    "lightbar": "reported to work dynamically over USB in some games; Bluetooth support unknown",
+    "gyro": "unknown",
+    "touchpad": "unknown",
+    "windowsAudioEndpoint": "not observed yet",
+    "internalSpeaker": "hardware advertised, PC protocol support unconfirmed",
+    "headsetJack": "hardware advertised, PC protocol support unconfirmed",
+    "ds4AudioProtocol": "untested"
+  },
+  "notes": [
+    "Do not assume this controller fully implements the DualShock 4 protocol.",
+    "The first PadScope target is to collect VID/PID and HID report data from a real unit.",
+    "Audio support may require DS4-style HID audio reports; if firmware does not implement them, software cannot force support."
+  ],
+  "evidenceNeeded": [
+    "USB VID/PID",
+    "Bluetooth VID/PID or device instance path",
+    "HID report descriptor",
+    "Windows sound endpoint screenshot or enumeration output",
+    "Rumble test result",
+    "Lightbar test result",
+    "Audio probe result"
+  ]
+}
