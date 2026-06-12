@@ -1,0 +1,35 @@
+{
+  "id": "skytech-ds4-clone",
+  "name": "SkyTech DS4-style clone",
+  "category": "DS4-style clone",
+  "manufacturer": "SkyTech",
+  "status": "community-research-needed",
+  "connections": [
+    "USB",
+    "Bluetooth"
+  ],
+  "knownBehavior": {
+    "input": "unknown",
+    "rumble": "unknown",
+    "lightbar": "unknown",
+    "gyro": "unknown",
+    "touchpad": "unknown",
+    "windowsAudioEndpoint": "unknown",
+    "internalSpeaker": "unconfirmed",
+    "headsetJack": "unconfirmed",
+    "ds4AudioProtocol": "untested"
+  },
+  "notes": [
+    "Starter profile only. Do not assume full DualShock 4 protocol compatibility.",
+    "Collect USB and Bluetooth scan reports before enabling feature tests."
+  ],
+  "evidenceNeeded": [
+    "USB VID/PID",
+    "Bluetooth device path",
+    "HID report descriptor",
+    "DS4Windows detection behavior",
+    "Rumble test result",
+    "Lightbar test result",
+    "Windows audio endpoint check"
+  ]
+}
