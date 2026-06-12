@@ -12,6 +12,60 @@ The goal is not to promise that every clone controller can magically support eve
 - Do rumble, lightbar, gyro, touchpad, headset jack, or internal speaker features work?
 - Is the problem fixable through software, or is the controller firmware/hardware missing the required protocol?
 
+## Current GitHub stage
+
+PadScope is currently at **Stage 0 / Stage 1 readiness**:
+
+- Stage 0: build verification is ready.
+- Stage 1: no-controller scan is ready to test.
+- Stage 2: USB scan is the first real controller test.
+- Stage 3: Bluetooth scan comes after USB.
+
+Do **not** start rumble, lightbar, gyro, touchpad, or audio experiments yet. Those features are planned and registered, but locked until scanner and identity evidence are validated.
+
+## Quick build without Visual Studio
+
+This is the lowest-data setup for testing:
+
+Requirements:
+
+- Windows 10/11
+- .NET 8 SDK
+- Git for Windows
+
+Commands:
+
+```powershell
+cd Desktop
+git clone https://github.com/mhmdwaelanwr/PadScope.git
+cd PadScope\src
+dotnet restore
+dotnet build PadScope.sln
+dotnet run --project PadScope.Desktop
+```
+
+If the repository already exists:
+
+```powershell
+cd Desktop\PadScope
+git pull
+cd src
+dotnet restore
+dotnet build PadScope.sln
+dotnet run --project PadScope.Desktop
+```
+
+## First test order
+
+1. Build the solution.
+2. Run the desktop app.
+3. Scan with no controller connected.
+4. Connect Marvo GT-84 by USB.
+5. Scan again.
+6. Export JSON and Markdown.
+7. Disconnect USB, connect Bluetooth, and scan again.
+8. Compare USB and Bluetooth reports.
+
 ## Why this project exists
 
 Many PC players buy affordable PS4-style controllers and discover that features work inconsistently:
@@ -30,15 +84,16 @@ PadScope turns this mess into a structured compatibility report.
 
 ### Phase 1 — Scanner
 
-The first version will scan connected gamepads and produce a report containing:
+The first version scans connected gamepads and produces a report containing:
 
 - Device name
 - Vendor ID / Product ID
 - USB/Bluetooth connection hints
-- HID path and usage information
 - Windows audio-device visibility
 - Known controller profile match
 - Compatibility notes
+- JSON export
+- Markdown export
 
 ### Phase 2 — Feature tests
 
@@ -74,22 +129,19 @@ If a clone controller does not implement the DS4 audio protocol, PadScope should
 
 ## Compatibility database
 
-PadScope will maintain JSON profiles for tested controllers. Example:
+PadScope maintains JSON profiles for tested and research-needed controllers under `data/controllers`.
 
-```json
-{
-  "name": "Marvo GT-84",
-  "category": "DS4-style clone",
-  "connection": ["USB", "Bluetooth"],
-  "input": "works",
-  "rumble": "unknown",
-  "lightbar": "unknown",
-  "gyro": "unknown",
-  "touchpad": "unknown",
-  "windowsAudioDevice": "not observed",
-  "ds4AudioProtocol": "untested"
-}
-```
+Current starter profiles include:
+
+- Marvo GT-84
+- SkyTech DS4-style clone
+- Zero DS4-style clone
+- Generic Wireless Controller
+- AULA G1000
+- Sony DualShock 4
+- Sony DualSense
+
+Profiles are evidence records. Unknown features should remain `unknown` until a scan or controlled test proves otherwise.
 
 ## Engineering principles
 
@@ -99,25 +151,20 @@ PadScope will maintain JSON profiles for tested controllers. Example:
 - Prefer clean-room implementation and avoid copying GPL code into MIT-licensed modules.
 - Make clone-controller compatibility visible and searchable.
 
-## Tech direction
-
-Initial target:
+## Tech stack
 
 - Windows 10/11
 - .NET 8
 - C#
-- CLI first, GUI later
+- WPF desktop app
+- CLI app
+- GitHub Actions Windows build
 
-Possible later components:
+## Key docs
 
-- WPF or WinUI desktop app
-- NAudio-based audio capture
-- SBC encoder integration
-- HidHide detection helper
-- Controller compatibility report exporter
-
-## Current status
-
-Early research and architecture phase.
-
-The first implementation target is a safe read-only scanner that lists connected HID/gamepad/audio devices and produces a compatibility report.
+- `docs/getting-started.md`
+- `docs/a-to-z-feature-map.md`
+- `docs/staged-test-plan.md`
+- `docs/safety-policy.md`
+- `docs/compatibility-profiles.md`
+- `docs/ds4-audio-protocol.md`
