@@ -8,6 +8,7 @@ using PadScope.Core.Diagnostics;
 using PadScope.Core.Models;
 using PadScope.Core.Reports;
 using PadScope.Core.Scanning;
+using PadScope.Core.Testing;
 
 namespace PadScope.Desktop;
 
@@ -26,6 +27,19 @@ public partial class MainWindow : Window
         new ProfileRow("Sony DualShock 4", "Reference hardware", "baseline", "USB/Bluetooth identity, known DS4 report shape"),
         new ProfileRow("Sony DualSense", "Reference hardware", "baseline", "USB/Bluetooth identity, adaptive trigger scope, audio endpoint behavior")
     };
+
+    public IReadOnlyList<FeatureTestRow> FeatureTestRows { get; } = FeatureTestRegistry.All
+        .Select(test => new FeatureTestRow(
+            Name: test.Name,
+            Stage: test.Stage.ToString(),
+            RiskLevel: test.RiskLevel.ToString(),
+            RequiresSelectedDevice: test.RequiresSelectedDevice ? "Yes" : "No",
+            RequiresUserConfirmation: test.RequiresUserConfirmation ? "Yes" : "No",
+            State: test.EnabledByDefault ? "Enabled" : "Locked",
+            Goal: test.Goal,
+            PassCriteria: test.PassCriteria
+        ))
+        .ToList();
 
     public MainWindow()
     {
@@ -121,6 +135,36 @@ public partial class MainWindow : Window
         StatusText.Text = "Details copied";
     }
 
+    private void ExplainSelectedFeatureButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (FeatureTestsGrid.SelectedItem is not FeatureTestRow row)
+        {
+            MessageBox.Show(
+                this,
+                "Select a feature test first.",
+                "PadScope Feature Tests",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information
+            );
+            return;
+        }
+
+        MessageBox.Show(
+            this,
+            $"Feature: {row.Name}\n" +
+            $"Stage: {row.Stage}\n" +
+            $"Risk: {row.RiskLevel}\n" +
+            $"Requires selected device: {row.RequiresSelectedDevice}\n" +
+            $"Requires confirmation: {row.RequiresUserConfirmation}\n" +
+            $"State: {row.State}\n\n" +
+            $"Goal:\n{row.Goal}\n\n" +
+            $"Pass criteria:\n{row.PassCriteria}",
+            "Feature test details",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information
+        );
+    }
+
     private void ReportsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (ReportsGrid.SelectedItem is not CompatibilityReport report)
@@ -213,3 +257,14 @@ public partial class MainWindow : Window
 }
 
 public sealed record ProfileRow(string Name, string Category, string Status, string EvidenceNeeded);
+
+public sealed record FeatureTestRow(
+    string Name,
+    string Stage,
+    string RiskLevel,
+    string RequiresSelectedDevice,
+    string RequiresUserConfirmation,
+    string State,
+    string Goal,
+    string PassCriteria
+);
