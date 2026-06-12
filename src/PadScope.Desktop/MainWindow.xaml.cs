@@ -17,6 +17,17 @@ public partial class MainWindow : Window
     private readonly IControllerScanner _scanner = new WindowsDeviceScanner();
     private readonly ObservableCollection<CompatibilityReport> _reports = new();
 
+    public IReadOnlyList<StageRow> StageRows { get; } = TestStageRegistry.All
+        .Select(stage => new StageRow(
+            Stage: stage.Stage.ToString(),
+            Name: stage.Name,
+            Status: stage.Status,
+            Goal: stage.Goal,
+            WhatToDo: stage.WhatToDo,
+            PassCriteria: stage.PassCriteria
+        ))
+        .ToList();
+
     public IReadOnlyList<ProfileRow> ProfileRows { get; } = new[]
     {
         new ProfileRow("Marvo GT-84", "DS4-style clone", "starter profile", "USB/Bluetooth VID/PID, HID descriptor, rumble, lightbar, audio endpoint"),
@@ -135,6 +146,34 @@ public partial class MainWindow : Window
         StatusText.Text = "Details copied";
     }
 
+    private void ExplainSelectedStageButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (StagesGrid.SelectedItem is not StageRow row)
+        {
+            MessageBox.Show(
+                this,
+                "Select a stage first.",
+                "PadScope Stages",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information
+            );
+            return;
+        }
+
+        MessageBox.Show(
+            this,
+            $"Stage: {row.Stage}\n" +
+            $"Name: {row.Name}\n" +
+            $"Status: {row.Status}\n\n" +
+            $"Goal:\n{row.Goal}\n\n" +
+            $"What to do:\n{row.WhatToDo}\n\n" +
+            $"Pass criteria:\n{row.PassCriteria}",
+            "Stage details",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information
+        );
+    }
+
     private void ExplainSelectedFeatureButton_Click(object sender, RoutedEventArgs e)
     {
         if (FeatureTestsGrid.SelectedItem is not FeatureTestRow row)
@@ -205,6 +244,7 @@ public partial class MainWindow : Window
                 _reports.Add(report);
             }
 
+            CurrentStageText.Text = _reports.Count == 0 ? "1 Empty Scan" : "2 USB/BT Scan";
             StatusText.Text = _reports.Count == 0
                 ? "No controller-like devices detected"
                 : $"Detected {_reports.Count} controller-like device(s)";
@@ -255,6 +295,15 @@ public partial class MainWindow : Window
         LastScanText.Text = _reports.Count == 0 ? "Never" : DateTime.Now.ToString("HH:mm:ss");
     }
 }
+
+public sealed record StageRow(
+    string Stage,
+    string Name,
+    string Status,
+    string Goal,
+    string WhatToDo,
+    string PassCriteria
+);
 
 public sealed record ProfileRow(string Name, string Category, string Status, string EvidenceNeeded);
 
