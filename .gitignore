@@ -1,0 +1,23 @@
+# Build output
+bin/
+obj/
+out/
+artifacts/
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Reports generated locally
+reports/
+*.local.json
+
+# Logs
+*.log
