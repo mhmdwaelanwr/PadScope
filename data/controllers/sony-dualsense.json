@@ -1,0 +1,33 @@
+{
+  "id": "sony-dualsense",
+  "name": "Sony DualSense",
+  "category": "Reference hardware",
+  "manufacturer": "Sony",
+  "status": "baseline-reference-needed",
+  "connections": [
+    "USB",
+    "Bluetooth"
+  ],
+  "knownBehavior": {
+    "input": "expected",
+    "rumble": "expected-or-advanced-haptics",
+    "lightbar": "expected",
+    "gyro": "expected",
+    "touchpad": "expected",
+    "windowsAudioEndpoint": "varies-by-connection",
+    "internalSpeaker": "protocol-specific",
+    "headsetJack": "protocol-specific",
+    "ds4AudioProtocol": "not-ds4-profile"
+  },
+  "notes": [
+    "Reference profile used for future DualSense diagnostics.",
+    "DualSense behavior should not be mixed with DS4 clone behavior."
+  ],
+  "evidenceNeeded": [
+    "USB VID/PID",
+    "Bluetooth identity",
+    "Audio endpoint behavior",
+    "Adaptive trigger scope",
+    "Gyro and touchpad behavior"
+  ]
+}
