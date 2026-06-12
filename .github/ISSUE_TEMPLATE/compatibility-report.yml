@@ -1,0 +1,65 @@
+name: Controller compatibility report
+description: Submit a PadScope scan report for a controller
+title: "Compatibility: <controller name>"
+labels: [compatibility, report]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve PadScope. Please attach JSON or Markdown output from the latest PadScope build when possible.
+  - type: input
+    id: controller-name
+    attributes:
+      label: Controller name
+      description: Product name printed on the box or shown by Windows.
+      placeholder: Marvo GT-84
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connection type
+      options:
+        - USB
+        - Bluetooth
+        - Both USB and Bluetooth
+        - Unknown
+    validations:
+      required: true
+  - type: input
+    id: vid-pid
+    attributes:
+      label: VID/PID
+      placeholder: 054C/09CC or unknown
+  - type: textarea
+    id: scan-output
+    attributes:
+      label: PadScope scan output
+      description: Paste JSON/Markdown report or key lines from the desktop details panel.
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: observed-behavior
+    attributes:
+      label: Observed behavior
+      description: Describe input, rumble, lightbar, gyro, touchpad, audio endpoint, and DS4Windows behavior.
+    validations:
+      required: true
+  - type: checkboxes
+    id: features
+    attributes:
+      label: Feature checklist
+      options:
+        - label: Input works
+        - label: Rumble observed
+        - label: Lightbar observed
+        - label: Touchpad observed
+        - label: Gyro observed
+        - label: Windows audio endpoint observed
+        - label: DS4 audio probe tested
+  - type: textarea
+    id: notes
+    attributes:
+      label: Extra notes
+      description: Add screenshots, game names, DS4Windows mode, or Windows version.
