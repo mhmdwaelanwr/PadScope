@@ -1,4 +1,5 @@
 using PadScope.Core.Models;
+using PadScope.Core.Profiles;
 
 namespace PadScope.Core.Diagnostics;
 
@@ -7,12 +8,15 @@ public static class ReportBuilder
     public static CompatibilityReport BuildInitialReport(ControllerDevice device)
     {
         bool isSoundDevice = device.Source.Equals("Win32_SoundDevice", StringComparison.OrdinalIgnoreCase);
+        ProfileMatch profile = ProfileMatcher.Match(device);
 
         List<string> notes = new()
         {
             "This is an initial read-only report.",
             "Active feature tests have not been executed yet.",
-            "Do not assume clone controllers fully implement the DualShock 4 protocol."
+            "Clone controllers may not implement the full DualShock 4 protocol.",
+            $"Profile match: {profile.Name} ({profile.Confidence} confidence).",
+            $"Next action: {profile.RecommendedNextAction}"
         };
 
         if (isSoundDevice)
@@ -22,6 +26,10 @@ public static class ReportBuilder
 
         return new CompatibilityReport(
             device,
+            ProfileName: profile.Name,
+            ProfileConfidence: profile.Confidence,
+            RecommendedRiskLevel: profile.RecommendedRiskLevel,
+            RecommendedNextAction: profile.RecommendedNextAction,
             Input: isSoundDevice ? FeatureStatus.Unknown : FeatureStatus.RequiresManualTest,
             Rumble: FeatureStatus.NotTested,
             Lightbar: FeatureStatus.NotTested,
