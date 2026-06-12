@@ -39,8 +39,8 @@
 
             <Border Style="{StaticResource Card}" Margin="0,0,12,0">
                 <StackPanel>
-                    <TextBlock Text="Mode" Style="{StaticResource MutedText}" />
-                    <TextBlock Text="Read-only" FontSize="24" FontWeight="Bold" Margin="0,6,0,0" />
+                    <TextBlock Text="Profile Matches" Style="{StaticResource MutedText}" />
+                    <TextBlock x:Name="ProfileCountText" Text="0" FontSize="28" FontWeight="Bold" Margin="0,6,0,0" />
                 </StackPanel>
             </Border>
 
@@ -82,12 +82,14 @@
                                       SelectionChanged="ReportsGrid_SelectionChanged">
                                 <DataGrid.Columns>
                                     <DataGridTextColumn Header="Device" Binding="{Binding Device.DisplayName}" Width="2*" />
-                                    <DataGridTextColumn Header="VID" Binding="{Binding Device.VendorId}" Width="80" />
-                                    <DataGridTextColumn Header="PID" Binding="{Binding Device.ProductId}" Width="80" />
+                                    <DataGridTextColumn Header="Profile" Binding="{Binding ProfileName}" Width="180" />
+                                    <DataGridTextColumn Header="Risk" Binding="{Binding RecommendedRiskLevel}" Width="90" />
+                                    <DataGridTextColumn Header="VID" Binding="{Binding Device.VendorId}" Width="70" />
+                                    <DataGridTextColumn Header="PID" Binding="{Binding Device.ProductId}" Width="70" />
                                     <DataGridTextColumn Header="Connection" Binding="{Binding Device.ConnectionType}" Width="110" />
                                     <DataGridTextColumn Header="Source" Binding="{Binding Device.Source}" Width="150" />
-                                    <DataGridTextColumn Header="Audio" Binding="{Binding WindowsAudioEndpoint}" Width="120" />
-                                    <DataGridTextColumn Header="DS4 Audio" Binding="{Binding Ds4AudioProtocol}" Width="120" />
+                                    <DataGridTextColumn Header="Audio" Binding="{Binding WindowsAudioEndpoint}" Width="110" />
+                                    <DataGridTextColumn Header="DS4 Audio" Binding="{Binding Ds4AudioProtocol}" Width="110" />
                                 </DataGrid.Columns>
                             </DataGrid>
                         </DockPanel>
