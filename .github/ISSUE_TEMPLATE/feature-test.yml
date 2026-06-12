@@ -1,0 +1,65 @@
+name: Feature test result
+description: Report a controlled PadScope feature test result
+title: "Feature test: <feature> on <controller>"
+labels: [feature-test]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template only for PadScope feature tests. Scanner-only reports should use the compatibility report template.
+  - type: input
+    id: feature
+    attributes:
+      label: Feature tested
+      placeholder: Rumble / Lightbar / Gyro / Touchpad / Audio endpoint / DS4 audio probe
+    validations:
+      required: true
+  - type: input
+    id: controller
+    attributes:
+      label: Controller
+      placeholder: Marvo GT-84
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Connection type
+      options:
+        - USB
+        - Bluetooth
+        - Unknown
+    validations:
+      required: true
+  - type: input
+    id: padscope-version
+    attributes:
+      label: PadScope version or commit
+      placeholder: commit SHA or release version
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result
+      options:
+        - observed-working
+        - failed
+        - unsupported
+        - inconclusive
+        - not-run
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Details
+      description: What happened? Include exported report data when possible.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety confirmation
+      options:
+        - label: I selected the correct target controller.
+        - label: I understood whether the test was safe, controlled, or experimental.
+        - label: The test was not run automatically during normal scan.
