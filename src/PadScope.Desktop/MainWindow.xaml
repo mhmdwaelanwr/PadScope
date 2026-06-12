@@ -133,16 +133,30 @@
 
             <TabItem Header="Feature Tests">
                 <Border Style="{StaticResource Card}" Margin="0,16,0,0">
-                    <StackPanel>
-                        <TextBlock Text="Feature Tests" FontSize="22" FontWeight="Bold" />
-                        <TextBlock Text="Rumble, lightbar, gyro, touchpad, and headset tests will be enabled after the read-only scanner is validated." Style="{StaticResource MutedText}" Margin="0,8,0,18" TextWrapping="Wrap" />
-                        <WrapPanel>
-                            <Button Content="Test Rumble" Style="{StaticResource SecondaryButton}" Margin="0,0,10,10" IsEnabled="False" />
-                            <Button Content="Test Lightbar" Style="{StaticResource SecondaryButton}" Margin="0,0,10,10" IsEnabled="False" />
-                            <Button Content="Test Gyro" Style="{StaticResource SecondaryButton}" Margin="0,0,10,10" IsEnabled="False" />
-                            <Button Content="Test Touchpad" Style="{StaticResource SecondaryButton}" Margin="0,0,10,10" IsEnabled="False" />
-                        </WrapPanel>
-                    </StackPanel>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,14">
+                            <TextBlock Text="Feature Test Registry" FontSize="22" FontWeight="Bold" />
+                            <TextBlock Text="This table is generated from PadScope.Core.Testing.FeatureTestRegistry. Features stay locked until their stage and safety gates are ready." Style="{StaticResource MutedText}" Margin="0,8,0,14" TextWrapping="Wrap" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Explain Selected Test" Width="170" Style="{StaticResource SecondaryButton}" Click="ExplainSelectedFeatureButton_Click" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <DataGrid x:Name="FeatureTestsGrid"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=FeatureTestRows}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Feature" Binding="{Binding Name}" Width="2*" />
+                                <DataGridTextColumn Header="Stage" Binding="{Binding Stage}" Width="140" />
+                                <DataGridTextColumn Header="Risk" Binding="{Binding RiskLevel}" Width="105" />
+                                <DataGridTextColumn Header="Target" Binding="{Binding RequiresSelectedDevice}" Width="90" />
+                                <DataGridTextColumn Header="Confirm" Binding="{Binding RequiresUserConfirmation}" Width="90" />
+                                <DataGridTextColumn Header="State" Binding="{Binding State}" Width="100" />
+                                <DataGridTextColumn Header="Goal" Binding="{Binding Goal}" Width="3*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
                 </Border>
             </TabItem>
 
