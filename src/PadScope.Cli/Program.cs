@@ -2,7 +2,7 @@ using System.Text.Json;
 using PadScope.Core.Diagnostics;
 using PadScope.Core.Scanning;
 
-IControllerScanner scanner = new StubControllerScanner();
+IControllerScanner scanner = new WindowsDeviceScanner();
 
 string command = args.Length > 0 ? args[0].ToLowerInvariant() : "scan";
 
@@ -48,6 +48,13 @@ static void RunScan(IControllerScanner scanner, string[] args)
     Console.WriteLine("PadScope scan");
     Console.WriteLine("=============");
 
+    if (reports.Count == 0)
+    {
+        Console.WriteLine("No controller-like devices were detected by the read-only Windows scanner.");
+        Console.WriteLine("Try connecting the controller by USB first, then run the scan again.");
+        return;
+    }
+
     foreach (var report in reports)
     {
         Console.WriteLine($"Device: {report.Device.DisplayName}");
@@ -79,7 +86,7 @@ static void PrintHelp()
     Console.WriteLine("Gamepad diagnostics and compatibility toolkit for Windows.");
     Console.WriteLine();
     Console.WriteLine("Commands:");
-    Console.WriteLine("  scan          Run the scanner");
+    Console.WriteLine("  scan          Run the read-only Windows scanner");
     Console.WriteLine("  scan --json   Run the scanner and print JSON");
     Console.WriteLine("  help          Show help");
 }
