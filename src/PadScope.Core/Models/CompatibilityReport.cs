@@ -2,6 +2,10 @@ namespace PadScope.Core.Models;
 
 public sealed record CompatibilityReport(
     ControllerDevice Device,
+    string ProfileName,
+    string ProfileConfidence,
+    RiskLevel RecommendedRiskLevel,
+    string RecommendedNextAction,
     FeatureStatus Input,
     FeatureStatus Rumble,
     FeatureStatus Lightbar,
