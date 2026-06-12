@@ -19,6 +19,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         ReportsGrid.ItemsSource = _reports;
+        UpdateSummary();
     }
 
     private void ScanButton_Click(object sender, RoutedEventArgs e)
@@ -26,11 +27,31 @@ public partial class MainWindow : Window
         RunScan();
     }
 
+    private void ClearButton_Click(object sender, RoutedEventArgs e)
+    {
+        _reports.Clear();
+        DetailsText.Text = "Run a scan, then select a device.";
+        StatusText.Text = "Cleared";
+        UpdateSummary();
+    }
+
     private void ExportJsonButton_Click(object sender, RoutedEventArgs e)
     {
         if (_reports.Count == 0)
         {
             RunScan();
+        }
+
+        if (_reports.Count == 0)
+        {
+            MessageBox.Show(
+                this,
+                "No report data is available to export yet.",
+                "PadScope",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information
+            );
+            return;
         }
 
         SaveFileDialog dialog = new()
@@ -65,6 +86,17 @@ public partial class MainWindow : Window
         );
     }
 
+    private void CopyDetailsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(DetailsText.Text))
+        {
+            return;
+        }
+
+        Clipboard.SetText(DetailsText.Text);
+        StatusText.Text = "Details copied";
+    }
+
     private void ReportsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (ReportsGrid.SelectedItem is not CompatibilityReport report)
@@ -77,7 +109,8 @@ public partial class MainWindow : Window
                            $"Manufacturer: {report.Device.Manufacturer ?? "Unknown"}\n" +
                            $"VID/PID: {report.Device.VendorId ?? "?"}/{report.Device.ProductId ?? "?"}\n" +
                            $"Connection: {report.Device.ConnectionType}\n" +
-                           $"Source: {report.Device.Source}\n\n" +
+                           $"Source: {report.Device.Source}\n" +
+                           $"Path: {report.Device.DevicePath ?? "Unknown"}\n\n" +
                            $"Input: {report.Input}\n" +
                            $"Rumble: {report.Rumble}\n" +
                            $"Lightbar: {report.Lightbar}\n" +
@@ -91,14 +124,39 @@ public partial class MainWindow : Window
     private void RunScan()
     {
         _reports.Clear();
+        StatusText.Text = "Scanning...";
 
-        foreach (var report in _scanner.Scan().Select(ReportBuilder.BuildInitialReport))
+        try
         {
-            _reports.Add(report);
-        }
+            foreach (var report in _scanner.Scan().Select(ReportBuilder.BuildInitialReport))
+            {
+                _reports.Add(report);
+            }
 
-        StatusText.Text = _reports.Count == 0
-            ? "No controller-like devices detected. Try USB first, then scan again."
-            : $"Detected {_reports.Count} controller-like device(s).";
+            StatusText.Text = _reports.Count == 0
+                ? "No controller-like devices detected"
+                : $"Detected {_reports.Count} controller-like device(s)";
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Scan failed";
+            MessageBox.Show(
+                this,
+                ex.Message,
+                "PadScope scan failed",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error
+            );
+        }
+        finally
+        {
+            UpdateSummary();
+        }
+    }
+
+    private void UpdateSummary()
+    {
+        DeviceCountText.Text = _reports.Count.ToString();
+        LastScanText.Text = _reports.Count == 0 ? "Never" : DateTime.Now.ToString("HH:mm:ss");
     }
 }
