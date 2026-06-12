@@ -46,8 +46,8 @@
 
             <Border Style="{StaticResource Card}" Margin="0,0,12,0">
                 <StackPanel>
-                    <TextBlock Text="Audio Probe" Style="{StaticResource MutedText}" />
-                    <TextBlock Text="Locked" FontSize="24" FontWeight="Bold" Margin="0,6,0,0" Foreground="{StaticResource BrushWarning}" />
+                    <TextBlock Text="Current Stage" Style="{StaticResource MutedText}" />
+                    <TextBlock x:Name="CurrentStageText" Text="0/1 Ready" FontSize="24" FontWeight="Bold" Margin="0,6,0,0" Foreground="{StaticResource BrushWarning}" />
                 </StackPanel>
             </Border>
 
@@ -111,6 +111,34 @@
                 </Grid>
             </TabItem>
 
+            <TabItem Header="Stages">
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,14">
+                            <TextBlock Text="Staged Test Plan" FontSize="22" FontWeight="Bold" />
+                            <TextBlock Text="This is the full GUI map for building and testing PadScope step by step. Current work is Stage 0/1 readiness; controlled and experimental stages stay locked." Style="{StaticResource MutedText}" Margin="0,8,0,14" TextWrapping="Wrap" />
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Explain Selected Stage" Width="170" Style="{StaticResource SecondaryButton}" Click="ExplainSelectedStageButton_Click" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <DataGrid x:Name="StagesGrid"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=StageRows}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Stage" Binding="{Binding Stage}" Width="130" />
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="190" />
+                                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="135" />
+                                <DataGridTextColumn Header="Goal" Binding="{Binding Goal}" Width="2*" />
+                                <DataGridTextColumn Header="What to do" Binding="{Binding WhatToDo}" Width="2*" />
+                                <DataGridTextColumn Header="Pass criteria" Binding="{Binding PassCriteria}" Width="2*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
+                </Border>
+            </TabItem>
+
             <TabItem Header="Profiles">
                 <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -166,19 +194,6 @@
                         <TextBlock Text="Audio Lab" FontSize="22" FontWeight="Bold" />
                         <TextBlock Text="DS4-style speaker/headset audio probing is experimental. It will stay locked until the scanner can identify the target controller safely." Style="{StaticResource MutedText}" Margin="0,8,0,18" TextWrapping="Wrap" />
                         <Button Content="Open Audio Lab Warning" Width="180" Click="AudioLabButton_Click" />
-                    </StackPanel>
-                </Border>
-            </TabItem>
-
-            <TabItem Header="Roadmap">
-                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
-                    <StackPanel>
-                        <TextBlock Text="Next Engineering Milestones" FontSize="22" FontWeight="Bold" Margin="0,0,0,12" />
-                        <TextBlock Text="1. Validate scanner output on Marvo GT-84 over USB and Bluetooth." Style="{StaticResource MutedText}" Margin="0,0,0,8" />
-                        <TextBlock Text="2. Add explicit HID report descriptor inspection." Style="{StaticResource MutedText}" Margin="0,0,0,8" />
-                        <TextBlock Text="3. Add safe rumble and lightbar tests for known DS4-like devices." Style="{StaticResource MutedText}" Margin="0,0,0,8" />
-                        <TextBlock Text="4. Keep compatibility profiles evidence-based." Style="{StaticResource MutedText}" Margin="0,0,0,8" />
-                        <TextBlock Text="5. Add opt-in DS4 Audio Lab after safety checks." Style="{StaticResource MutedText}" />
                     </StackPanel>
                 </Border>
             </TabItem>
