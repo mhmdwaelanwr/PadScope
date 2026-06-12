@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using Microsoft.Win32;
 using PadScope.Core.Diagnostics;
 using PadScope.Core.Models;
+using PadScope.Core.Reports;
 using PadScope.Core.Scanning;
 
 namespace PadScope.Desktop;
@@ -15,9 +16,21 @@ public partial class MainWindow : Window
     private readonly IControllerScanner _scanner = new WindowsDeviceScanner();
     private readonly ObservableCollection<CompatibilityReport> _reports = new();
 
+    public IReadOnlyList<ProfileRow> ProfileRows { get; } = new[]
+    {
+        new ProfileRow("Marvo GT-84", "DS4-style clone", "starter profile", "USB/Bluetooth VID/PID, HID descriptor, rumble, lightbar, audio endpoint"),
+        new ProfileRow("SkyTech DS4-style clone", "DS4-style clone", "research needed", "VID/PID, game mode, Bluetooth behavior, DS4Windows detection"),
+        new ProfileRow("Zero DS4-style clone", "DS4-style clone", "research needed", "VID/PID, input mode, rumble, lightbar, touchpad behavior"),
+        new ProfileRow("Generic Wireless Controller", "Unknown DS4-compatible", "research needed", "Device path, vendor strings, report shape, audio endpoint check"),
+        new ProfileRow("AULA G1000", "DirectInput PC gamepad", "research needed", "VID/PID, DirectInput layout, rumble behavior, XInput compatibility"),
+        new ProfileRow("Sony DualShock 4", "Reference hardware", "baseline", "USB/Bluetooth identity, known DS4 report shape"),
+        new ProfileRow("Sony DualSense", "Reference hardware", "baseline", "USB/Bluetooth identity, adaptive trigger scope, audio endpoint behavior")
+    };
+
     public MainWindow()
     {
         InitializeComponent();
+        DataContext = this;
         ReportsGrid.ItemsSource = _reports;
         UpdateSummary();
     }
@@ -37,26 +50,14 @@ public partial class MainWindow : Window
 
     private void ExportJsonButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_reports.Count == 0)
+        if (!EnsureReportData())
         {
-            RunScan();
-        }
-
-        if (_reports.Count == 0)
-        {
-            MessageBox.Show(
-                this,
-                "No report data is available to export yet.",
-                "PadScope",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information
-            );
             return;
         }
 
         SaveFileDialog dialog = new()
         {
-            Title = "Export PadScope report",
+            Title = "Export PadScope JSON report",
             Filter = "JSON report (*.json)|*.json|All files (*.*)|*.*",
             FileName = "padscope-report.json"
         };
@@ -72,7 +73,30 @@ public partial class MainWindow : Window
         };
 
         File.WriteAllText(dialog.FileName, JsonSerializer.Serialize(_reports, options));
-        StatusText.Text = $"Report exported: {dialog.FileName}";
+        StatusText.Text = $"JSON report exported: {dialog.FileName}";
+    }
+
+    private void ExportMarkdownButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (!EnsureReportData())
+        {
+            return;
+        }
+
+        SaveFileDialog dialog = new()
+        {
+            Title = "Export PadScope Markdown report",
+            Filter = "Markdown report (*.md)|*.md|Text file (*.txt)|*.txt|All files (*.*)|*.*",
+            FileName = "padscope-report.md"
+        };
+
+        if (dialog.ShowDialog(this) != true)
+        {
+            return;
+        }
+
+        File.WriteAllText(dialog.FileName, MarkdownReportExporter.Export(_reports));
+        StatusText.Text = $"Markdown report exported: {dialog.FileName}";
     }
 
     private void AudioLabButton_Click(object sender, RoutedEventArgs e)
@@ -158,6 +182,28 @@ public partial class MainWindow : Window
         }
     }
 
+    private bool EnsureReportData()
+    {
+        if (_reports.Count == 0)
+        {
+            RunScan();
+        }
+
+        if (_reports.Count != 0)
+        {
+            return true;
+        }
+
+        MessageBox.Show(
+            this,
+            "No report data is available to export yet.",
+            "PadScope",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information
+        );
+        return false;
+    }
+
     private void UpdateSummary()
     {
         DeviceCountText.Text = _reports.Count.ToString();
@@ -165,3 +211,5 @@ public partial class MainWindow : Window
         LastScanText.Text = _reports.Count == 0 ? "Never" : DateTime.Now.ToString("HH:mm:ss");
     }
 }
+
+public sealed record ProfileRow(string Name, string Category, string Status, string EvidenceNeeded);
