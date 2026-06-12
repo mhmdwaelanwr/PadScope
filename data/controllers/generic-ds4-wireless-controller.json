@@ -1,0 +1,34 @@
+{
+  "id": "generic-ds4-wireless-controller",
+  "name": "Generic Wireless Controller",
+  "category": "Unknown DS4-compatible controller",
+  "manufacturer": "Unknown",
+  "status": "community-research-needed",
+  "connections": [
+    "USB",
+    "Bluetooth"
+  ],
+  "knownBehavior": {
+    "input": "unknown",
+    "rumble": "unknown",
+    "lightbar": "unknown",
+    "gyro": "unknown",
+    "touchpad": "unknown",
+    "windowsAudioEndpoint": "unknown",
+    "internalSpeaker": "unconfirmed",
+    "headsetJack": "unconfirmed",
+    "ds4AudioProtocol": "untested"
+  },
+  "notes": [
+    "Windows often labels DS4-like controllers as Wireless Controller even when the hardware is a clone.",
+    "This profile is a safe fallback until a more specific profile can be matched."
+  ],
+  "evidenceNeeded": [
+    "Display name",
+    "Manufacturer string",
+    "USB VID/PID",
+    "Bluetooth device path",
+    "HID report descriptor",
+    "Feature test results"
+  ]
+}
