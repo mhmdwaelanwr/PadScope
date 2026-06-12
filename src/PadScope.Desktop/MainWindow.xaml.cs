@@ -106,6 +106,10 @@ public partial class MainWindow : Window
         }
 
         DetailsText.Text = $"Device: {report.Device.DisplayName}\n" +
+                           $"Profile: {report.ProfileName}\n" +
+                           $"Confidence: {report.ProfileConfidence}\n" +
+                           $"Recommended risk: {report.RecommendedRiskLevel}\n" +
+                           $"Next action: {report.RecommendedNextAction}\n\n" +
                            $"Manufacturer: {report.Device.Manufacturer ?? "Unknown"}\n" +
                            $"VID/PID: {report.Device.VendorId ?? "?"}/{report.Device.ProductId ?? "?"}\n" +
                            $"Connection: {report.Device.ConnectionType}\n" +
@@ -157,6 +161,7 @@ public partial class MainWindow : Window
     private void UpdateSummary()
     {
         DeviceCountText.Text = _reports.Count.ToString();
+        ProfileCountText.Text = _reports.Count(report => !report.ProfileName.StartsWith("Unknown", StringComparison.OrdinalIgnoreCase)).ToString();
         LastScanText.Text = _reports.Count == 0 ? "Never" : DateTime.Now.ToString("HH:mm:ss");
     }
 }
