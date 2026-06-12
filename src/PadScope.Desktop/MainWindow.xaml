@@ -73,6 +73,7 @@
                             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,14">
                                 <Button Content="Scan Controllers" Width="150" Margin="0,0,10,0" Click="ScanButton_Click" />
                                 <Button Content="Export JSON" Width="120" Margin="0,0,10,0" Style="{StaticResource SecondaryButton}" Click="ExportJsonButton_Click" />
+                                <Button Content="Export Markdown" Width="150" Margin="0,0,10,0" Style="{StaticResource SecondaryButton}" Click="ExportMarkdownButton_Click" />
                                 <Button Content="Clear" Width="90" Style="{StaticResource SecondaryButton}" Click="ClearButton_Click" />
                             </StackPanel>
 
@@ -110,6 +111,26 @@
                 </Grid>
             </TabItem>
 
+            <TabItem Header="Profiles">
+                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <TextBlock Text="Compatibility Profiles" FontSize="22" FontWeight="Bold" />
+                            <TextBlock Text="These profiles are starter records. They are intentionally conservative until real scan reports confirm VID/PID, HID shape, and feature behavior." Style="{StaticResource MutedText}" Margin="0,8,0,18" TextWrapping="Wrap" />
+
+                            <DataGrid AutoGenerateColumns="False" IsReadOnly="True" ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ProfileRows}" MinHeight="260">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Profile" Binding="{Binding Name}" Width="2*" />
+                                    <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="160" />
+                                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="190" />
+                                    <DataGridTextColumn Header="Evidence needed" Binding="{Binding EvidenceNeeded}" Width="3*" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </TabItem>
+
             <TabItem Header="Feature Tests">
                 <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                     <StackPanel>
@@ -142,7 +163,7 @@
                         <TextBlock Text="1. Validate scanner output on Marvo GT-84 over USB and Bluetooth." Style="{StaticResource MutedText}" Margin="0,0,0,8" />
                         <TextBlock Text="2. Add explicit HID report descriptor inspection." Style="{StaticResource MutedText}" Margin="0,0,0,8" />
                         <TextBlock Text="3. Add safe rumble and lightbar tests for known DS4-like devices." Style="{StaticResource MutedText}" Margin="0,0,0,8" />
-                        <TextBlock Text="4. Add compatibility profile matching and report export." Style="{StaticResource MutedText}" Margin="0,0,0,8" />
+                        <TextBlock Text="4. Keep compatibility profiles evidence-based." Style="{StaticResource MutedText}" Margin="0,0,0,8" />
                         <TextBlock Text="5. Add opt-in DS4 Audio Lab after safety checks." Style="{StaticResource MutedText}" />
                     </StackPanel>
                 </Border>
