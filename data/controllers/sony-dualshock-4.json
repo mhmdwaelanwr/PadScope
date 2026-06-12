@@ -1,0 +1,34 @@
+{
+  "id": "sony-dualshock-4",
+  "name": "Sony DualShock 4",
+  "category": "Reference hardware",
+  "manufacturer": "Sony",
+  "status": "baseline-reference-needed",
+  "connections": [
+    "USB",
+    "Bluetooth"
+  ],
+  "knownBehavior": {
+    "input": "expected",
+    "rumble": "expected",
+    "lightbar": "expected",
+    "gyro": "expected",
+    "touchpad": "expected",
+    "windowsAudioEndpoint": "varies-by-connection-and-revision",
+    "internalSpeaker": "protocol-specific",
+    "headsetJack": "protocol-specific",
+    "ds4AudioProtocol": "research-baseline"
+  },
+  "notes": [
+    "Reference profile used to compare clone controllers against known DS4 behavior.",
+    "Do not use this profile to claim clone compatibility without matching VID/PID and report behavior."
+  ],
+  "evidenceNeeded": [
+    "VID/PID for each revision",
+    "USB report descriptor",
+    "Bluetooth report descriptor",
+    "Audio endpoint behavior",
+    "Known-safe rumble report",
+    "Known-safe lightbar report"
+  ]
+}
