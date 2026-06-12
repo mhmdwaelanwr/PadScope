@@ -18,6 +18,36 @@ public static class ProfileMatcher
             );
         }
 
+        if (Contains(text, "skytech"))
+        {
+            return new ProfileMatch(
+                Name: "SkyTech DS4-style clone",
+                Confidence: "medium",
+                RecommendedRiskLevel: RiskLevel.Safe,
+                RecommendedNextAction: "Collect VID/PID and DS4Windows behavior before enabling feature tests."
+            );
+        }
+
+        if (Contains(text, "zero"))
+        {
+            return new ProfileMatch(
+                Name: "Zero DS4-style clone",
+                Confidence: "medium",
+                RecommendedRiskLevel: RiskLevel.Safe,
+                RecommendedNextAction: "Collect HID identity and verify whether the unit is a DS4 clone or generic DInput pad."
+            );
+        }
+
+        if (Contains(text, "aula") || Contains(text, "g1000"))
+        {
+            return new ProfileMatch(
+                Name: "AULA G1000 / DirectInput PC gamepad",
+                Confidence: "medium",
+                RecommendedRiskLevel: RiskLevel.Safe,
+                RecommendedNextAction: "Focus on DirectInput/XInput and rumble testing; DS4 audio does not apply."
+            );
+        }
+
         if (device.VendorId?.Equals("054C", StringComparison.OrdinalIgnoreCase) == true)
         {
             return new ProfileMatch(
