@@ -28,7 +28,17 @@ public sealed class WindowsDeviceScanner : IControllerScanner
         }
 
         List<ControllerDevice> devices = new();
+        devices.AddRange(ScanPnPDevices());
+        devices.AddRange(ScanAudioDevices());
 
+        return devices
+            .DistinctBy(device => device.DevicePath ?? $"{device.DisplayName}:{device.VendorId}:{device.ProductId}:{device.Source}")
+            .OrderBy(device => device.DisplayName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static IEnumerable<ControllerDevice> ScanPnPDevices()
+    {
         using ManagementObjectSearcher searcher = new(
             "SELECT Name, Manufacturer, DeviceID, PNPDeviceID, Service, ClassGuid FROM Win32_PnPEntity"
         );
@@ -47,7 +57,7 @@ public sealed class WindowsDeviceScanner : IControllerScanner
 
             (string? vendorId, string? productId) = ExtractVidPid(pnpDeviceId);
 
-            devices.Add(new ControllerDevice(
+            yield return new ControllerDevice(
                 DisplayName: string.IsNullOrWhiteSpace(name) ? "Unknown controller-like device" : name,
                 Manufacturer: string.IsNullOrWhiteSpace(manufacturer) ? null : manufacturer,
                 VendorId: vendorId,
@@ -55,13 +65,39 @@ public sealed class WindowsDeviceScanner : IControllerScanner
                 DevicePath: string.IsNullOrWhiteSpace(pnpDeviceId) ? null : pnpDeviceId,
                 ConnectionType: InferConnectionType(pnpDeviceId),
                 Source: "Win32_PnPEntity"
-            ));
+            );
         }
+    }
 
-        return devices
-            .DistinctBy(device => device.DevicePath ?? $"{device.DisplayName}:{device.VendorId}:{device.ProductId}")
-            .OrderBy(device => device.DisplayName, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+    private static IEnumerable<ControllerDevice> ScanAudioDevices()
+    {
+        using ManagementObjectSearcher searcher = new(
+            "SELECT Name, Manufacturer, DeviceID, PNPDeviceID FROM Win32_SoundDevice"
+        );
+
+        foreach (ManagementObject item in searcher.Get().OfType<ManagementObject>())
+        {
+            string name = ReadString(item, "Name") ?? string.Empty;
+            string pnpDeviceId = ReadString(item, "PNPDeviceID") ?? ReadString(item, "DeviceID") ?? string.Empty;
+            string manufacturer = ReadString(item, "Manufacturer") ?? string.Empty;
+
+            if (!ContainsAny($"{name} {pnpDeviceId} {manufacturer}", ControllerKeywords))
+            {
+                continue;
+            }
+
+            (string? vendorId, string? productId) = ExtractVidPid(pnpDeviceId);
+
+            yield return new ControllerDevice(
+                DisplayName: string.IsNullOrWhiteSpace(name) ? "Unknown controller audio endpoint" : name,
+                Manufacturer: string.IsNullOrWhiteSpace(manufacturer) ? null : manufacturer,
+                VendorId: vendorId,
+                ProductId: productId,
+                DevicePath: string.IsNullOrWhiteSpace(pnpDeviceId) ? null : pnpDeviceId,
+                ConnectionType: InferConnectionType(pnpDeviceId),
+                Source: "Win32_SoundDevice"
+            );
+        }
     }
 
     private static bool LooksLikeController(string name, string pnpDeviceId, string service)
