@@ -1,0 +1,35 @@
+{
+  "id": "zero-ds4-clone",
+  "name": "Zero DS4-style clone",
+  "category": "DS4-style clone",
+  "manufacturer": "Zero",
+  "status": "community-research-needed",
+  "connections": [
+    "USB",
+    "Bluetooth"
+  ],
+  "knownBehavior": {
+    "input": "unknown",
+    "rumble": "unknown",
+    "lightbar": "unknown",
+    "gyro": "unknown",
+    "touchpad": "unknown",
+    "windowsAudioEndpoint": "unknown",
+    "internalSpeaker": "unconfirmed",
+    "headsetJack": "unconfirmed",
+    "ds4AudioProtocol": "untested"
+  },
+  "notes": [
+    "Starter profile only. Many clone controllers share the same public name but use different internal boards.",
+    "Treat every unit as unverified until VID/PID and HID behavior are scanned."
+  ],
+  "evidenceNeeded": [
+    "USB VID/PID",
+    "Bluetooth device path",
+    "HID report descriptor",
+    "Input mode mapping",
+    "Rumble test result",
+    "Lightbar test result",
+    "Touchpad behavior"
+  ]
+}
