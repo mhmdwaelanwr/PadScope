@@ -3,5 +3,97 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
+        <Color x:Key="ColorBackground">#0B1020</Color>
+        <Color x:Key="ColorSurface">#111827</Color>
+        <Color x:Key="ColorSurfaceAlt">#182033</Color>
+        <Color x:Key="ColorBorder">#243044</Color>
+        <Color x:Key="ColorPrimary">#38BDF8</Color>
+        <Color x:Key="ColorPrimaryDark">#0284C7</Color>
+        <Color x:Key="ColorText">#E5E7EB</Color>
+        <Color x:Key="ColorMuted">#94A3B8</Color>
+        <Color x:Key="ColorWarning">#F59E0B</Color>
+
+        <SolidColorBrush x:Key="BrushBackground" Color="{StaticResource ColorBackground}" />
+        <SolidColorBrush x:Key="BrushSurface" Color="{StaticResource ColorSurface}" />
+        <SolidColorBrush x:Key="BrushSurfaceAlt" Color="{StaticResource ColorSurfaceAlt}" />
+        <SolidColorBrush x:Key="BrushBorder" Color="{StaticResource ColorBorder}" />
+        <SolidColorBrush x:Key="BrushPrimary" Color="{StaticResource ColorPrimary}" />
+        <SolidColorBrush x:Key="BrushPrimaryDark" Color="{StaticResource ColorPrimaryDark}" />
+        <SolidColorBrush x:Key="BrushText" Color="{StaticResource ColorText}" />
+        <SolidColorBrush x:Key="BrushMuted" Color="{StaticResource ColorMuted}" />
+        <SolidColorBrush x:Key="BrushWarning" Color="{StaticResource ColorWarning}" />
+
+        <Style TargetType="Window">
+            <Setter Property="Background" Value="{StaticResource BrushBackground}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushText}" />
+            <Setter Property="FontFamily" Value="Segoe UI" />
+        </Style>
+
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource BrushText}" />
+        </Style>
+
+        <Style x:Key="MutedText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource BrushMuted}" />
+        </Style>
+
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource BrushSurface}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Padding" Value="16" />
+        </Style>
+
+        <Style TargetType="Button">
+            <Setter Property="Height" Value="38" />
+            <Setter Property="MinWidth" Value="112" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="{StaticResource BrushPrimaryDark}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushPrimary}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="{StaticResource BrushSurfaceAlt}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+        </Style>
+
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="{StaticResource BrushSurface}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushText}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+            <Setter Property="GridLinesVisibility" Value="None" />
+            <Setter Property="HeadersVisibility" Value="Column" />
+            <Setter Property="RowBackground" Value="{StaticResource BrushSurface}" />
+            <Setter Property="AlternatingRowBackground" Value="{StaticResource BrushSurfaceAlt}" />
+            <Setter Property="CanUserAddRows" Value="False" />
+            <Setter Property="CanUserDeleteRows" Value="False" />
+            <Setter Property="SelectionMode" Value="Single" />
+            <Setter Property="SelectionUnit" Value="FullRow" />
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="{StaticResource BrushSurfaceAlt}" />
+            <Setter Property="Foreground" Value="{StaticResource BrushMuted}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="10" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+        </Style>
+
+        <Style TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+
+        <Style TargetType="TabItem">
+            <Setter Property="Foreground" Value="{StaticResource BrushText}" />
+            <Setter Property="Background" Value="{StaticResource BrushSurface}" />
+            <Setter Property="Padding" Value="14,8" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+        </Style>
     </Application.Resources>
 </Application>
