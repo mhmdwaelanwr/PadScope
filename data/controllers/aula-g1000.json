@@ -1,0 +1,32 @@
+{
+  "id": "aula-g1000",
+  "name": "AULA G1000",
+  "category": "DirectInput PC gamepad",
+  "manufacturer": "AULA",
+  "status": "community-research-needed",
+  "connections": [
+    "USB"
+  ],
+  "knownBehavior": {
+    "input": "unknown",
+    "rumble": "unknown",
+    "lightbar": "not-applicable-or-unknown",
+    "gyro": "not-expected",
+    "touchpad": "not-expected",
+    "windowsAudioEndpoint": "not-expected",
+    "internalSpeaker": "not-expected",
+    "headsetJack": "not-expected",
+    "ds4AudioProtocol": "not-applicable"
+  },
+  "notes": [
+    "This is not a DS4-style controller profile. It is tracked because low-cost PC gamepads are part of PadScope compatibility research.",
+    "Focus on DirectInput/XInput behavior and rumble support."
+  ],
+  "evidenceNeeded": [
+    "USB VID/PID",
+    "DirectInput layout",
+    "XInput compatibility",
+    "Rumble test result",
+    "Game compatibility notes"
+  ]
+}
