@@ -354,15 +354,12 @@ public partial class MainWindow : Window
 
     private static void SetResourceBrush(string resourceKey, string colorHex)
     {
-        if (Application.Current.Resources[resourceKey] is not SolidColorBrush brush)
+        if (ColorConverter.ConvertFromString(colorHex) is not Color color)
         {
             return;
         }
 
-        if (ColorConverter.ConvertFromString(colorHex) is Color color)
-        {
-            brush.Color = color;
-        }
+        Application.Current.Resources[resourceKey] = new SolidColorBrush(color);
     }
 }
 
