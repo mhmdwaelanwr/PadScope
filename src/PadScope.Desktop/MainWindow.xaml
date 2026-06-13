@@ -1,8 +1,8 @@
 <Window x:Class="PadScope.Desktop.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="PadScope" Height="760" Width="1180" MinHeight="640" MinWidth="980">
-    <Grid Margin="22">
+        Title="PadScope" Height="800" Width="1240" MinHeight="680" MinWidth="1040">
+    <Grid Margin="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -10,52 +10,96 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="0,0,0,18">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
+        <Border Grid.Row="0" Style="{StaticResource Card}" Padding="22" Margin="0,0,0,18">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="18" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-            <StackPanel>
-                <TextBlock Text="PadScope" FontSize="34" FontWeight="Bold" />
-                <TextBlock Text="Gamepad diagnostics and compatibility toolkit for Windows" Style="{StaticResource MutedText}" FontSize="15" Margin="0,4,0,0" />
-            </StackPanel>
+                <Border Width="58" Height="58" CornerRadius="18" Background="{StaticResource BrushPrimaryDark}" BorderBrush="{StaticResource BrushPrimary}" BorderThickness="1">
+                    <TextBlock Text="P" FontSize="30" FontWeight="Black" Foreground="{StaticResource BrushButtonText}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
 
-            <Border Grid.Column="1" Style="{StaticResource Card}" Padding="14,10">
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Ellipse Width="10" Height="10" Fill="{StaticResource BrushPrimary}" Margin="0,0,8,0" />
-                    <TextBlock x:Name="StatusText" Text="Ready" Style="{StaticResource MutedText}" />
+                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="PadScope" FontSize="36" FontWeight="Black" />
+                        <Border Style="{StaticResource Pill}" Margin="12,4,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="Stage 0/1 Ready" Style="{StaticResource AccentText}" FontSize="12" />
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="Clean controller diagnostics, staged safety gates, and evidence-based compatibility reports." Style="{StaticResource MutedText}" FontSize="15" Margin="0,6,0,0" />
                 </StackPanel>
-            </Border>
-        </Grid>
+
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Border Style="{StaticResource Pill}" Margin="0,0,10,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Ellipse Width="9" Height="9" Fill="{StaticResource BrushSuccess}" Margin="0,0,8,0" />
+                            <TextBlock x:Name="StatusText" Text="Ready" Style="{StaticResource MutedText}" />
+                        </StackPanel>
+                    </Border>
+                    <Button x:Name="ThemeButton" Content="Light mode" Width="116" Style="{StaticResource SecondaryButton}" Click="ToggleThemeButton_Click" />
+                </StackPanel>
+            </Grid>
+        </Border>
 
         <UniformGrid Grid.Row="1" Columns="4" Margin="0,0,0,18">
             <Border Style="{StaticResource Card}" Margin="0,0,12,0">
-                <StackPanel>
-                    <TextBlock Text="Detected" Style="{StaticResource MutedText}" />
-                    <TextBlock x:Name="DeviceCountText" Text="0" FontSize="28" FontWeight="Bold" Margin="0,6,0,0" />
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Detected" Style="{StaticResource MutedText}" />
+                        <TextBlock x:Name="DeviceCountText" Text="0" FontSize="30" FontWeight="Black" Margin="0,6,0,0" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="🎮" FontSize="28" VerticalAlignment="Center" />
+                </Grid>
             </Border>
 
             <Border Style="{StaticResource Card}" Margin="0,0,12,0">
-                <StackPanel>
-                    <TextBlock Text="Profile Matches" Style="{StaticResource MutedText}" />
-                    <TextBlock x:Name="ProfileCountText" Text="0" FontSize="28" FontWeight="Bold" Margin="0,6,0,0" />
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Profile Matches" Style="{StaticResource MutedText}" />
+                        <TextBlock x:Name="ProfileCountText" Text="0" FontSize="30" FontWeight="Black" Margin="0,6,0,0" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="🧩" FontSize="26" VerticalAlignment="Center" />
+                </Grid>
             </Border>
 
             <Border Style="{StaticResource Card}" Margin="0,0,12,0">
-                <StackPanel>
-                    <TextBlock Text="Current Stage" Style="{StaticResource MutedText}" />
-                    <TextBlock x:Name="CurrentStageText" Text="0/1 Ready" FontSize="24" FontWeight="Bold" Margin="0,6,0,0" Foreground="{StaticResource BrushWarning}" />
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Current Stage" Style="{StaticResource MutedText}" />
+                        <TextBlock x:Name="CurrentStageText" Text="0/1 Ready" FontSize="24" FontWeight="Black" Margin="0,8,0,0" Foreground="{StaticResource BrushWarning}" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="🛡" FontSize="26" VerticalAlignment="Center" />
+                </Grid>
             </Border>
 
             <Border Style="{StaticResource Card}">
-                <StackPanel>
-                    <TextBlock Text="Last Scan" Style="{StaticResource MutedText}" />
-                    <TextBlock x:Name="LastScanText" Text="Never" FontSize="20" FontWeight="Bold" Margin="0,8,0,0" />
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="Last Scan" Style="{StaticResource MutedText}" />
+                        <TextBlock x:Name="LastScanText" Text="Never" FontSize="22" FontWeight="Black" Margin="0,9,0,0" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="⏱" FontSize="26" VerticalAlignment="Center" />
+                </Grid>
             </Border>
         </UniformGrid>
 
@@ -70,12 +114,22 @@
 
                     <Border Grid.Column="0" Style="{StaticResource Card}">
                         <DockPanel>
-                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,14">
-                                <Button Content="Scan Controllers" Width="150" Margin="0,0,10,0" Click="ScanButton_Click" />
-                                <Button Content="Export JSON" Width="120" Margin="0,0,10,0" Style="{StaticResource SecondaryButton}" Click="ExportJsonButton_Click" />
-                                <Button Content="Export Markdown" Width="150" Margin="0,0,10,0" Style="{StaticResource SecondaryButton}" Click="ExportMarkdownButton_Click" />
-                                <Button Content="Clear" Width="90" Style="{StaticResource SecondaryButton}" Click="ClearButton_Click" />
-                            </StackPanel>
+                            <Grid DockPanel.Dock="Top" Margin="0,0,0,16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Controller scan" FontSize="22" FontWeight="Black" />
+                                    <TextBlock Text="Read-only device discovery. No rumble, lightbar, or audio packets are sent." Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Content="Scan Controllers" Width="150" Margin="0,0,10,0" Click="ScanButton_Click" />
+                                    <Button Content="Export JSON" Width="120" Margin="0,0,10,0" Style="{StaticResource SecondaryButton}" Click="ExportJsonButton_Click" />
+                                    <Button Content="Export Markdown" Width="155" Margin="0,0,10,0" Style="{StaticResource SecondaryButton}" Click="ExportMarkdownButton_Click" />
+                                    <Button Content="Clear" Width="90" Style="{StaticResource SecondaryButton}" Click="ClearButton_Click" />
+                                </StackPanel>
+                            </Grid>
 
                             <DataGrid x:Name="ReportsGrid"
                                       AutoGenerateColumns="False"
@@ -98,14 +152,23 @@
 
                     <Border Grid.Column="2" Style="{StaticResource Card}">
                         <DockPanel>
-                            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,12">
-                                <TextBlock Text="Selected Device" FontSize="19" FontWeight="Bold" VerticalAlignment="Center" />
-                                <Button Content="Copy" Width="76" Margin="12,0,0,0" Style="{StaticResource SecondaryButton}" Click="CopyDetailsButton_Click" />
-                            </StackPanel>
+                            <Grid DockPanel.Dock="Top" Margin="0,0,0,14">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="Selected Device" FontSize="21" FontWeight="Black" />
+                                    <TextBlock Text="Pick a detected row to inspect its evidence." Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+                                </StackPanel>
+                                <Button Grid.Column="1" Content="Copy" Width="76" Style="{StaticResource SecondaryButton}" Click="CopyDetailsButton_Click" />
+                            </Grid>
 
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <TextBlock x:Name="DetailsText" Text="Run a scan, then select a device." TextWrapping="Wrap" Style="{StaticResource MutedText}" />
-                            </ScrollViewer>
+                            <Border Style="{StaticResource SoftCard}" Padding="14">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <TextBlock x:Name="DetailsText" Text="Run a scan, then select a device." TextWrapping="Wrap" Style="{StaticResource MutedText}" />
+                                </ScrollViewer>
+                            </Border>
                         </DockPanel>
                     </Border>
                 </Grid>
@@ -114,13 +177,17 @@
             <TabItem Header="Stages">
                 <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                     <DockPanel>
-                        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,14">
-                            <TextBlock Text="Staged Test Plan" FontSize="22" FontWeight="Bold" />
-                            <TextBlock Text="This is the full GUI map for building and testing PadScope step by step. Current work is Stage 0/1 readiness; controlled and experimental stages stay locked." Style="{StaticResource MutedText}" Margin="0,8,0,14" TextWrapping="Wrap" />
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="Explain Selected Stage" Width="170" Style="{StaticResource SecondaryButton}" Click="ExplainSelectedStageButton_Click" />
+                        <Grid DockPanel.Dock="Top" Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Staged Test Plan" FontSize="22" FontWeight="Black" />
+                                <TextBlock Text="A controlled path from build verification to USB, Bluetooth, feature tests, Audio Lab, and packaging." Style="{StaticResource MutedText}" Margin="0,6,0,0" TextWrapping="Wrap" />
                             </StackPanel>
-                        </StackPanel>
+                            <Button Grid.Column="1" Content="Explain Selected Stage" Width="178" Style="{StaticResource SecondaryButton}" Click="ExplainSelectedStageButton_Click" />
+                        </Grid>
 
                         <DataGrid x:Name="StagesGrid"
                                   AutoGenerateColumns="False"
@@ -141,34 +208,38 @@
 
             <TabItem Header="Profiles">
                 <Border Style="{StaticResource Card}" Margin="0,16,0,0">
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <StackPanel>
-                            <TextBlock Text="Compatibility Profiles" FontSize="22" FontWeight="Bold" />
-                            <TextBlock Text="These profiles are starter records. They are intentionally conservative until real scan reports confirm VID/PID, HID shape, and feature behavior." Style="{StaticResource MutedText}" Margin="0,8,0,18" TextWrapping="Wrap" />
-
-                            <DataGrid AutoGenerateColumns="False" IsReadOnly="True" ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ProfileRows}" MinHeight="260">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Profile" Binding="{Binding Name}" Width="2*" />
-                                    <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="160" />
-                                    <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="190" />
-                                    <DataGridTextColumn Header="Evidence needed" Binding="{Binding EvidenceNeeded}" Width="3*" />
-                                </DataGrid.Columns>
-                            </DataGrid>
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,16">
+                            <TextBlock Text="Compatibility Profiles" FontSize="22" FontWeight="Black" />
+                            <TextBlock Text="Starter records for clone and reference controllers. Unknowns stay unknown until real scan evidence proves them." Style="{StaticResource MutedText}" Margin="0,6,0,0" TextWrapping="Wrap" />
                         </StackPanel>
-                    </ScrollViewer>
+
+                        <DataGrid AutoGenerateColumns="False" IsReadOnly="True" ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=ProfileRows}" MinHeight="260">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Profile" Binding="{Binding Name}" Width="2*" />
+                                <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="160" />
+                                <DataGridTextColumn Header="Status" Binding="{Binding Status}" Width="190" />
+                                <DataGridTextColumn Header="Evidence needed" Binding="{Binding EvidenceNeeded}" Width="3*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </DockPanel>
                 </Border>
             </TabItem>
 
             <TabItem Header="Feature Tests">
                 <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                     <DockPanel>
-                        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,14">
-                            <TextBlock Text="Feature Test Registry" FontSize="22" FontWeight="Bold" />
-                            <TextBlock Text="This table is generated from PadScope.Core.Testing.FeatureTestRegistry. Features stay locked until their stage and safety gates are ready." Style="{StaticResource MutedText}" Margin="0,8,0,14" TextWrapping="Wrap" />
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="Explain Selected Test" Width="170" Style="{StaticResource SecondaryButton}" Click="ExplainSelectedFeatureButton_Click" />
+                        <Grid DockPanel.Dock="Top" Margin="0,0,0,16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Feature Test Registry" FontSize="22" FontWeight="Black" />
+                                <TextBlock Text="Safe tests are enabled first. Controlled and experimental tests stay locked until their stage and safety gates are ready." Style="{StaticResource MutedText}" Margin="0,6,0,0" TextWrapping="Wrap" />
                             </StackPanel>
-                        </StackPanel>
+                            <Button Grid.Column="1" Content="Explain Selected Test" Width="174" Style="{StaticResource SecondaryButton}" Click="ExplainSelectedFeatureButton_Click" />
+                        </Grid>
 
                         <DataGrid x:Name="FeatureTestsGrid"
                                   AutoGenerateColumns="False"
@@ -190,19 +261,26 @@
 
             <TabItem Header="Audio Lab">
                 <Border Style="{StaticResource Card}" Margin="0,16,0,0">
-                    <StackPanel>
-                        <TextBlock Text="Audio Lab" FontSize="22" FontWeight="Bold" />
-                        <TextBlock Text="DS4-style speaker/headset audio probing is experimental. It will stay locked until the scanner can identify the target controller safely." Style="{StaticResource MutedText}" Margin="0,8,0,18" TextWrapping="Wrap" />
-                        <Button Content="Open Audio Lab Warning" Width="180" Click="AudioLabButton_Click" />
-                    </StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Audio Lab" FontSize="24" FontWeight="Black" />
+                            <TextBlock Text="DS4-style speaker/headset audio probing is experimental. It stays locked until the scanner identifies a safe target." Style="{StaticResource MutedText}" Margin="0,8,0,18" TextWrapping="Wrap" />
+                            <Border Style="{StaticResource SoftCard}" MaxWidth="760" HorizontalAlignment="Left">
+                                <TextBlock Text="Locked by design: no speaker/headset packets, no raw HID output, and no continuous audio stream until USB/Bluetooth identity evidence is collected." TextWrapping="Wrap" Style="{StaticResource MutedText}" />
+                            </Border>
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="Open Audio Lab Warning" Width="190" VerticalAlignment="Top" Click="AudioLabButton_Click" />
+                    </Grid>
                 </Border>
             </TabItem>
         </TabControl>
 
-        <TextBlock Grid.Row="3"
-                   Margin="0,16,0,0"
-                   Style="{StaticResource MutedText}"
-                   TextWrapping="Wrap"
-                   Text="Phase 1 is read-only diagnostics. No raw HID writes, rumble, lightbar, speaker, or headset packets are sent automatically." />
+        <Border Grid.Row="3" Style="{StaticResource Pill}" Margin="0,16,0,0" HorizontalAlignment="Left">
+            <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap" Text="Phase 1 is read-only diagnostics. No raw HID writes, rumble, lightbar, speaker, or headset packets are sent automatically." />
+        </Border>
     </Grid>
 </Window>
