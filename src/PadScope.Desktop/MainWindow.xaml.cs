@@ -73,6 +73,7 @@ public partial class MainWindow : Window
         _reports.Clear();
         DetailsText.Text = "Run a scan, then select a device.";
         StatusText.Text = "Cleared";
+        CurrentStageText.Text = "0/1 Ready";
         UpdateSummary();
     }
 
@@ -145,7 +146,7 @@ public partial class MainWindow : Window
     {
         MessageBox.Show(
             this,
-            "Audio Lab is planned for Phase 3. It will stay opt-in because DS4-style audio packets are experimental, especially on clone controllers.",
+            "Audio Lab is locked until a known DS4-like target passes identity checks. It will stay manual and opt-in because DS4-style audio packets are experimental, especially on clone controllers.",
             "PadScope Audio Lab",
             MessageBoxButton.OK,
             MessageBoxImage.Information
