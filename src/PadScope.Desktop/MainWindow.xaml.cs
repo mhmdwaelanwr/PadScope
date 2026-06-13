@@ -3,6 +3,7 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
 using Microsoft.Win32;
 using PadScope.Core.Diagnostics;
 using PadScope.Core.Models;
@@ -16,6 +17,7 @@ public partial class MainWindow : Window
 {
     private readonly IControllerScanner _scanner = new WindowsDeviceScanner();
     private readonly ObservableCollection<CompatibilityReport> _reports = new();
+    private bool _isLightTheme;
 
     public IReadOnlyList<StageRow> StageRows { get; } = TestStageRegistry.All
         .Select(stage => new StageRow(
@@ -57,6 +59,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = this;
         ReportsGrid.ItemsSource = _reports;
+        ApplyDarkTheme();
         UpdateSummary();
     }
 
@@ -71,6 +74,20 @@ public partial class MainWindow : Window
         DetailsText.Text = "Run a scan, then select a device.";
         StatusText.Text = "Cleared";
         UpdateSummary();
+    }
+
+    private void ToggleThemeButton_Click(object sender, RoutedEventArgs e)
+    {
+        _isLightTheme = !_isLightTheme;
+
+        if (_isLightTheme)
+        {
+            ApplyLightTheme();
+        }
+        else
+        {
+            ApplyDarkTheme();
+        }
     }
 
     private void ExportJsonButton_Click(object sender, RoutedEventArgs e)
@@ -293,6 +310,59 @@ public partial class MainWindow : Window
         DeviceCountText.Text = _reports.Count.ToString();
         ProfileCountText.Text = _reports.Count(report => !report.ProfileName.StartsWith("Unknown", StringComparison.OrdinalIgnoreCase)).ToString();
         LastScanText.Text = _reports.Count == 0 ? "Never" : DateTime.Now.ToString("HH:mm:ss");
+    }
+
+    private void ApplyDarkTheme()
+    {
+        SetResourceBrush("BrushBackground", "#07111F");
+        SetResourceBrush("BrushSurface", "#0F172A");
+        SetResourceBrush("BrushSurfaceAlt", "#162033");
+        SetResourceBrush("BrushSurfaceRaised", "#1E293B");
+        SetResourceBrush("BrushBorder", "#2B3A55");
+        SetResourceBrush("BrushPrimary", "#38BDF8");
+        SetResourceBrush("BrushPrimaryDark", "#0369A1");
+        SetResourceBrush("BrushText", "#E5E7EB");
+        SetResourceBrush("BrushMuted", "#94A3B8");
+        SetResourceBrush("BrushWarning", "#F59E0B");
+        SetResourceBrush("BrushSuccess", "#22C55E");
+        SetResourceBrush("BrushDanger", "#EF4444");
+        SetResourceBrush("BrushButtonText", "#FFFFFF");
+
+        ThemeButton.Content = "Light mode";
+        Background = (Brush)Application.Current.Resources["BrushBackground"];
+    }
+
+    private void ApplyLightTheme()
+    {
+        SetResourceBrush("BrushBackground", "#F8FAFC");
+        SetResourceBrush("BrushSurface", "#FFFFFF");
+        SetResourceBrush("BrushSurfaceAlt", "#EEF4FF");
+        SetResourceBrush("BrushSurfaceRaised", "#E2E8F0");
+        SetResourceBrush("BrushBorder", "#CBD5E1");
+        SetResourceBrush("BrushPrimary", "#0284C7");
+        SetResourceBrush("BrushPrimaryDark", "#0369A1");
+        SetResourceBrush("BrushText", "#0F172A");
+        SetResourceBrush("BrushMuted", "#475569");
+        SetResourceBrush("BrushWarning", "#B45309");
+        SetResourceBrush("BrushSuccess", "#15803D");
+        SetResourceBrush("BrushDanger", "#B91C1C");
+        SetResourceBrush("BrushButtonText", "#FFFFFF");
+
+        ThemeButton.Content = "Dark mode";
+        Background = (Brush)Application.Current.Resources["BrushBackground"];
+    }
+
+    private static void SetResourceBrush(string resourceKey, string colorHex)
+    {
+        if (Application.Current.Resources[resourceKey] is not SolidColorBrush brush)
+        {
+            return;
+        }
+
+        if (ColorConverter.ConvertFromString(colorHex) is Color color)
+        {
+            brush.Color = color;
+        }
     }
 }
 
