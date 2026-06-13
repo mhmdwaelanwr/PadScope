@@ -17,6 +17,10 @@ switch (command)
         PrintStages();
         break;
 
+    case "run-stage":
+        RunStage(scanner, args);
+        break;
+
     case "package":
         PrintPackageInstructions();
         break;
@@ -38,22 +42,61 @@ static void RunScan(IControllerScanner scanner, string[] args)
 {
     bool json = args.Any(arg => arg.Equals("--json", StringComparison.OrdinalIgnoreCase));
 
-    var reports = scanner
-        .Scan()
-        .Select(ReportBuilder.BuildInitialReport)
-        .ToList();
+    var reports = scanner.Scan().Select(ReportBuilder.BuildInitialReport).ToList();
 
     if (json)
     {
-        var options = new JsonSerializerOptions
-        {
-            WriteIndented = true
-        };
-
-        Console.WriteLine(JsonSerializer.Serialize(reports, options));
+        Console.WriteLine(JsonSerializer.Serialize(reports, new JsonSerializerOptions { WriteIndented = true }));
         return;
     }
 
+    PrintReports(reports);
+}
+
+static void RunStage(IControllerScanner scanner, string[] args)
+{
+    if (args.Length < 2 || !int.TryParse(args[1], out int stageNumber) || !Enum.IsDefined(typeof(TestStage), stageNumber))
+    {
+        Console.Error.WriteLine("Usage: PadScope.Cli run-stage <0-11>");
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    TestStage stage = (TestStage)stageNumber;
+    TestStageDefinition definition = TestStageRegistry.All.First(item => item.Stage == stage);
+
+    Console.WriteLine($"Stage {stageNumber}: {definition.Name}");
+    Console.WriteLine($"Status: {definition.Status}");
+    Console.WriteLine($"Goal: {definition.Goal}");
+    Console.WriteLine();
+
+    if (stage is TestStage.BuildVerification)
+    {
+        Console.WriteLine("Implemented: build this solution with dotnet build src\\PadScope.sln, then launch PadScope.Desktop.");
+        return;
+    }
+
+    if (stage is TestStage.EmptyScan or TestStage.UsbScan or TestStage.BluetoothScan or TestStage.ProfileValidation or TestStage.AudioEndpoint)
+    {
+        Console.WriteLine("Implemented: running read-only scan and report builder.");
+        Console.WriteLine();
+        PrintReports(scanner.Scan().Select(ReportBuilder.BuildInitialReport).ToList());
+        return;
+    }
+
+    if (stage is TestStage.Packaging)
+    {
+        PrintPackageInstructions();
+        return;
+    }
+
+    Console.WriteLine("Locked: this stage needs verified device evidence before it can run.");
+    Console.WriteLine(definition.WhatToDo);
+    Environment.ExitCode = 2;
+}
+
+static void PrintReports(IReadOnlyList<PadScope.Core.Models.CompatibilityReport> reports)
+{
     Console.WriteLine("PadScope scan");
     Console.WriteLine("=============");
 
@@ -71,11 +114,10 @@ static void RunScan(IControllerScanner scanner, string[] args)
         Console.WriteLine($"VID/PID: {report.Device.VendorId ?? "?"}/{report.Device.ProductId ?? "?"}");
         Console.WriteLine($"Connection: {report.Device.ConnectionType}");
         Console.WriteLine($"Source: {report.Device.Source}");
+        Console.WriteLine($"Profile: {report.ProfileName}");
+        Console.WriteLine($"Confidence: {report.ProfileConfidence}");
+        Console.WriteLine($"Risk: {report.RecommendedRiskLevel}");
         Console.WriteLine($"Input: {report.Input}");
-        Console.WriteLine($"Rumble: {report.Rumble}");
-        Console.WriteLine($"Lightbar: {report.Lightbar}");
-        Console.WriteLine($"Gyro: {report.Gyro}");
-        Console.WriteLine($"Touchpad: {report.Touchpad}");
         Console.WriteLine($"Windows audio endpoint: {report.WindowsAudioEndpoint}");
         Console.WriteLine($"DS4 audio protocol: {report.Ds4AudioProtocol}");
         Console.WriteLine("Notes:");
@@ -96,7 +138,7 @@ static void PrintStages()
 
     foreach (var stage in TestStageRegistry.All)
     {
-        Console.WriteLine($"{stage.Stage}: {stage.Name}");
+        Console.WriteLine($"{(int)stage.Stage}: {stage.Name}");
         Console.WriteLine($"Status: {stage.Status}");
         Console.WriteLine($"Goal: {stage.Goal}");
         Console.WriteLine($"Next: {stage.WhatToDo}");
@@ -121,9 +163,10 @@ static void PrintHelp()
     Console.WriteLine("Gamepad diagnostics and compatibility toolkit for Windows.");
     Console.WriteLine();
     Console.WriteLine("Commands:");
-    Console.WriteLine("  scan          Run the read-only Windows scanner");
-    Console.WriteLine("  scan --json   Run the scanner and print JSON");
-    Console.WriteLine("  stages        Print implemented and locked stage status");
-    Console.WriteLine("  package       Print Windows package instructions");
-    Console.WriteLine("  help          Show help");
+    Console.WriteLine("  scan              Run the read-only Windows scanner");
+    Console.WriteLine("  scan --json       Run the scanner and print JSON");
+    Console.WriteLine("  stages            Print implemented and locked stage status");
+    Console.WriteLine("  run-stage <0-11>  Run a safe implemented stage, or explain a locked stage");
+    Console.WriteLine("  package           Print Windows package instructions");
+    Console.WriteLine("  help              Show help");
 }
