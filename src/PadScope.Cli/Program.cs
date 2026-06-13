@@ -1,6 +1,7 @@
 using System.Text.Json;
 using PadScope.Core.Diagnostics;
 using PadScope.Core.Scanning;
+using PadScope.Core.Testing;
 
 IControllerScanner scanner = new WindowsDeviceScanner();
 
@@ -10,6 +11,14 @@ switch (command)
 {
     case "scan":
         RunScan(scanner, args);
+        break;
+
+    case "stages":
+        PrintStages();
+        break;
+
+    case "package":
+        PrintPackageInstructions();
         break;
 
     case "help":
@@ -80,6 +89,32 @@ static void RunScan(IControllerScanner scanner, string[] args)
     }
 }
 
+static void PrintStages()
+{
+    Console.WriteLine("PadScope stages");
+    Console.WriteLine("===============");
+
+    foreach (var stage in TestStageRegistry.All)
+    {
+        Console.WriteLine($"{stage.Stage}: {stage.Name}");
+        Console.WriteLine($"Status: {stage.Status}");
+        Console.WriteLine($"Goal: {stage.Goal}");
+        Console.WriteLine($"Next: {stage.WhatToDo}");
+        Console.WriteLine($"Pass: {stage.PassCriteria}");
+        Console.WriteLine();
+    }
+}
+
+static void PrintPackageInstructions()
+{
+    Console.WriteLine("PadScope Windows package");
+    Console.WriteLine("========================");
+    Console.WriteLine("Run from the repository root:");
+    Console.WriteLine("dotnet publish src\\PadScope.Desktop\\PadScope.Desktop.csproj -c Release -r win-x64 --self-contained false -o artifacts\\PadScope-win-x64");
+    Console.WriteLine();
+    Console.WriteLine("Or use GitHub Actions: Package Windows");
+}
+
 static void PrintHelp()
 {
     Console.WriteLine("PadScope");
@@ -88,5 +123,7 @@ static void PrintHelp()
     Console.WriteLine("Commands:");
     Console.WriteLine("  scan          Run the read-only Windows scanner");
     Console.WriteLine("  scan --json   Run the scanner and print JSON");
+    Console.WriteLine("  stages        Print implemented and locked stage status");
+    Console.WriteLine("  package       Print Windows package instructions");
     Console.WriteLine("  help          Show help");
 }
