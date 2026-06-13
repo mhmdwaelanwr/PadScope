@@ -35,7 +35,6 @@
             <Setter Property="Background" Value="{StaticResource BrushBackground}" />
             <Setter Property="Foreground" Value="{StaticResource BrushText}" />
             <Setter Property="FontFamily" Value="Segoe UI" />
-            <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
         </Style>
 
         <Style TargetType="TextBlock">
@@ -46,7 +45,7 @@
             <Setter Property="Foreground" Value="{StaticResource BrushMuted}" />
         </Style>
 
-        <Style x:Key="AccentText" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+        <Style x:Key="AccentText" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{StaticResource BrushPrimary}" />
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
@@ -59,8 +58,10 @@
             <Setter Property="Padding" Value="18" />
         </Style>
 
-        <Style x:Key="SoftCard" TargetType="Border" BasedOn="{StaticResource Card}">
+        <Style x:Key="SoftCard" TargetType="Border">
             <Setter Property="Background" Value="{StaticResource BrushSurfaceAlt}" />
+            <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="16" />
             <Setter Property="Padding" Value="14" />
         </Style>
@@ -69,7 +70,7 @@
             <Setter Property="Background" Value="{StaticResource BrushSurfaceAlt}" />
             <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="999" />
+            <Setter Property="CornerRadius" Value="20" />
             <Setter Property="Padding" Value="12,7" />
         </Style>
 
@@ -98,10 +99,29 @@
             </Setter>
         </Style>
 
-        <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-            <Setter Property="Background" Value="{StaticResource BrushSurfaceAlt}" />
+        <Style x:Key="SecondaryButton" TargetType="Button">
+            <Setter Property="Height" Value="40" />
+            <Setter Property="MinWidth" Value="112" />
+            <Setter Property="Padding" Value="16,0" />
             <Setter Property="Foreground" Value="{StaticResource BrushText}" />
+            <Setter Property="Background" Value="{StaticResource BrushSurfaceAlt}" />
             <Setter Property="BorderBrush" Value="{StaticResource BrushBorder}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="12"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="DataGrid">
