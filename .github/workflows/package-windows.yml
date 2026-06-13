@@ -1,0 +1,39 @@
+name: Package Windows
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  package:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore src/PadScope.sln
+
+      - name: Build
+        run: dotnet build src/PadScope.sln -c Release --no-restore
+
+      - name: Publish Desktop
+        run: dotnet publish src/PadScope.Desktop/PadScope.Desktop.csproj -c Release -r win-x64 --self-contained false -o artifacts/PadScope-win-x64
+
+      - name: Compress package
+        shell: pwsh
+        run: Compress-Archive -Path artifacts/PadScope-win-x64/* -DestinationPath artifacts/PadScope-win-x64.zip -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PadScope-win-x64
+          path: artifacts/PadScope-win-x64.zip
