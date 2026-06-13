@@ -120,7 +120,6 @@
         </Style>
 
         <Style TargetType="DataGridCell">
-            <Setter Property="Padding" Value="8" />
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Foreground" Value="{StaticResource BrushText}" />
         </Style>
