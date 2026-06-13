@@ -21,6 +21,10 @@ switch (command)
         RunStage(scanner, args);
         break;
 
+    case "run-safe":
+        RunSafeStageSuite(scanner);
+        break;
+
     case "package":
         PrintPackageInstructions();
         break;
@@ -51,6 +55,22 @@ static void RunScan(IControllerScanner scanner, string[] args)
     }
 
     PrintReports(reports);
+}
+
+static void RunSafeStageSuite(IControllerScanner scanner)
+{
+    Console.WriteLine("PadScope safe stage suite");
+    Console.WriteLine("=========================");
+    Console.WriteLine("This suite runs only implemented read-only or packaging stages.");
+    Console.WriteLine();
+
+    foreach (int stageNumber in new[] { 0, 1, 2, 3, 4, 9, 11 })
+    {
+        RunStage(scanner, new[] { "run-stage", stageNumber.ToString() });
+        Console.WriteLine("-------------------------");
+    }
+
+    Console.WriteLine("Locked stages intentionally skipped: 5, 6, 7, 8, 10.");
 }
 
 static void RunStage(IControllerScanner scanner, string[] args)
@@ -167,6 +187,7 @@ static void PrintHelp()
     Console.WriteLine("  scan --json       Run the scanner and print JSON");
     Console.WriteLine("  stages            Print implemented and locked stage status");
     Console.WriteLine("  run-stage <0-11>  Run a safe implemented stage, or explain a locked stage");
+    Console.WriteLine("  run-safe          Run all safe implemented stage checks");
     Console.WriteLine("  package           Print Windows package instructions");
     Console.WriteLine("  help              Show help");
 }
