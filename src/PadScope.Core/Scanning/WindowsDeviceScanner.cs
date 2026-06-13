@@ -6,18 +6,41 @@ namespace PadScope.Core.Scanning;
 
 public sealed class WindowsDeviceScanner : IControllerScanner
 {
-    private static readonly string[] ControllerKeywords =
+    private static readonly string[] StrongControllerKeywords =
     {
-        "controller",
         "gamepad",
         "joystick",
+        "game controller",
+        "hid-compliant game controller",
         "wireless controller",
         "dualshock",
         "dualsense",
         "xbox",
+        "xinput",
         "marvo",
-        "skytech",
-        "zero"
+        "skytech"
+    };
+
+    private static readonly string[] ExcludedControllerLikeKeywords =
+    {
+        "audio controller",
+        "host controller",
+        "usb controller",
+        "sata controller",
+        "nvme controller",
+        "raid controller",
+        "storage controller",
+        "network controller",
+        "ethernet controller",
+        "memory controller",
+        "system controller",
+        "smbus controller",
+        "pci controller",
+        "thunderbolt controller",
+        "high definition audio controller",
+        "intel",
+        "realtek",
+        "nvidia"
     };
 
     public IReadOnlyList<ControllerDevice> Scan()
@@ -50,7 +73,7 @@ public sealed class WindowsDeviceScanner : IControllerScanner
             string manufacturer = ReadString(item, "Manufacturer") ?? string.Empty;
             string service = ReadString(item, "Service") ?? string.Empty;
 
-            if (!LooksLikeController(name, pnpDeviceId, service))
+            if (!LooksLikeController(name, pnpDeviceId, manufacturer, service))
             {
                 continue;
             }
@@ -81,7 +104,7 @@ public sealed class WindowsDeviceScanner : IControllerScanner
             string pnpDeviceId = ReadString(item, "PNPDeviceID") ?? ReadString(item, "DeviceID") ?? string.Empty;
             string manufacturer = ReadString(item, "Manufacturer") ?? string.Empty;
 
-            if (!ContainsAny($"{name} {pnpDeviceId} {manufacturer}", ControllerKeywords))
+            if (!LooksLikeControllerAudioEndpoint(name, pnpDeviceId, manufacturer))
             {
                 continue;
             }
@@ -100,22 +123,35 @@ public sealed class WindowsDeviceScanner : IControllerScanner
         }
     }
 
-    private static bool LooksLikeController(string name, string pnpDeviceId, string service)
+    private static bool LooksLikeController(string name, string pnpDeviceId, string manufacturer, string service)
     {
-        string combined = $"{name} {pnpDeviceId} {service}";
+        string combined = $"{name} {pnpDeviceId} {manufacturer} {service}";
 
-        if (pnpDeviceId.StartsWith("HID", StringComparison.OrdinalIgnoreCase) &&
-            ContainsAny(combined, ControllerKeywords))
+        if (ContainsAny(combined, ExcludedControllerLikeKeywords) &&
+            !ContainsAny(combined, StrongControllerKeywords))
+        {
+            return false;
+        }
+
+        if (ContainsAny(combined, StrongControllerKeywords))
         {
             return true;
         }
 
-        if (ContainsAny(combined, ControllerKeywords))
+        if (pnpDeviceId.StartsWith("HID\\VID_", StringComparison.OrdinalIgnoreCase) &&
+            pnpDeviceId.Contains("IG_", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
 
         return false;
+    }
+
+    private static bool LooksLikeControllerAudioEndpoint(string name, string pnpDeviceId, string manufacturer)
+    {
+        string combined = $"{name} {pnpDeviceId} {manufacturer}";
+        return ContainsAny(combined, StrongControllerKeywords) &&
+               !ContainsAny(combined, ExcludedControllerLikeKeywords);
     }
 
     private static bool ContainsAny(string value, IEnumerable<string> keywords)
