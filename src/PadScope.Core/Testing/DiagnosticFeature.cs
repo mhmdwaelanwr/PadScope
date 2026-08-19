@@ -17,5 +17,7 @@ public enum DiagnosticFeature
     Ds4AudioProbe,
     Ds4AudioStreaming,
     VirtualControllerOutput,
-    RemappingProfiles
+    RemappingProfiles,
+    TouchpadMouseEmulation,
+    GyroMouseEmulation
 }

@@ -159,6 +159,28 @@ public static class FeatureTestRegistry
             EnabledByDefault: true,
             Goal: "Detect HidHide and explain how to hide the physical controller from games.",
             PassCriteria: "The HidHide driver status is reported and the next steps are shown."
+        ),
+        new FeatureTestDefinition(
+            DiagnosticFeature.TouchpadMouseEmulation,
+            "Touchpad to mouse",
+            TestStage.TouchpadMouse,
+            RiskLevel.Controlled,
+            RequiresSelectedDevice: true,
+            RequiresUserConfirmation: true,
+            EnabledByDefault: true,
+            Goal: "Move and click the Windows mouse from touchpad gestures.",
+            PassCriteria: "Movement, tap-click, drag, and two-finger right-click match the configured sensitivity."
+        ),
+        new FeatureTestDefinition(
+            DiagnosticFeature.GyroMouseEmulation,
+            "Gyro to mouse",
+            TestStage.GyroMouse,
+            RiskLevel.Controlled,
+            RequiresSelectedDevice: true,
+            RequiresUserConfirmation: true,
+            EnabledByDefault: true,
+            Goal: "Move the Windows mouse from gyroscope input with smoothing.",
+            PassCriteria: "Tilting moves the mouse and sensitivity, inversion, and smoothing are tunable."
         )
     };
 }

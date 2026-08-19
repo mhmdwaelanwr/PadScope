@@ -16,5 +16,7 @@ public enum TestStage
     Packaging = 11,
     VirtualController = 12,
     Remapping = 13,
-    HidHideIntegration = 14
+    HidHideIntegration = 14,
+    TouchpadMouse = 15,
+    GyroMouse = 16
 }

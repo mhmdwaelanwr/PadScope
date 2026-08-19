@@ -6,6 +6,7 @@ using PadScope.Core.Models;
 using PadScope.Core.Scanning;
 using PadScope.Core.Testing;
 using PadScope.Hid;
+using PadScope.Hid.Mouse;
 using PadScope.Hid.Virtual;
 
 IControllerScanner scanner = new WindowsDeviceScanner();
@@ -32,6 +33,10 @@ switch (command)
 
     case "virtual":
         RunVirtual(scanner, args);
+        break;
+
+    case "mouse":
+        RunMouse(scanner, args);
         break;
 
     case "stages":
@@ -290,6 +295,47 @@ static void RunVirtual(IControllerScanner scanner, string[] args)
     WaitForCtrlC();
 }
 
+static void RunMouse(IControllerScanner scanner, string[] args)
+{
+    if (!TrySelectDevice(scanner, args, out ControllerDevice? device, out string? error))
+    {
+        Console.Error.WriteLine(error);
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    bool touch = args.Any(arg => arg.Equals("--touch", StringComparison.OrdinalIgnoreCase));
+    bool gyro = args.Any(arg => arg.Equals("--gyro", StringComparison.OrdinalIgnoreCase));
+
+    if (!touch && !gyro)
+    {
+        touch = true;
+        gyro = true;
+    }
+
+    double sensitivity = ParseDoubleArg(args, "--sensitivity", 1.0);
+
+    using Ds4ControllerSession session = new(new HidSharpHidInputReader(), device);
+    using MouseEmulationBridge bridge = new(
+        session,
+        new WindowsMouseSink(),
+        touch ? new TouchpadMouseSettings { Sensitivity = sensitivity } : null,
+        gyro ? new GyroMouseSettings { Sensitivity = sensitivity } : null);
+
+    if (!bridge.TryStart(out error))
+    {
+        Console.Error.WriteLine(error);
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    Console.WriteLine($"Mouse emulation live: touchpad={touch} gyro={gyro} sensitivity={sensitivity:F2}");
+    Console.WriteLine("One finger moves the mouse (tap clicks, drag holds). Two fingers hold the right button.");
+    Console.WriteLine("Pressing the touchpad clicks and holds the left button. Tilt the controller for gyro mouse.");
+    Console.WriteLine("Press Ctrl+C to stop.");
+    WaitForCtrlC();
+}
+
 static bool TrySelectDevice(
     IControllerScanner scanner,
     string[] args,
@@ -378,7 +424,7 @@ static void RunStage(IControllerScanner scanner, string[] args)
 {
     if (args.Length < 2 || !int.TryParse(args[1], out int stageNumber) || !Enum.IsDefined(typeof(TestStage), stageNumber))
     {
-        Console.Error.WriteLine("Usage: PadScope.Cli run-stage <0-14>");
+        Console.Error.WriteLine("Usage: PadScope.Cli run-stage <0-16>");
         Environment.ExitCode = 1;
         return;
     }
@@ -429,6 +475,13 @@ static void RunStage(IControllerScanner scanner, string[] args)
     {
         Console.WriteLine("Implemented: HidHide driver status is reported.");
         Console.WriteLine(HidHideDetector.DescribeStatus());
+        return;
+    }
+
+    if (stage is TestStage.TouchpadMouse or TestStage.GyroMouse)
+    {
+        Console.WriteLine("Implemented: requires a connected DS4-like controller.");
+        Console.WriteLine("Run: PadScope.Cli mouse [--vid XXXX] [--pid XXXX] [--touch] [--gyro] [--sensitivity 1]");
         return;
     }
 
@@ -511,8 +564,9 @@ static void PrintHelp()
     Console.WriteLine("  rumble [--vid XXXX] [--pid XXXX] [--small 255] [--large 0] [--seconds 1]");
     Console.WriteLine("  lightbar [--vid XXXX] [--pid XXXX] [--color RRGGBB] [--seconds 1]");
     Console.WriteLine("  virtual [--vid XXXX] [--pid XXXX] [--target ds4|xbox360] [--profile path.json]   Mirror the pad as a virtual controller");
+    Console.WriteLine("  mouse [--vid XXXX] [--pid XXXX] [--touch] [--gyro] [--sensitivity 1]   Drive the Windows mouse from touchpad and gyro");
     Console.WriteLine("  stages                     Print implemented and locked stage status");
-    Console.WriteLine("  run-stage <0-14>           Run a safe implemented stage, or explain a locked stage");
+    Console.WriteLine("  run-stage <0-16>           Run a safe implemented stage, or explain a locked stage");
     Console.WriteLine("  run-safe                   Run all safe implemented stage checks");
     Console.WriteLine("  package                    Print Windows package instructions");
     Console.WriteLine("  help                       Show help");

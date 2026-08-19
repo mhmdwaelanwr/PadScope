@@ -70,6 +70,7 @@ public partial class MainWindow : Window
         _liveTimer?.Stop();
         _liveSession?.Dispose();
         StopVirtualPassthrough();
+        StopMouseEmulation();
         base.OnClosed(e);
     }
 
@@ -88,6 +89,7 @@ public partial class MainWindow : Window
         UpdateSummary();
         ClearLiveDeviceList();
         ClearVirtualDeviceList();
+        ClearMouseDeviceList();
     }
 
     private void ToggleThemeButton_Click(object sender, RoutedEventArgs e)
@@ -299,6 +301,7 @@ public partial class MainWindow : Window
             UpdateSummary();
             RefreshLiveDeviceList();
             RefreshVirtualDeviceList();
+            RefreshMouseDeviceList();
         }
     }
 

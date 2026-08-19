@@ -469,6 +469,44 @@
                 </Grid>
             </TabItem>
 
+            <TabItem Header="Mouse Lab">
+                <Grid Margin="0,16,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Style="{StaticResource Card}" Padding="16">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Physical source:" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                                <ComboBox x:Name="MouseDeviceComboBox" Width="360" Margin="10,0,0,0" VerticalAlignment="Center" DisplayMemberPath="DisplayName" />
+                                <Button x:Name="MouseStartButton" Content="Start Emulation" Width="160" Margin="12,0,0,0" Click="MouseStartButton_Click" />
+                                <Button x:Name="MouseStopButton" Content="Stop" Width="90" Margin="10,0,0,0" Style="{StaticResource SecondaryButton}" Click="MouseStopButton_Click" IsEnabled="False" />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                <CheckBox x:Name="MouseTouchCheckBox" Content="Touchpad → Mouse" IsChecked="True" VerticalAlignment="Center" />
+                                <CheckBox x:Name="MouseGyroCheckBox" Content="Gyro → Mouse" IsChecked="True" Margin="16,0,0,0" VerticalAlignment="Center" />
+                                <TextBlock Text="Sensitivity:" Style="{StaticResource MutedText}" VerticalAlignment="Center" Margin="16,0,0,0" />
+                                <Slider x:Name="MouseSensitivitySlider" Width="180" Minimum="0.1" Maximum="10" Value="1" Margin="8,0,0,0" VerticalAlignment="Center" ValueChanged="MouseSensitivitySlider_ValueChanged" />
+                                <TextBlock x:Name="MouseSensitivityText" Style="{StaticResource MutedText}" VerticalAlignment="Center" Margin="8,0,0,0" Text="1.00" />
+                            </StackPanel>
+
+                            <TextBlock x:Name="MouseStatusText" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,12,0,0" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,14,0,0" Padding="16">
+                        <StackPanel>
+                            <TextBlock Text="How it works" Style="{StaticResource AccentText}" />
+                            <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                       Text="One finger on the touchpad moves the mouse (tap to click, drag to hold). Two fingers hold the right button. Pressing the touchpad clicks and holds the left button. Gyro mode tilts the controller to move the mouse. Sensitivity tunes both, and gyro smoothing reduces jitter." />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
             <TabItem Header="Audio Lab">
                 <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                     <Grid>

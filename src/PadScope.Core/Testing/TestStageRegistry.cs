@@ -123,6 +123,22 @@ public static class TestStageRegistry
             "Hide the physical controller from games so only the virtual pad is visible.",
             "Install HidHide, then review its detected status and add PadScope as a trusted application.",
             "The HidHide driver status is shown and the physical controller can be hidden while the virtual pad stays visible."
+        ),
+        new TestStageDefinition(
+            TestStage.TouchpadMouse,
+            "Touchpad to mouse",
+            "Implemented - requires a DS4-like controller",
+            "Drive the Windows mouse from the touchpad: move, tap to click, drag, and two-finger right click.",
+            "Use the Mouse Lab tab or the CLI mouse command with --touch.",
+            "The mouse pointer follows the touchpad and clicks behave as configured."
+        ),
+        new TestStageDefinition(
+            TestStage.GyroMouse,
+            "Gyro to mouse",
+            "Implemented - requires a DS4-like controller",
+            "Drive the Windows mouse from the gyroscope with sensitivity, inversion, and smoothing.",
+            "Use the Mouse Lab tab or the CLI mouse command with --gyro.",
+            "Tilting the controller moves the mouse and tuning settings change the feel."
         )
     };
 }
