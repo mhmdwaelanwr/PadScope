@@ -46,9 +46,9 @@ public static class FeatureTestRegistry
             RiskLevel.Safe,
             RequiresSelectedDevice: true,
             RequiresUserConfirmation: false,
-            EnabledByDefault: false,
+            EnabledByDefault: true,
             Goal: "Inspect HID identity and report shape without output writes.",
-            PassCriteria: "Report shape notes are captured while staying read-only."
+            PassCriteria: "Live input reports are read and parsed without sending output reports."
         ),
         new FeatureTestDefinition(
             DiagnosticFeature.RumbleTest,
@@ -57,7 +57,7 @@ public static class FeatureTestRegistry
             RiskLevel.Controlled,
             RequiresSelectedDevice: true,
             RequiresUserConfirmation: true,
-            EnabledByDefault: false,
+            EnabledByDefault: true,
             Goal: "Run one short rumble pulse on an identified target.",
             PassCriteria: "Result is recorded as observed-working, failed, or unsupported."
         ),
@@ -68,7 +68,7 @@ public static class FeatureTestRegistry
             RiskLevel.Controlled,
             RequiresSelectedDevice: true,
             RequiresUserConfirmation: true,
-            EnabledByDefault: false,
+            EnabledByDefault: true,
             Goal: "Run one controlled lightbar change on a known DS4-like target.",
             PassCriteria: "Result is recorded and the test stops cleanly."
         ),
@@ -79,7 +79,7 @@ public static class FeatureTestRegistry
             RiskLevel.Safe,
             RequiresSelectedDevice: true,
             RequiresUserConfirmation: false,
-            EnabledByDefault: false,
+            EnabledByDefault: true,
             Goal: "Observe touchpad data if present.",
             PassCriteria: "Touch data is detected or marked unavailable without output writes."
         ),
@@ -90,7 +90,7 @@ public static class FeatureTestRegistry
             RiskLevel.Safe,
             RequiresSelectedDevice: true,
             RequiresUserConfirmation: false,
-            EnabledByDefault: false,
+            EnabledByDefault: true,
             Goal: "Observe gyro or accelerometer data if present.",
             PassCriteria: "Motion data is detected or marked unavailable without output writes."
         ),

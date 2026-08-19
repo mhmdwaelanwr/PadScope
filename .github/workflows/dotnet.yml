@@ -24,3 +24,6 @@ jobs:
 
       - name: Build
         run: dotnet build src/PadScope.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test src/PadScope.sln --configuration Release --no-build

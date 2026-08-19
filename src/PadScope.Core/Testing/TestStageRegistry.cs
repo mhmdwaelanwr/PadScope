@@ -47,33 +47,33 @@ public static class TestStageRegistry
         new TestStageDefinition(
             TestStage.HidInspection,
             "HID identity inspection",
-            "Locked - verify read-only HID access first",
+            "Implemented - read-only HID read",
             "Inspect HID identity and report shape before any output tests.",
-            "Next implementation: enumerate HID interfaces and report descriptor shape without writing output reports.",
-            "No HID output reports are sent. More identity evidence is shown before rumble or lightbar."
+            "Open the HID interface, capture live input reports, and review buttons, sticks, triggers, gyro, and touch data.",
+            "No HID output reports are sent during inspection. Identity evidence is shown before rumble or lightbar."
         ),
         new TestStageDefinition(
             TestStage.Rumble,
             "Controlled rumble test",
-            "Locked - needs verified target",
+            "Implemented - confirmation required",
             "Run one short rumble pulse only after HID identity is known.",
-            "Unlock only after Stage 5 proves the selected device and the user confirms the warning.",
+            "Select a device, confirm the warning, then send a short rumble output report.",
             "Result is recorded as observed-working, failed, unsupported, or inconclusive."
         ),
         new TestStageDefinition(
             TestStage.Lightbar,
             "Controlled lightbar test",
-            "Locked - needs verified DS4-like target",
+            "Implemented - confirmation required",
             "Run one controlled lightbar change on a known DS4-like target.",
-            "Unlock only after Stage 5 confirms a compatible output report path.",
+            "Select a device, confirm the warning, then send one lightbar output report.",
             "Result is recorded and the test stops cleanly."
         ),
         new TestStageDefinition(
             TestStage.TouchpadAndGyro,
             "Touchpad and gyro observation",
-            "Locked - needs input report mapping",
+            "Implemented - read-only",
             "Observe input-only motion and touch data where available.",
-            "Unlock after input report fields are mapped for the selected controller.",
+            "Capture live input reports and read gyro, accelerometer, and touchpad fields.",
             "No output reports are sent; data is detected or marked unavailable."
         ),
         new TestStageDefinition(

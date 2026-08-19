@@ -1,7 +1,10 @@
+using System.Text;
 using System.Text.Json;
 using PadScope.Core.Diagnostics;
+using PadScope.Core.Models;
 using PadScope.Core.Scanning;
 using PadScope.Core.Testing;
+using PadScope.Hid;
 
 IControllerScanner scanner = new WindowsDeviceScanner();
 
@@ -11,6 +14,18 @@ switch (command)
 {
     case "scan":
         RunScan(scanner, args);
+        break;
+
+    case "input":
+        RunInput(scanner, args);
+        break;
+
+    case "rumble":
+        RunRumble(scanner, args);
+        break;
+
+    case "lightbar":
+        RunLightbar(scanner, args);
         break;
 
     case "stages":
@@ -55,6 +70,217 @@ static void RunScan(IControllerScanner scanner, string[] args)
     }
 
     PrintReports(reports);
+}
+
+static void RunInput(IControllerScanner scanner, string[] args)
+{
+    if (!TrySelectDevice(scanner, args, out ControllerDevice? device, out string? error))
+    {
+        Console.Error.WriteLine(error);
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    using Ds4ControllerSession session = new(new HidSharpHidInputReader(), device);
+
+    if (!session.TryStart(out error))
+    {
+        Console.Error.WriteLine(error);
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    Console.WriteLine($"Live input from: {device.DisplayName} (VID {device.VendorId ?? "?"}/PID {device.ProductId ?? "?"})");
+    Console.WriteLine("Move sticks, press buttons, or use the touchpad. Press Ctrl+C to stop.");
+    Console.WriteLine();
+
+    string lastLine = string.Empty;
+    session.StateUpdated += state =>
+    {
+        string line = FormatInputState(state);
+        if (line == lastLine)
+        {
+            return;
+        }
+
+        lastLine = line;
+        Console.WriteLine(line);
+    };
+    session.Error += message => Console.Error.WriteLine(message);
+
+    WaitForCtrlC();
+}
+
+static void RunRumble(IControllerScanner scanner, string[] args)
+{
+    if (!TrySelectDevice(scanner, args, out ControllerDevice? device, out string? error))
+    {
+        Console.Error.WriteLine(error);
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    if (!Confirm("This sends a rumble output report to the selected controller. Continue?"))
+    {
+        Console.WriteLine("Aborted.");
+        return;
+    }
+
+    using Ds4ControllerSession session = new(new HidSharpHidInputReader(), device);
+
+    if (!session.TryStart(out error))
+    {
+        Console.Error.WriteLine(error);
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    byte small = ParseByteArg(args, "--small", 255);
+    byte large = ParseByteArg(args, "--large", 0);
+    double seconds = ParseDoubleArg(args, "--seconds", 1.0);
+
+    if (!session.TrySendRumble(small, large, out error))
+    {
+        Console.Error.WriteLine(error);
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    Console.WriteLine($"Sent rumble small={small} large={large} for {seconds:F1}s.");
+    Console.WriteLine("Did the controller vibrate? If not, the clone may not implement the DS4 output report.");
+    Thread.Sleep(TimeSpan.FromSeconds(seconds));
+
+    session.TryResetOutput(out _);
+    Console.WriteLine("Output reset to neutral.");
+}
+
+static void RunLightbar(IControllerScanner scanner, string[] args)
+{
+    if (!TrySelectDevice(scanner, args, out ControllerDevice? device, out string? error))
+    {
+        Console.Error.WriteLine(error);
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    if (!Confirm("This sends a lightbar output report to the selected controller. Continue?"))
+    {
+        Console.WriteLine("Aborted.");
+        return;
+    }
+
+    using Ds4ControllerSession session = new(new HidSharpHidInputReader(), device);
+
+    if (!session.TryStart(out error))
+    {
+        Console.Error.WriteLine(error);
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    string colorHex = GetArgValue(args, "--color") ?? "00FF00";
+    if (!TryParseRgb(colorHex, out byte red, out byte green, out byte blue))
+    {
+        Console.Error.WriteLine($"Invalid color '{colorHex}'. Use RRGGBB, for example FF0000.");
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    double? seconds = args.Any(arg => arg.Equals("--seconds", StringComparison.OrdinalIgnoreCase))
+        ? ParseDoubleArg(args, "--seconds", 1.0)
+        : null;
+
+    if (!session.TrySendLightbar(red, green, blue, out error))
+    {
+        Console.Error.WriteLine(error);
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    Console.WriteLine($"Sent lightbar #{colorHex}.");
+    Console.WriteLine("Did the lightbar change color? If not, the clone may not implement the DS4 output report.");
+
+    if (seconds is double hold)
+    {
+        Thread.Sleep(TimeSpan.FromSeconds(hold));
+        session.TryResetOutput(out _);
+        Console.WriteLine("Lightbar reset to neutral.");
+    }
+    else
+    {
+        Console.WriteLine("Press Ctrl+C to reset the lightbar.");
+        WaitForCtrlC();
+        session.TryResetOutput(out _);
+        Console.WriteLine("Lightbar reset to neutral.");
+    }
+}
+
+static bool TrySelectDevice(
+    IControllerScanner scanner,
+    string[] args,
+    out ControllerDevice? device,
+    out string? error)
+{
+    device = null;
+
+    var reports = scanner.Scan().Select(ReportBuilder.BuildInitialReport).ToList();
+
+    if (reports.Count == 0)
+    {
+        error = "No controller-like device was detected. Connect the controller first, then try again.";
+        return false;
+    }
+
+    string? vid = GetArgValue(args, "--vid");
+    string? pid = GetArgValue(args, "--pid");
+
+    IEnumerable<CompatibilityReport> candidates = reports;
+
+    if (vid is not null)
+    {
+        candidates = candidates.Where(report => string.Equals(report.Device.VendorId, vid, StringComparison.OrdinalIgnoreCase));
+    }
+
+    if (pid is not null)
+    {
+        candidates = candidates.Where(report => string.Equals(report.Device.ProductId, pid, StringComparison.OrdinalIgnoreCase));
+    }
+
+    List<CompatibilityReport> filtered = candidates.ToList();
+    if (filtered.Count == 0)
+    {
+        filtered = reports.ToList();
+    }
+
+    if (filtered.Count == 0)
+    {
+        error = "No matching device was found.";
+        return false;
+    }
+
+    device = filtered[0].Device;
+    error = null;
+    return true;
+}
+
+static string FormatInputState(PadScope.Core.Input.Ds4InputState state)
+{
+    StringBuilder builder = new();
+
+    builder.Append($"LX {state.LeftStickX,3} LY {state.LeftStickY,3} ");
+    builder.Append($"RX {state.RightStickX,3} RY {state.RightStickY,3} ");
+    builder.Append($"L2 {state.LeftTrigger,3} R2 {state.RightTrigger,3} ");
+    builder.Append($"GYR {state.GyroX,5} {state.GyroY,5} {state.GyroZ,5} ");
+    builder.Append($"BAT {(state.BatteryLevel.HasValue ? state.BatteryLevel.Value.ToString() : "?"),2} ");
+
+    if (state.Touch1?.Touching == true)
+    {
+        builder.Append($"T1 {state.Touch1.Value.X,4}x{state.Touch1.Value.Y,4} ");
+    }
+
+    builder.Append(state.Buttons.ToString());
+
+    return builder.ToString();
 }
 
 static void RunSafeStageSuite(IControllerScanner scanner)
@@ -115,7 +341,7 @@ static void RunStage(IControllerScanner scanner, string[] args)
     Environment.ExitCode = 2;
 }
 
-static void PrintReports(IReadOnlyList<PadScope.Core.Models.CompatibilityReport> reports)
+static void PrintReports(IReadOnlyList<CompatibilityReport> reports)
 {
     Console.WriteLine("PadScope scan");
     Console.WriteLine("=============");
@@ -183,11 +409,74 @@ static void PrintHelp()
     Console.WriteLine("Gamepad diagnostics and compatibility toolkit for Windows.");
     Console.WriteLine();
     Console.WriteLine("Commands:");
-    Console.WriteLine("  scan              Run the read-only Windows scanner");
-    Console.WriteLine("  scan --json       Run the scanner and print JSON");
-    Console.WriteLine("  stages            Print implemented and locked stage status");
-    Console.WriteLine("  run-stage <0-11>  Run a safe implemented stage, or explain a locked stage");
-    Console.WriteLine("  run-safe          Run all safe implemented stage checks");
-    Console.WriteLine("  package           Print Windows package instructions");
-    Console.WriteLine("  help              Show help");
+    Console.WriteLine("  scan                       Run the read-only Windows scanner");
+    Console.WriteLine("  scan --json                Run the scanner and print JSON");
+    Console.WriteLine("  input [--vid XXXX] [--pid XXXX]   Live-read the controller state");
+    Console.WriteLine("  rumble [--vid XXXX] [--pid XXXX] [--small 255] [--large 0] [--seconds 1]");
+    Console.WriteLine("  lightbar [--vid XXXX] [--pid XXXX] [--color RRGGBB] [--seconds 1]");
+    Console.WriteLine("  stages                     Print implemented and locked stage status");
+    Console.WriteLine("  run-stage <0-11>           Run a safe implemented stage, or explain a locked stage");
+    Console.WriteLine("  run-safe                   Run all safe implemented stage checks");
+    Console.WriteLine("  package                    Print Windows package instructions");
+    Console.WriteLine("  help                       Show help");
+}
+
+static void WaitForCtrlC()
+{
+    using ManualResetEventSlim gate = new();
+    Console.CancelKeyPress += (_, e) =>
+    {
+        e.Cancel = true;
+        gate.Set();
+    };
+    gate.Wait();
+}
+
+static bool Confirm(string message)
+{
+    Console.WriteLine(message);
+    Console.Write("Type 'yes' to continue: ");
+    return string.Equals(Console.ReadLine(), "yes", StringComparison.OrdinalIgnoreCase);
+}
+
+static string? GetArgValue(string[] args, string name)
+{
+    for (int i = 0; i < args.Length - 1; i++)
+    {
+        if (args[i].Equals(name, StringComparison.OrdinalIgnoreCase))
+        {
+            return args[i + 1];
+        }
+    }
+
+    return null;
+}
+
+static byte ParseByteArg(string[] args, string name, byte fallback)
+{
+    string? value = GetArgValue(args, name);
+    return byte.TryParse(value, out byte parsed) ? parsed : fallback;
+}
+
+static double ParseDoubleArg(string[] args, string name, double fallback)
+{
+    string? value = GetArgValue(args, name);
+    return double.TryParse(value, out double parsed) ? parsed : fallback;
+}
+
+static bool TryParseRgb(string hex, out byte red, out byte green, out byte blue)
+{
+    red = 0;
+    green = 0;
+    blue = 0;
+
+    if (hex.Length != 6 ||
+        !byte.TryParse(hex.Substring(0, 2), System.Globalization.NumberStyles.HexNumber, null, out red) ||
+        !byte.TryParse(hex.Substring(2, 2), System.Globalization.NumberStyles.HexNumber, null, out green) ||
+        !byte.TryParse(hex.Substring(4, 2), System.Globalization.NumberStyles.HexNumber, null, out blue))
+    {
+        return false;
+    }
+
+    return true;
 }

@@ -1,0 +1,248 @@
+using System.Text;
+using HidSharp;
+using PadScope.Core.Models;
+
+namespace PadScope.Hid;
+
+public sealed class HidSharpHidInputReader : IHidInputReader
+{
+    private HidStream? _stream;
+    private HidDevice? _device;
+    private Thread? _readThread;
+    private volatile bool _keepReading;
+    private bool _disposed;
+
+    public event Action<HidInputReport>? ReportReceived;
+    public event Action<string>? ErrorOccurred;
+
+    public bool IsRunning => _keepReading;
+
+    public string? DeviceDescription { get; private set; }
+
+    public int MaxOutputReportLength => _device?.MaxOutputReportLength ?? 0;
+
+    public bool TryOpen(ControllerDevice device, out string? error)
+    {
+        if (_disposed)
+        {
+            error = "The reader has been disposed.";
+            return false;
+        }
+
+        Stop();
+        _stream?.Dispose();
+        _stream = null;
+
+        try
+        {
+            _device = SelectBestDevice(device);
+        }
+        catch (Exception ex)
+        {
+            error = $"HID enumeration failed: {ex.Message}";
+            return false;
+        }
+
+        if (_device is null)
+        {
+            error = BuildNoDeviceMessage(device);
+            return false;
+        }
+
+        try
+        {
+            _stream = _device.Open();
+        }
+        catch (Exception ex)
+        {
+            error = $"Could not open the HID device: {ex.Message}";
+            return false;
+        }
+
+        DeviceDescription = $"{_device.ProductName ?? "Unnamed HID device"} (VID {_device.VendorID:X4}/PID {_device.ProductID:X4})";
+        error = null;
+        return true;
+    }
+
+    public void Start()
+    {
+        if (_stream is null || _keepReading)
+        {
+            return;
+        }
+
+        _keepReading = true;
+        _readThread = new Thread(ReadLoop)
+        {
+            IsBackground = true,
+            Name = "PadScope.Hid.ReadLoop"
+        };
+        _readThread.Start();
+    }
+
+    public void Stop()
+    {
+        _keepReading = false;
+        _readThread?.Join(TimeSpan.FromMilliseconds(500));
+        _readThread = null;
+    }
+
+    public bool TryWriteOutput(byte[] report, out string? error)
+    {
+        if (_stream is null)
+        {
+            error = "No HID device is open.";
+            return false;
+        }
+
+        try
+        {
+            _stream.Write(report);
+            error = null;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            error = $"HID output write failed: {ex.Message}";
+            return false;
+        }
+    }
+
+    private void ReadLoop()
+    {
+        if (_stream is null)
+        {
+            return;
+        }
+
+        int bufferLength = _device?.MaxInputReportLength ?? 64;
+        if (bufferLength <= 0)
+        {
+            bufferLength = 64;
+        }
+
+        byte[] buffer = new byte[bufferLength];
+
+        while (_keepReading)
+        {
+            try
+            {
+                int read = _stream.Read(buffer, 0, buffer.Length);
+                if (read <= 0)
+                {
+                    continue;
+                }
+
+                byte[] copy = new byte[read];
+                Buffer.BlockCopy(buffer, 0, copy, 0, read);
+
+                ReportReceived?.Invoke(new HidInputReport(
+                    copy,
+                    ReportId: copy.Length > 0 ? copy[0] : 0,
+                    Timestamp: DateTimeOffset.UtcNow
+                ));
+            }
+            catch (Exception ex)
+            {
+                if (!_keepReading)
+                {
+                    return;
+                }
+
+                ErrorOccurred?.Invoke($"HID read failed: {ex.Message}");
+                Thread.Sleep(200);
+            }
+        }
+    }
+
+    private static HidDevice? SelectBestDevice(ControllerDevice device)
+    {
+        int vendorId = ParseHexId(device.VendorId);
+        int productId = ParseHexId(device.ProductId);
+
+        List<HidDevice> candidates = new();
+
+        if (vendorId > 0)
+        {
+            candidates.AddRange(DeviceList.Local.GetHidDevices(vendorId, productId > 0 ? productId : null));
+        }
+        else
+        {
+            candidates.AddRange(DeviceList.Local.GetHidDevices().Cast<HidDevice>());
+        }
+
+        if (candidates.Count == 0)
+        {
+            return null;
+        }
+
+        return candidates
+            .Select(candidate => new
+            {
+                Device = candidate,
+                Score = ScoreDevice(candidate)
+            })
+            .OrderByDescending(item => item.Score)
+            .ThenByDescending(item => item.Device.MaxInputReportLength)
+            .Select(item => item.Device)
+            .FirstOrDefault();
+    }
+
+    private static int ScoreDevice(HidDevice candidate)
+    {
+        int score = 0;
+        string name = candidate.ProductName ?? string.Empty;
+        string lowered = name.ToLowerInvariant();
+
+        if (lowered.Contains("game controller") || lowered.Contains("gamepad") || lowered.Contains("wireless controller"))
+        {
+            score += 4;
+        }
+
+        if (candidate.MaxInputReportLength is >= 64)
+        {
+            score += 2;
+        }
+
+        if (lowered.Contains("audio") || lowered.Contains("headset") || lowered.Contains("speaker") || lowered.Contains("microphone"))
+        {
+            score -= 6;
+        }
+
+        return score;
+    }
+
+    private static int ParseHexId(string? value)
+    {
+        return value is not null && int.TryParse(value, System.Globalization.NumberStyles.HexNumber, null, out int parsed)
+            ? parsed
+            : -1;
+    }
+
+    private static string BuildNoDeviceMessage(ControllerDevice device)
+    {
+        StringBuilder message = new();
+        message.Append("No HID interface was found for the selected device.");
+
+        if (device.VendorId is not null || device.ProductId is not null)
+        {
+            message.Append($" Tried VID {device.VendorId ?? "?"}/PID {device.ProductId ?? "?"}.");
+        }
+
+        message.Append(" The controller may be asleep, unplugged, or its driver may expose only non-HID interfaces.");
+        return message.ToString();
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        Stop();
+        _stream?.Dispose();
+        _stream = null;
+    }
+}

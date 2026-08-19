@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PadScope.Core\PadScope.Core.csproj" />
+    <ProjectReference Include="..\PadScope.Hid\PadScope.Hid.csproj" />
   </ItemGroup>
 
 </Project>

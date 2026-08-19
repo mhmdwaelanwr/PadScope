@@ -124,6 +124,13 @@
             </Setter>
         </Style>
 
+        <Style x:Key="PadButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Height" Value="42" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+
         <Style TargetType="DataGrid">
             <Setter Property="Background" Value="{StaticResource BrushSurface}" />
             <Setter Property="Foreground" Value="{StaticResource BrushText}" />

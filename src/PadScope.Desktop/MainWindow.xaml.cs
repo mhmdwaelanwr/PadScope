@@ -61,20 +61,30 @@ public partial class MainWindow : Window
         ReportsGrid.ItemsSource = _reports;
         ApplyDarkTheme();
         UpdateSummary();
+        EnableOutputControls(false);
     }
 
-    private void ScanButton_Click(object sender, RoutedEventArgs e)
+    protected override void OnClosed(EventArgs e)
     {
-        RunScan();
+        _liveTimer?.Stop();
+        _liveSession?.Dispose();
+        base.OnClosed(e);
+    }
+
+    private async void ScanButton_Click(object sender, RoutedEventArgs e)
+    {
+        await RunScanAsync();
     }
 
     private void ClearButton_Click(object sender, RoutedEventArgs e)
     {
+        StopLiveInput();
         _reports.Clear();
         DetailsText.Text = "Run a scan, then select a device.";
         StatusText.Text = "Cleared";
         CurrentStageText.Text = "0/1 Ready";
         UpdateSummary();
+        ClearLiveDeviceList();
     }
 
     private void ToggleThemeButton_Click(object sender, RoutedEventArgs e)
@@ -91,9 +101,9 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ExportJsonButton_Click(object sender, RoutedEventArgs e)
+    private async void ExportJsonButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!EnsureReportData())
+        if (!await EnsureReportDataAsync())
         {
             return;
         }
@@ -119,9 +129,9 @@ public partial class MainWindow : Window
         StatusText.Text = $"JSON report exported: {dialog.FileName}";
     }
 
-    private void ExportMarkdownButton_Click(object sender, RoutedEventArgs e)
+    private async void ExportMarkdownButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!EnsureReportData())
+        if (!await EnsureReportDataAsync())
         {
             return;
         }
@@ -250,14 +260,17 @@ public partial class MainWindow : Window
                            "Notes:\n- " + string.Join("\n- ", report.Notes);
     }
 
-    private void RunScan()
+    private async Task RunScanAsync()
     {
         _reports.Clear();
         StatusText.Text = "Scanning...";
+        UpdateSummary();
 
         try
         {
-            foreach (var report in _scanner.Scan().Select(ReportBuilder.BuildInitialReport))
+            var reports = await Task.Run(() => _scanner.Scan().Select(ReportBuilder.BuildInitialReport).ToList());
+
+            foreach (var report in reports)
             {
                 _reports.Add(report);
             }
@@ -281,14 +294,15 @@ public partial class MainWindow : Window
         finally
         {
             UpdateSummary();
+            RefreshLiveDeviceList();
         }
     }
 
-    private bool EnsureReportData()
+    private async Task<bool> EnsureReportDataAsync()
     {
         if (_reports.Count == 0)
         {
-            RunScan();
+            await RunScanAsync();
         }
 
         if (_reports.Count != 0)

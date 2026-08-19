@@ -259,6 +259,170 @@
                 </Border>
             </TabItem>
 
+            <TabItem Header="Live Input">
+                <Grid Margin="0,16,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Style="{StaticResource Card}" Padding="16">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Device:" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                            <ComboBox x:Name="DeviceComboBox" Width="360" Margin="12,0,0,0" VerticalAlignment="Center"
+                                      DisplayMemberPath="DisplayName" />
+                            <Button x:Name="StartInputButton" Content="Start Live Input" Width="150" Margin="12,0,0,0"
+                                    Click="StartInputButton_Click" />
+                            <Button x:Name="StopInputButton" Content="Stop" Width="90" Margin="10,0,0,0"
+                                    Style="{StaticResource SecondaryButton}" Click="StopInputButton_Click" IsEnabled="False" />
+                            <TextBlock x:Name="LiveStatusText" Style="{StaticResource MutedText}" VerticalAlignment="Center"
+                                       Margin="16,0,0,0" Text="Pick a detected device, then press Start." />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,14,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="18" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="18" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" VerticalAlignment="Top">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Left stick" Style="{StaticResource MutedText}" Width="120" />
+                                    <TextBlock x:Name="LeftStickText" Style="{StaticResource AccentText}" />
+                                </StackPanel>
+                                <Canvas x:Name="LeftStickCanvas" Width="180" Height="180" Background="{StaticResource BrushSurfaceAlt}" Margin="0,8,0,0">
+                                    <Line X1="90" Y1="0" X2="90" Y2="180" Stroke="{StaticResource BrushBorder}" StrokeThickness="1" />
+                                    <Line X1="0" Y1="90" X2="180" Y2="90" Stroke="{StaticResource BrushBorder}" StrokeThickness="1" />
+                                    <Ellipse x:Name="LeftStickDot" Width="18" Height="18" Fill="{StaticResource BrushPrimary}" />
+                                </Canvas>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                    <TextBlock Text="Right stick" Style="{StaticResource MutedText}" Width="120" />
+                                    <TextBlock x:Name="RightStickText" Style="{StaticResource AccentText}" />
+                                </StackPanel>
+                                <Canvas x:Name="RightStickCanvas" Width="180" Height="180" Background="{StaticResource BrushSurfaceAlt}" Margin="0,8,0,0">
+                                    <Line X1="90" Y1="0" X2="90" Y2="180" Stroke="{StaticResource BrushBorder}" StrokeThickness="1" />
+                                    <Line X1="0" Y1="90" X2="180" Y2="90" Stroke="{StaticResource BrushBorder}" StrokeThickness="1" />
+                                    <Ellipse x:Name="RightStickDot" Width="18" Height="18" Fill="{StaticResource BrushPrimary}" />
+                                </Canvas>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" VerticalAlignment="Top">
+                                <TextBlock Text="Buttons" FontWeight="Black" FontSize="17" />
+
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                    <Button x:Name="L1Button" Content="L1" Width="64" Style="{StaticResource PadButton}" />
+                                    <Button x:Name="R1Button" Content="R1" Width="64" Margin="10,0,0,0" Style="{StaticResource PadButton}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                    <Grid Width="150" Height="150">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+                                        <Button x:Name="DpadUpButton" Grid.Column="1" Content="▲" Width="48" Style="{StaticResource PadButton}" />
+                                        <Button x:Name="DpadLeftButton" Grid.Column="0" Grid.Row="1" Content="◀" Width="48" Style="{StaticResource PadButton}" />
+                                        <Button x:Name="DpadRightButton" Grid.Column="2" Grid.Row="1" Content="▶" Width="48" Style="{StaticResource PadButton}" />
+                                        <Button x:Name="DpadDownButton" Grid.Column="1" Grid.Row="2" Content="▼" Width="48" Style="{StaticResource PadButton}" />
+                                    </Grid>
+
+                                    <Grid Width="150" Height="150" Margin="18,0,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+                                        <Button x:Name="SquareButton" Grid.Column="0" Grid.Row="0" Content="Sq" Width="58" Style="{StaticResource PadButton}" />
+                                        <Button x:Name="TriangleButton" Grid.Column="1" Grid.Row="0" Content="△" Width="58" Style="{StaticResource PadButton}" />
+                                        <Button x:Name="CrossButton" Grid.Column="0" Grid.Row="1" Content="✕" Width="58" Style="{StaticResource PadButton}" />
+                                        <Button x:Name="CircleButton" Grid.Column="1" Grid.Row="1" Content="◯" Width="58" Style="{StaticResource PadButton}" />
+                                    </Grid>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                                    <Button x:Name="L2Button" Content="L2" Width="64" Style="{StaticResource PadButton}" />
+                                    <Button x:Name="R2Button" Content="R2" Width="64" Margin="10,0,0,0" Style="{StaticResource PadButton}" />
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                    <Button x:Name="ShareButton" Content="Share" Width="70" Style="{StaticResource PadButton}" />
+                                    <Button x:Name="OptionsButton" Content="Options" Width="70" Margin="8,0,0,0" Style="{StaticResource PadButton}" />
+                                    <Button x:Name="PsButton" Content="PS" Width="52" Margin="8,0,0,0" Style="{StaticResource PadButton}" />
+                                    <Button x:Name="TouchpadButton" Content="Touch" Width="58" Margin="8,0,0,0" Style="{StaticResource PadButton}" />
+                                    <Button x:Name="L3Button" Content="L3" Width="52" Margin="8,0,0,0" Style="{StaticResource PadButton}" />
+                                    <Button x:Name="R3Button" Content="R3" Width="52" Margin="8,0,0,0" Style="{StaticResource PadButton}" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="4" VerticalAlignment="Top">
+                                <TextBlock Text="Triggers" FontWeight="Black" FontSize="17" />
+                                <TextBlock x:Name="L2ValueText" Style="{StaticResource MutedText}" Margin="0,10,0,0" />
+                                <ProgressBar x:Name="L2Bar" Minimum="0" Maximum="255" Height="12" Width="200" Margin="0,4,0,0" />
+                                <TextBlock x:Name="R2ValueText" Style="{StaticResource MutedText}" Margin="0,14,0,0" />
+                                <ProgressBar x:Name="R2Bar" Minimum="0" Maximum="255" Height="12" Width="200" Margin="0,4,0,0" />
+
+                                <TextBlock Text="Motion (gyro/accel)" FontWeight="Black" FontSize="17" Margin="0,20,0,0" />
+                                <TextBlock x:Name="GyroText" Style="{StaticResource MutedText}" Margin="0,8,0,0" />
+                                <TextBlock x:Name="AccelText" Style="{StaticResource MutedText}" Margin="0,6,0,0" />
+
+                                <TextBlock Text="Battery" FontWeight="Black" FontSize="17" Margin="0,20,0,0" />
+                                <TextBlock x:Name="BatteryText" Style="{StaticResource MutedText}" Margin="0,8,0,0" />
+
+                                <TextBlock Text="Last raw report (hex)" FontWeight="Black" FontSize="17" Margin="0,20,0,0" />
+                                <Border Style="{StaticResource SoftCard}" Padding="10" Margin="0,8,0,0" MaxHeight="120">
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                        <TextBlock x:Name="RawHexText" Style="{StaticResource MutedText}" FontFamily="Consolas" TextWrapping="Wrap" />
+                                    </ScrollViewer>
+                                </Border>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,14,0,0" Padding="16">
+                        <StackPanel>
+                            <TextBlock Text="Controlled output tests" FontWeight="Black" FontSize="17" />
+                            <TextBlock Text="These send DS4-style output reports. They require a live session and a confirmation warning." Style="{StaticResource MutedText}" Margin="0,4,0,0" />
+
+                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                <TextBlock Text="Rumble small" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                                <Slider x:Name="RumbleSmallSlider" Minimum="0" Maximum="255" Width="160" Margin="10,0,0,0" Value="255" VerticalAlignment="Center" />
+                                <Button x:Name="PulseRumbleButton" Content="Pulse Rumble" Width="140" Margin="16,0,0,0" Click="PulseRumbleButton_Click" />
+
+                                <TextBlock Text="Rumble large" Style="{StaticResource MutedText}" VerticalAlignment="Center" Margin="24,0,0,0" />
+                                <Slider x:Name="RumbleLargeSlider" Minimum="0" Maximum="255" Width="160" Margin="10,0,0,0" Value="0" VerticalAlignment="Center" />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                <TextBlock Text="R" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                                <Slider x:Name="LightbarRedSlider" Minimum="0" Maximum="255" Width="120" Margin="8,0,0,0" Value="0" VerticalAlignment="Center" />
+                                <TextBlock Text="G" Style="{StaticResource MutedText}" VerticalAlignment="Center" Margin="14,0,0,0" />
+                                <Slider x:Name="LightbarGreenSlider" Minimum="0" Maximum="255" Width="120" Margin="8,0,0,0" Value="255" VerticalAlignment="Center" />
+                                <TextBlock Text="B" Style="{StaticResource MutedText}" VerticalAlignment="Center" Margin="14,0,0,0" />
+                                <Slider x:Name="LightbarBlueSlider" Minimum="0" Maximum="255" Width="120" Margin="8,0,0,0" Value="0" VerticalAlignment="Center" />
+                                <Button x:Name="SetLightbarButton" Content="Set Lightbar" Width="130" Margin="18,0,0,0" Click="SetLightbarButton_Click" />
+                                <Button x:Name="ResetOutputButton" Content="Reset Output" Width="120" Margin="10,0,0,0" Style="{StaticResource SecondaryButton}" Click="ResetOutputButton_Click" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </TabItem>
+
             <TabItem Header="Audio Lab">
                 <Border Style="{StaticResource Card}" Margin="0,16,0,0">
                     <Grid>
@@ -280,7 +444,7 @@
         </TabControl>
 
         <Border Grid.Row="3" Style="{StaticResource Pill}" Margin="0,16,0,0" HorizontalAlignment="Left">
-            <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap" Text="Phase 1 is read-only diagnostics. No raw HID writes, rumble, lightbar, speaker, or headset packets are sent automatically." />
+            <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap" Text="Phase 1 diagnostics are read-only. Rumble and lightbar are manual, confirmed tests only. Speaker, headset, and raw DS4 audio packets stay locked." />
         </Border>
     </Grid>
 </Window>
