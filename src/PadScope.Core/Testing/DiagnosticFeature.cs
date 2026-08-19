@@ -16,5 +16,6 @@ public enum DiagnosticFeature
     WindowsAudioEndpointCheck,
     Ds4AudioProbe,
     Ds4AudioStreaming,
-    VirtualControllerOutput
+    VirtualControllerOutput,
+    RemappingProfiles
 }

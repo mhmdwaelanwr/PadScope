@@ -6,13 +6,18 @@ public sealed class Ds4PassThrough : IDisposable
 {
     private readonly Ds4ControllerSession _physical;
     private readonly IVirtualControllerTarget _virtual;
+    private readonly ControllerProfile? _profile;
     private readonly System.Threading.Timer? _rumbleResetTimer;
     private bool _disposed;
 
-    public Ds4PassThrough(Ds4ControllerSession physical, IVirtualControllerTarget virtualTarget)
+    public Ds4PassThrough(
+        Ds4ControllerSession physical,
+        IVirtualControllerTarget virtualTarget,
+        ControllerProfile? profile = null)
     {
         _physical = physical;
         _virtual = virtualTarget;
+        _profile = profile;
 
         _physical.StateUpdated += ForwardInput;
         _virtual.FeedbackReceived += ForwardFeedback;
@@ -42,14 +47,19 @@ public sealed class Ds4PassThrough : IDisposable
 
     private void ForwardInput(Ds4InputState state)
     {
-        _virtual.Update(state);
+        Ds4InputState output = _profile is null ? state : Ds4Remapper.Apply(_profile, state);
+        _virtual.Update(output);
     }
 
     private void ForwardFeedback(VirtualControllerFeedback feedback)
     {
-        _physical.TrySendRumble(feedback.SmallMotor, feedback.LargeMotor, out _);
+        if (_profile?.ApplyRumble ?? true)
+        {
+            _physical.TrySendRumble(feedback.SmallMotor, feedback.LargeMotor, out _);
+        }
 
-        if (feedback.Red != 0 || feedback.Green != 0 || feedback.Blue != 0)
+        if ((_profile?.ApplyLightbar ?? true) &&
+            (feedback.Red != 0 || feedback.Green != 0 || feedback.Blue != 0))
         {
             _physical.TrySendLightbar(feedback.Red, feedback.Green, feedback.Blue, out _);
         }

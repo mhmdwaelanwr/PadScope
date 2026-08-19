@@ -137,6 +137,28 @@ public static class FeatureTestRegistry
             EnabledByDefault: true,
             Goal: "Expose a virtual DualShock 4 or Xbox 360 device and mirror live input.",
             PassCriteria: "Virtual pad is visible, mirrors input, and forwards game feedback to the physical controller."
+        ),
+        new FeatureTestDefinition(
+            DiagnosticFeature.RemappingProfiles,
+            "Profile remapping",
+            TestStage.Remapping,
+            RiskLevel.Controlled,
+            RequiresSelectedDevice: true,
+            RequiresUserConfirmation: true,
+            EnabledByDefault: true,
+            Goal: "Apply saved button, stick, and trigger remaps before the virtual pad sees them.",
+            PassCriteria: "Remapped input matches the loaded profile and game feedback still reaches the physical controller."
+        ),
+        new FeatureTestDefinition(
+            DiagnosticFeature.HidHideDiagnostics,
+            "HidHide integration",
+            TestStage.HidHideIntegration,
+            RiskLevel.Safe,
+            RequiresSelectedDevice: false,
+            RequiresUserConfirmation: false,
+            EnabledByDefault: true,
+            Goal: "Detect HidHide and explain how to hide the physical controller from games.",
+            PassCriteria: "The HidHide driver status is reported and the next steps are shown."
         )
     };
 }

@@ -107,6 +107,22 @@ public static class TestStageRegistry
             "Expose the physical controller as a virtual DualShock 4 or Xbox 360 device for games.",
             "Install ViGEmBus, then use the Virtual Controller tab or the CLI virtual command.",
             "The virtual pad appears in Windows, mirrors live input, and forwards rumble, lightbar, and LED requests back."
+        ),
+        new TestStageDefinition(
+            TestStage.Remapping,
+            "Profile remapping",
+            "Implemented - requires ViGEmBus and a JSON profile",
+            "Remap buttons, sticks, and triggers through a saved profile before the virtual pad sees them.",
+            "Create a JSON profile with ProfileStore, then start the virtual command or tab with --profile.",
+            "Remapped buttons and axes are visible on the virtual pad and forwarded game feedback still reaches the physical controller."
+        ),
+        new TestStageDefinition(
+            TestStage.HidHideIntegration,
+            "HidHide integration",
+            "Implemented - requires HidHide driver",
+            "Hide the physical controller from games so only the virtual pad is visible.",
+            "Install HidHide, then review its detected status and add PadScope as a trusted application.",
+            "The HidHide driver status is shown and the physical controller can be hidden while the virtual pad stays visible."
         )
     };
 }

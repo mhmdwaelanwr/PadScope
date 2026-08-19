@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using PadScope.Core.Diagnostics;
+using PadScope.Core.Input;
 using PadScope.Core.Models;
 using PadScope.Core.Scanning;
 using PadScope.Core.Testing;
@@ -236,9 +237,27 @@ static void RunVirtual(IControllerScanner scanner, string[] args)
 
     Console.WriteLine($"Virtual target: {target.GetType().Name}");
     Console.WriteLine(ViGEmBusDetector.DescribeStatus());
+    Console.WriteLine(HidHideDetector.DescribeStatus());
+
+    ControllerProfile? profile = null;
+    string? profilePath = GetArgValue(args, "--profile");
+    if (profilePath is not null)
+    {
+        try
+        {
+            profile = ProfileStore.Load(profilePath);
+            Console.WriteLine($"Applied profile: {profile.Name} v{profile.Version} ({profilePath})");
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or InvalidDataException or ArgumentException)
+        {
+            Console.Error.WriteLine($"Could not load profile '{profilePath}': {ex.Message}");
+            Environment.ExitCode = 1;
+            return;
+        }
+    }
 
     using Ds4ControllerSession physical = new(new HidSharpHidInputReader(), device);
-    using Ds4PassThrough bridge = new(physical, target);
+    using Ds4PassThrough bridge = new(physical, target, profile);
 
     if (!bridge.TryStart(out error))
     {
@@ -359,7 +378,7 @@ static void RunStage(IControllerScanner scanner, string[] args)
 {
     if (args.Length < 2 || !int.TryParse(args[1], out int stageNumber) || !Enum.IsDefined(typeof(TestStage), stageNumber))
     {
-        Console.Error.WriteLine("Usage: PadScope.Cli run-stage <0-11>");
+        Console.Error.WriteLine("Usage: PadScope.Cli run-stage <0-14>");
         Environment.ExitCode = 1;
         return;
     }
@@ -395,7 +414,21 @@ static void RunStage(IControllerScanner scanner, string[] args)
     if (stage is TestStage.VirtualController)
     {
         Console.WriteLine("Implemented: requires the ViGEmBus driver and a connected controller.");
-        Console.WriteLine("Run: PadScope.Cli virtual [--vid XXXX] [--pid XXXX] [--target ds4|xbox360]");
+        Console.WriteLine("Run: PadScope.Cli virtual [--vid XXXX] [--pid XXXX] [--target ds4|xbox360] [--profile path.json]");
+        return;
+    }
+
+    if (stage is TestStage.Remapping)
+    {
+        Console.WriteLine("Implemented: requires the ViGEmBus driver, a connected controller, and a JSON profile.");
+        Console.WriteLine("Run: PadScope.Cli virtual [--vid XXXX] [--pid XXXX] [--target ds4|xbox360] --profile path.json");
+        return;
+    }
+
+    if (stage is TestStage.HidHideIntegration)
+    {
+        Console.WriteLine("Implemented: HidHide driver status is reported.");
+        Console.WriteLine(HidHideDetector.DescribeStatus());
         return;
     }
 
@@ -477,9 +510,9 @@ static void PrintHelp()
     Console.WriteLine("  input [--vid XXXX] [--pid XXXX]   Live-read the controller state");
     Console.WriteLine("  rumble [--vid XXXX] [--pid XXXX] [--small 255] [--large 0] [--seconds 1]");
     Console.WriteLine("  lightbar [--vid XXXX] [--pid XXXX] [--color RRGGBB] [--seconds 1]");
-    Console.WriteLine("  virtual [--vid XXXX] [--pid XXXX] [--target ds4|xbox360]   Mirror the pad as a virtual controller");
+    Console.WriteLine("  virtual [--vid XXXX] [--pid XXXX] [--target ds4|xbox360] [--profile path.json]   Mirror the pad as a virtual controller");
     Console.WriteLine("  stages                     Print implemented and locked stage status");
-    Console.WriteLine("  run-stage <0-11>           Run a safe implemented stage, or explain a locked stage");
+    Console.WriteLine("  run-stage <0-14>           Run a safe implemented stage, or explain a locked stage");
     Console.WriteLine("  run-safe                   Run all safe implemented stage checks");
     Console.WriteLine("  package                    Print Windows package instructions");
     Console.WriteLine("  help                       Show help");

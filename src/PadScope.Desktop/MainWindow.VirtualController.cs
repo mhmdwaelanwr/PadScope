@@ -1,6 +1,8 @@
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using PadScope.Core.Diagnostics;
+using PadScope.Core.Input;
 using PadScope.Core.Models;
 using PadScope.Hid;
 using PadScope.Hid.Virtual;
@@ -12,6 +14,7 @@ public partial class MainWindow
     private Ds4ControllerSession? _virtualSession;
     private IVirtualControllerTarget? _virtualTarget;
     private Ds4PassThrough? _virtualBridge;
+    private ControllerProfile? _virtualProfile;
 
     internal void RefreshVirtualDeviceList()
     {
@@ -30,10 +33,12 @@ public partial class MainWindow
     internal void ClearVirtualDeviceList()
     {
         StopVirtualPassthrough();
+        _virtualProfile = null;
         VirtualDeviceComboBox.ItemsSource = null;
         VirtualStartButton.IsEnabled = false;
         VirtualStopButton.IsEnabled = false;
         VirtualFeedbackText.Text = "No feedback received yet.";
+        VirtualProfileStatusText.Text = "No profile applied. Remapping is off.";
         VirtualStatusText.Text = "Scan first to detect a controller, then start the passthrough.";
     }
 
@@ -58,7 +63,7 @@ public partial class MainWindow
             : new ViGEmDualShock4Target();
 
         Ds4ControllerSession session = new(new HidSharpHidInputReader(), device);
-        Ds4PassThrough bridge = new(session, target);
+        Ds4PassThrough bridge = new(session, target, _virtualProfile);
 
         if (!bridge.TryStart(out string? error))
         {
@@ -129,6 +134,60 @@ public partial class MainWindow
         if (IsLoaded)
         {
             VirtualStatusText.Text = "Passthrough stopped.";
+        }
+    }
+
+    private void VirtualProfileApplyButton_Click(object sender, RoutedEventArgs e)
+    {
+        string path = VirtualProfileTextBox.Text.Trim();
+        if (path.Length == 0)
+        {
+            MessageBox.Show(
+                this,
+                "Enter a profile file path or click Create Default first.",
+                "PadScope Profile",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information
+            );
+            return;
+        }
+
+        try
+        {
+            ControllerProfile profile = ProfileStore.Load(path);
+            _virtualProfile = profile;
+            VirtualProfileStatusText.Text = $"Profile applied: {profile.Name} v{profile.Version}. Remapping is on.";
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or InvalidDataException or ArgumentException)
+        {
+            MessageBox.Show(
+                this,
+                $"Could not load profile '{path}': {ex.Message}",
+                "PadScope Profile",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error
+            );
+        }
+    }
+
+    private void VirtualProfileDefaultButton_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            string path = ProfileStore.SaveDefaultProfile();
+            VirtualProfileTextBox.Text = path;
+            _virtualProfile = ProfileStore.CreateDefault();
+            VirtualProfileStatusText.Text = $"Default profile saved and applied ({path}). Remapping is on.";
+        }
+        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException or ArgumentException)
+        {
+            MessageBox.Show(
+                this,
+                $"Could not create the default profile: {ex.Message}",
+                "PadScope Profile",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error
+            );
         }
     }
 }

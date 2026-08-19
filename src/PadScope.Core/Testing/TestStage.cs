@@ -14,5 +14,7 @@ public enum TestStage
     AudioEndpoint = 9,
     AudioProbe = 10,
     Packaging = 11,
-    VirtualController = 12
+    VirtualController = 12,
+    Remapping = 13,
+    HidHideIntegration = 14
 }

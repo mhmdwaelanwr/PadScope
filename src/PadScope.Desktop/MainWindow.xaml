@@ -447,6 +447,14 @@
                                 <Button x:Name="VirtualStopButton" Content="Stop" Width="90" Margin="10,0,0,0" Style="{StaticResource SecondaryButton}" Click="VirtualStopButton_Click" IsEnabled="False" />
                             </StackPanel>
 
+                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                <TextBlock Text="Profile file:" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                                <TextBox x:Name="VirtualProfileTextBox" Width="360" Margin="10,0,0,0" VerticalAlignment="Center" ToolTip="JSON profile created by ProfileStore. The default lives in %APPDATA%\PadScope\profiles\default.json." />
+                                <Button x:Name="VirtualProfileApplyButton" Content="Apply Profile" Width="110" Margin="12,0,0,0" Style="{StaticResource SecondaryButton}" Click="VirtualProfileApplyButton_Click" />
+                                <Button x:Name="VirtualProfileDefaultButton" Content="Create Default" Width="110" Margin="10,0,0,0" Style="{StaticResource SecondaryButton}" Click="VirtualProfileDefaultButton_Click" />
+                            </StackPanel>
+
+                            <TextBlock x:Name="VirtualProfileStatusText" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,8,0,0" Text="No profile applied. Remapping is off." />
                             <TextBlock x:Name="VirtualStatusText" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,12,0,0" />
                         </StackPanel>
                     </Border>
