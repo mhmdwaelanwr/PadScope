@@ -38,11 +38,11 @@ public static class ProfileMatcher
             );
         }
 
-        if (Contains(text, "aula") || Contains(text, "g1000"))
+        if (Contains(text, "aula") || Contains(text, "g1000") || device.VendorId?.Equals("0079", StringComparison.OrdinalIgnoreCase) == true)
         {
             return new ProfileMatch(
-                Name: "AULA G1000 / DirectInput PC gamepad",
-                Confidence: "medium",
+                Name: "AULA G1000 / DragonRise DirectInput gamepad",
+                Confidence: device.VendorId?.Equals("0079", StringComparison.OrdinalIgnoreCase) == true ? "high" : "medium",
                 RecommendedRiskLevel: RiskLevel.Safe,
                 RecommendedNextAction: "Focus on DirectInput/XInput and rumble testing; DS4 audio does not apply."
             );
