@@ -62,12 +62,14 @@ public partial class MainWindow : Window
         ApplyDarkTheme();
         UpdateSummary();
         EnableOutputControls(false);
+        VirtualStatusText.Text = ViGEmBusDetector.DescribeStatus();
     }
 
     protected override void OnClosed(EventArgs e)
     {
         _liveTimer?.Stop();
         _liveSession?.Dispose();
+        StopVirtualPassthrough();
         base.OnClosed(e);
     }
 
@@ -85,6 +87,7 @@ public partial class MainWindow : Window
         CurrentStageText.Text = "0/1 Ready";
         UpdateSummary();
         ClearLiveDeviceList();
+        ClearVirtualDeviceList();
     }
 
     private void ToggleThemeButton_Click(object sender, RoutedEventArgs e)
@@ -295,6 +298,7 @@ public partial class MainWindow : Window
         {
             UpdateSummary();
             RefreshLiveDeviceList();
+            RefreshVirtualDeviceList();
         }
     }
 

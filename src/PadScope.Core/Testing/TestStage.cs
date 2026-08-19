@@ -13,5 +13,6 @@ public enum TestStage
     TouchpadAndGyro = 8,
     AudioEndpoint = 9,
     AudioProbe = 10,
-    Packaging = 11
+    Packaging = 11,
+    VirtualController = 12
 }

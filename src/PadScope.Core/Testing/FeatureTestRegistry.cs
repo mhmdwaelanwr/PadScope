@@ -126,6 +126,17 @@ public static class FeatureTestRegistry
             EnabledByDefault: false,
             Goal: "Research DS4-style audio streaming after probe support is known.",
             PassCriteria: "Experiment is opt-in, interruptible, and never part of normal scan."
+        ),
+        new FeatureTestDefinition(
+            DiagnosticFeature.VirtualControllerOutput,
+            "Virtual controller passthrough",
+            TestStage.VirtualController,
+            RiskLevel.Controlled,
+            RequiresSelectedDevice: true,
+            RequiresUserConfirmation: true,
+            EnabledByDefault: true,
+            Goal: "Expose a virtual DualShock 4 or Xbox 360 device and mirror live input.",
+            PassCriteria: "Virtual pad is visible, mirrors input, and forwards game feedback to the physical controller."
         )
     };
 }

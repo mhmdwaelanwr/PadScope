@@ -15,5 +15,6 @@ public enum DiagnosticFeature
     HidHideDiagnostics,
     WindowsAudioEndpointCheck,
     Ds4AudioProbe,
-    Ds4AudioStreaming
+    Ds4AudioStreaming,
+    VirtualControllerOutput
 }

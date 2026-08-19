@@ -5,6 +5,7 @@ using PadScope.Core.Models;
 using PadScope.Core.Scanning;
 using PadScope.Core.Testing;
 using PadScope.Hid;
+using PadScope.Hid.Virtual;
 
 IControllerScanner scanner = new WindowsDeviceScanner();
 
@@ -26,6 +27,10 @@ switch (command)
 
     case "lightbar":
         RunLightbar(scanner, args);
+        break;
+
+    case "virtual":
+        RunVirtual(scanner, args);
         break;
 
     case "stages":
@@ -215,6 +220,57 @@ static void RunLightbar(IControllerScanner scanner, string[] args)
     }
 }
 
+static void RunVirtual(IControllerScanner scanner, string[] args)
+{
+    if (!TrySelectDevice(scanner, args, out ControllerDevice? device, out string? error))
+    {
+        Console.Error.WriteLine(error);
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    string targetName = GetArgValue(args, "--target") ?? "ds4";
+    IVirtualControllerTarget target = targetName.Equals("xbox360", StringComparison.OrdinalIgnoreCase)
+        ? new ViGEmXbox360Target()
+        : new ViGEmDualShock4Target();
+
+    Console.WriteLine($"Virtual target: {target.GetType().Name}");
+    Console.WriteLine(ViGEmBusDetector.DescribeStatus());
+
+    using Ds4ControllerSession physical = new(new HidSharpHidInputReader(), device);
+    using Ds4PassThrough bridge = new(physical, target);
+
+    if (!bridge.TryStart(out error))
+    {
+        Console.Error.WriteLine(error);
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    Console.WriteLine($"Passthrough live: {device.DisplayName} -> {target.GetType().Name}");
+    Console.WriteLine("Games can now use the virtual pad. Press Ctrl+C to stop.");
+    Console.WriteLine();
+
+    target.FeedbackReceived += feedback =>
+    {
+        string line = $"[GAME] rumble small={feedback.SmallMotor} large={feedback.LargeMotor}";
+
+        if (feedback.LedNumber > 0)
+        {
+            line += $" led={feedback.LedNumber}";
+        }
+
+        if (feedback.Red != 0 || feedback.Green != 0 || feedback.Blue != 0)
+        {
+            line += $" lightbar=#{feedback.Red:X2}{feedback.Green:X2}{feedback.Blue:X2}";
+        }
+
+        Console.WriteLine(line);
+    };
+
+    WaitForCtrlC();
+}
+
 static bool TrySelectDevice(
     IControllerScanner scanner,
     string[] args,
@@ -336,6 +392,13 @@ static void RunStage(IControllerScanner scanner, string[] args)
         return;
     }
 
+    if (stage is TestStage.VirtualController)
+    {
+        Console.WriteLine("Implemented: requires the ViGEmBus driver and a connected controller.");
+        Console.WriteLine("Run: PadScope.Cli virtual [--vid XXXX] [--pid XXXX] [--target ds4|xbox360]");
+        return;
+    }
+
     Console.WriteLine("Locked: this stage needs verified device evidence before it can run.");
     Console.WriteLine(definition.WhatToDo);
     Environment.ExitCode = 2;
@@ -414,6 +477,7 @@ static void PrintHelp()
     Console.WriteLine("  input [--vid XXXX] [--pid XXXX]   Live-read the controller state");
     Console.WriteLine("  rumble [--vid XXXX] [--pid XXXX] [--small 255] [--large 0] [--seconds 1]");
     Console.WriteLine("  lightbar [--vid XXXX] [--pid XXXX] [--color RRGGBB] [--seconds 1]");
+    Console.WriteLine("  virtual [--vid XXXX] [--pid XXXX] [--target ds4|xbox360]   Mirror the pad as a virtual controller");
     Console.WriteLine("  stages                     Print implemented and locked stage status");
     Console.WriteLine("  run-stage <0-11>           Run a safe implemented stage, or explain a locked stage");
     Console.WriteLine("  run-safe                   Run all safe implemented stage checks");

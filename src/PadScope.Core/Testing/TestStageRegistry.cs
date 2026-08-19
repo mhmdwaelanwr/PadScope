@@ -99,6 +99,14 @@ public static class TestStageRegistry
             "Produce a usable Windows build for testers.",
             "Use the Package Windows GitHub Actions workflow or dotnet publish for win-x64.",
             "A ZIP artifact is produced and PadScope.Desktop launches on Windows."
+        ),
+        new TestStageDefinition(
+            TestStage.VirtualController,
+            "Virtual controller passthrough",
+            "Implemented - requires ViGEmBus driver",
+            "Expose the physical controller as a virtual DualShock 4 or Xbox 360 device for games.",
+            "Install ViGEmBus, then use the Virtual Controller tab or the CLI virtual command.",
+            "The virtual pad appears in Windows, mirrors live input, and forwards rumble, lightbar, and LED requests back."
         )
     };
 }
