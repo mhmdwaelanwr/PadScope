@@ -422,23 +422,27 @@ public partial class MainWindow : Window
 
     private void ApplyDarkTheme()
     {
-        LoadTheme("/PadScope.Desktop;component/Themes/DarkTheme.xaml");
+        LoadTheme("pack://application:,,,/PadScope.Desktop;component/Themes/DarkTheme.xaml");
         ThemeButton.Content = "Light";
         Background = (Brush)Application.Current.Resources["B_Background"];
     }
 
     private void ApplyLightTheme()
     {
-        LoadTheme("/PadScope.Desktop;component/Themes/LightTheme.xaml");
+        LoadTheme("pack://application:,,,/PadScope.Desktop;component/Themes/LightTheme.xaml");
         ThemeButton.Content = "Dark";
         Background = (Brush)Application.Current.Resources["B_Background"];
     }
 
     private static void LoadTheme(string packUri)
     {
-        var dict = new ResourceDictionary { Source = new Uri(packUri, UriKind.Absolute) };
-        Application.Current.Resources.MergedDictionaries.Clear();
-        Application.Current.Resources.MergedDictionaries.Add(dict);
+        var dicts = Application.Current.Resources.MergedDictionaries;
+        var newDict = new ResourceDictionary { Source = new Uri(packUri) };
+        dicts.Insert(0, newDict);
+        for (int i = dicts.Count - 1; i >= 1; i--)
+        {
+            dicts.RemoveAt(i);
+        }
     }
 }
 

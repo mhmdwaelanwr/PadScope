@@ -14,6 +14,7 @@ public partial class MainWindow
     private Ds4ControllerSession? _liveSession;
     private volatile Ds4InputState? _latestState;
     private DispatcherTimer? _liveTimer;
+    private Ds4Buttons _prevButtons;
 
     private static readonly Brush PressedBrush = new SolidColorBrush(Color.FromRgb(34, 197, 94));
 
@@ -75,13 +76,14 @@ public partial class MainWindow
         _liveSession.Error += message => Dispatcher.BeginInvoke(() => LiveStatusText.Text = message);
         _liveSession.StateUpdated += state => _latestState = state;
 
+        _prevButtons = default;
         StartInputButton.IsEnabled = false;
         StopInputButton.IsEnabled = true;
         LiveStatusText.Text = $"Live: {_liveSession.DeviceDescription}";
         EnableOutputControls(true);
 
         _liveTimer?.Stop();
-        _liveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(33) };
+        _liveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
         _liveTimer.Tick += (_, _) => RenderLatestState();
         _liveTimer.Start();
     }
@@ -183,58 +185,79 @@ public partial class MainWindow
             return;
         }
 
-        LeftStickText.Text = $"X {state.LeftStickX,3}  Y {state.LeftStickY,3}";
-        RightStickText.Text = $"X {state.RightStickX,3}  Y {state.RightStickY,3}";
-
-        PlaceStickDot(LeftStickCanvas, LeftStickDot, state.LeftStickXNorm, state.LeftStickYNorm);
-        PlaceStickDot(RightStickCanvas, RightStickDot, state.RightStickXNorm, state.RightStickYNorm);
-
-        L2ValueText.Text = $"L2 {state.LeftTrigger}  ({state.LeftTriggerNorm:P0})";
-        R2ValueText.Text = $"R2 {state.RightTrigger}  ({state.RightTriggerNorm:P0})";
-        L2Bar.Value = state.LeftTrigger;
-        R2Bar.Value = state.RightTrigger;
-
-        SetButtonState(DpadUpButton, state.Buttons.HasFlag(Ds4Buttons.DpadUp));
-        SetButtonState(DpadDownButton, state.Buttons.HasFlag(Ds4Buttons.DpadDown));
-        SetButtonState(DpadLeftButton, state.Buttons.HasFlag(Ds4Buttons.DpadLeft));
-        SetButtonState(DpadRightButton, state.Buttons.HasFlag(Ds4Buttons.DpadRight));
-        SetButtonState(SquareButton, state.Buttons.HasFlag(Ds4Buttons.Square));
-        SetButtonState(CrossButton, state.Buttons.HasFlag(Ds4Buttons.Cross));
-        SetButtonState(CircleButton, state.Buttons.HasFlag(Ds4Buttons.Circle));
-        SetButtonState(TriangleButton, state.Buttons.HasFlag(Ds4Buttons.Triangle));
-        SetButtonState(L1Button, state.Buttons.HasFlag(Ds4Buttons.L1));
-        SetButtonState(R1Button, state.Buttons.HasFlag(Ds4Buttons.R1));
-        SetButtonState(L2Button, state.Buttons.HasFlag(Ds4Buttons.L2));
-        SetButtonState(R2Button, state.Buttons.HasFlag(Ds4Buttons.R2));
-        SetButtonState(ShareButton, state.Buttons.HasFlag(Ds4Buttons.Share));
-        SetButtonState(OptionsButton, state.Buttons.HasFlag(Ds4Buttons.Options));
-        SetButtonState(L3Button, state.Buttons.HasFlag(Ds4Buttons.L3));
-        SetButtonState(R3Button, state.Buttons.HasFlag(Ds4Buttons.R3));
-        SetButtonState(PsButton, state.Buttons.HasFlag(Ds4Buttons.Ps));
-        SetButtonState(TouchpadButton, state.Buttons.HasFlag(Ds4Buttons.TouchpadClick));
-
-        GyroText.Text = $"Gyro  X {state.GyroX,6}  Y {state.GyroY,6}  Z {state.GyroZ,6}";
-        AccelText.Text = $"Accel X {state.AccelX,6}  Y {state.AccelY,6}  Z {state.AccelZ,6}";
-
-        BatteryText.Text = state.BatteryLevel.HasValue
-            ? $"Level {state.BatteryLevel.Value}/10  {(state.Charging ? "Charging" : "Not charging")}"
-            : "Battery level not reported (common over Bluetooth)";
-
-        string touch = state.Touch1?.Touching == true
-            ? $"\nTouch 1  X {state.Touch1.Value.X,4}  Y {state.Touch1.Value.Y,4}"
-            : string.Empty;
-
-        if (state.Touch2?.Touching == true)
+        try
         {
-            touch += $"\nTouch 2  X {state.Touch2.Value.X,4}  Y {state.Touch2.Value.Y,4}";
-        }
+            LeftStickText.Text = $"X {state.LeftStickX,3}  Y {state.LeftStickY,3}";
+            RightStickText.Text = $"X {state.RightStickX,3}  Y {state.RightStickY,3}";
 
-        if (touch.Length > 0)
+            PlaceStickDot(LeftStickCanvas, LeftStickDot, state.LeftStickXNorm, state.LeftStickYNorm);
+            PlaceStickDot(RightStickCanvas, RightStickDot, state.RightStickXNorm, state.RightStickYNorm);
+
+            L2ValueText.Text = $"L2 {state.LeftTrigger}  ({state.LeftTriggerNorm:P0})";
+            R2ValueText.Text = $"R2 {state.RightTrigger}  ({state.RightTriggerNorm:P0})";
+            L2Bar.Value = state.LeftTrigger;
+            R2Bar.Value = state.RightTrigger;
+
+            if (state.Buttons != _prevButtons)
+            {
+                UpdateButtonIfNeeded(DpadUpButton, state.Buttons, Ds4Buttons.DpadUp);
+                UpdateButtonIfNeeded(DpadDownButton, state.Buttons, Ds4Buttons.DpadDown);
+                UpdateButtonIfNeeded(DpadLeftButton, state.Buttons, Ds4Buttons.DpadLeft);
+                UpdateButtonIfNeeded(DpadRightButton, state.Buttons, Ds4Buttons.DpadRight);
+                UpdateButtonIfNeeded(SquareButton, state.Buttons, Ds4Buttons.Square);
+                UpdateButtonIfNeeded(CrossButton, state.Buttons, Ds4Buttons.Cross);
+                UpdateButtonIfNeeded(CircleButton, state.Buttons, Ds4Buttons.Circle);
+                UpdateButtonIfNeeded(TriangleButton, state.Buttons, Ds4Buttons.Triangle);
+                UpdateButtonIfNeeded(L1Button, state.Buttons, Ds4Buttons.L1);
+                UpdateButtonIfNeeded(R1Button, state.Buttons, Ds4Buttons.R1);
+                UpdateButtonIfNeeded(L2Button, state.Buttons, Ds4Buttons.L2);
+                UpdateButtonIfNeeded(R2Button, state.Buttons, Ds4Buttons.R2);
+                UpdateButtonIfNeeded(ShareButton, state.Buttons, Ds4Buttons.Share);
+                UpdateButtonIfNeeded(OptionsButton, state.Buttons, Ds4Buttons.Options);
+                UpdateButtonIfNeeded(L3Button, state.Buttons, Ds4Buttons.L3);
+                UpdateButtonIfNeeded(R3Button, state.Buttons, Ds4Buttons.R3);
+                UpdateButtonIfNeeded(PsButton, state.Buttons, Ds4Buttons.Ps);
+                UpdateButtonIfNeeded(TouchpadButton, state.Buttons, Ds4Buttons.TouchpadClick);
+                _prevButtons = state.Buttons;
+            }
+
+            GyroText.Text = $"Gyro  X {state.GyroX,6}  Y {state.GyroY,6}  Z {state.GyroZ,6}";
+            AccelText.Text = $"Accel X {state.AccelX,6}  Y {state.AccelY,6}  Z {state.AccelZ,6}";
+
+            BatteryText.Text = state.BatteryLevel.HasValue
+                ? $"Level {state.BatteryLevel.Value}/10  {(state.Charging ? "Charging" : "Not charging")}"
+                : "Battery level not reported (common over Bluetooth)";
+
+            string touch = state.Touch1?.Touching == true
+                ? $"\nTouch 1  X {state.Touch1.Value.X,4}  Y {state.Touch1.Value.Y,4}"
+                : string.Empty;
+
+            if (state.Touch2?.Touching == true)
+            {
+                touch += $"\nTouch 2  X {state.Touch2.Value.X,4}  Y {state.Touch2.Value.Y,4}";
+            }
+
+            if (touch.Length > 0)
+            {
+                BatteryText.Text += touch;
+            }
+
+            RawHexText.Text = FormatHex(state.Raw);
+        }
+        catch (Exception)
         {
-            BatteryText.Text += touch;
+            // UI element may be null after theme swap — ignore
         }
+    }
 
-        RawHexText.Text = FormatHex(state.Raw);
+    private void UpdateButtonIfNeeded(Button button, Ds4Buttons current, Ds4Buttons flag)
+    {
+        bool pressed = current.HasFlag(flag);
+        bool wasPressed = _prevButtons.HasFlag(flag);
+        if (pressed != wasPressed)
+        {
+            SetButtonState(button, pressed);
+        }
     }
 
     private void PlaceStickDot(Canvas canvas, FrameworkElement dot, float xNorm, float yNorm)
@@ -242,18 +265,34 @@ public partial class MainWindow
         const double center = 90.0;
         const double radius = 81.0;
 
-        double x = center + xNorm * radius;
-        double y = center - yNorm * radius;
+        double x = center + xNorm * radius - 5;
+        double y = center - yNorm * radius - 5;
 
-        Canvas.SetLeft(dot, Math.Clamp(x, 0, 162));
-        Canvas.SetTop(dot, Math.Clamp(y, 0, 162));
+        Canvas.SetLeft(dot, Math.Clamp(x, 0, 170));
+        Canvas.SetTop(dot, Math.Clamp(y, 0, 170));
     }
 
     private void SetButtonState(Button button, bool pressed)
     {
-        button.Background = pressed ? PressedBrush : (Brush)Application.Current.Resources["B_CardAlt"];
-        button.BorderBrush = pressed ? PressedBrush : (Brush)Application.Current.Resources["B_Border"];
-        button.Foreground = pressed ? Brushes.White : (Brush)Application.Current.Resources["B_Text"];
+        try
+        {
+            if (pressed)
+            {
+                button.Background = PressedBrush;
+                button.BorderBrush = PressedBrush;
+                button.Foreground = Brushes.White;
+            }
+            else
+            {
+                button.ClearValue(Control.BackgroundProperty);
+                button.ClearValue(Control.BorderBrushProperty);
+                button.ClearValue(Control.ForegroundProperty);
+            }
+        }
+        catch (Exception)
+        {
+            // ignore during theme transition
+        }
     }
 
     private void EnableOutputControls(bool enabled)
@@ -270,6 +309,7 @@ public partial class MainWindow
         _liveSession?.Dispose();
         _liveSession = null;
         _latestState = null;
+        _prevButtons = default;
 
         StartInputButton.IsEnabled = DeviceComboBox.Items.Count > 0;
         StopInputButton.IsEnabled = false;

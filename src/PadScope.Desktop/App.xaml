@@ -5,7 +5,7 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/PadScope.Desktop;component/Themes/DarkTheme.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/PadScope.Desktop;component/Themes/DarkTheme.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>
