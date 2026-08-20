@@ -245,18 +245,11 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Left panel: controls + buttons -->
-                        <Grid Grid.Column="0">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
+                        <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto">
+                            <StackPanel>
 
                             <!-- Device picker -->
-                            <Border Grid.Row="0" Style="{DynamicResource Card}">
+                            <Border Style="{DynamicResource Card}">
                                 <StackPanel>
                                     <TextBlock Text="Device" Style="{DynamicResource Dim}" FontSize="11.5" Margin="0,0,0,6" />
                                     <ComboBox x:Name="DeviceComboBox" DisplayMemberPath="DisplayName" />
@@ -269,10 +262,10 @@
 
                             <TextBlock x:Name="LiveStatusText" Text="Scan first to detect a controller."
                                        Style="{DynamicResource Dim}" FontSize="11.5" TextWrapping="Wrap"
-                                       Margin="18,10,18,0" Grid.Row="1" />
+                                       Margin="18,10,18,0" />
 
                             <!-- D-Pad -->
-                            <Border Grid.Row="2" Style="{DynamicResource CardAlt}">
+                            <Border Style="{DynamicResource CardAlt}">
                                 <StackPanel>
                                     <TextBlock Text="D-Pad" Style="{DynamicResource Dim}" FontSize="11.5" Margin="0,0,0,6" />
                                     <Grid Width="110" Height="110">
@@ -295,7 +288,7 @@
                             </Border>
 
                             <!-- Face buttons -->
-                            <Border Grid.Row="3" Style="{DynamicResource CardAlt}" Margin="0,6,0,0">
+                            <Border Style="{DynamicResource CardAlt}" Margin="0,6,0,0">
                                 <StackPanel>
                                     <TextBlock Text="Face Buttons" Style="{DynamicResource Dim}" FontSize="11.5" Margin="0,0,0,6" />
                                     <Grid Width="110" Height="110">
@@ -318,7 +311,7 @@
                             </Border>
 
                             <!-- Shoulder + system buttons -->
-                            <Border Grid.Row="4" Style="{DynamicResource CardAlt}" Margin="0,6,0,0">
+                            <Border Style="{DynamicResource CardAlt}" Margin="0,6,0,0">
                                 <StackPanel>
                                     <TextBlock Text="Shoulder / System" Style="{DynamicResource Dim}" FontSize="11.5" Margin="0,0,0,6" />
                                     <WrapPanel>
@@ -337,7 +330,7 @@
                             </Border>
 
                             <!-- Output controls -->
-                            <Border Grid.Row="5" Style="{DynamicResource Card}" Margin="0,6,0,0">
+                            <Border Style="{DynamicResource Card}" Margin="0,6,0,0">
                                 <StackPanel>
                                     <TextBlock Text="Output Tests" Style="{DynamicResource Dim}" FontSize="11.5" Margin="0,0,0,6" />
                                     <TextBlock Text="Rumble" Style="{DynamicResource Dim}" FontSize="11" Margin="0,0,0,2" />
@@ -369,7 +362,8 @@
                                             FontSize="11" HorizontalAlignment="Left" Margin="0,6,0,0" />
                                 </StackPanel>
                             </Border>
-                        </Grid>
+                        </StackPanel>
+                        </ScrollViewer>
 
                         <!-- Right panel: live state -->
                         <Grid Grid.Column="2">
