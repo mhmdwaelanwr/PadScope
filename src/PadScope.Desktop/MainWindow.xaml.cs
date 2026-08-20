@@ -422,58 +422,46 @@ public partial class MainWindow : Window
 
     private void ApplyDarkTheme()
     {
-        SetResourceBrush("BrushBackground", "#050A12");
-        SetResourceBrush("BrushSurface", "#0C1420");
-        SetResourceBrush("BrushSurfaceAlt", "#111C2E");
-        SetResourceBrush("BrushSurfaceRaised", "#182640");
-        SetResourceBrush("BrushBorder", "#1E3050");
-        SetResourceBrush("BrushPrimary", "#38BDF8");
-        SetResourceBrush("BrushPrimaryDark", "#0C4A6E");
-        SetResourceBrush("BrushText", "#E8ECF1");
-        SetResourceBrush("BrushMuted", "#7B8BA5");
-        SetResourceBrush("BrushWarning", "#FBBF24");
-        SetResourceBrush("BrushSuccess", "#34D399");
-        SetResourceBrush("BrushDanger", "#F87171");
-        SetResourceBrush("BrushButtonText", "#FFFFFF");
-        SetResourceBrush("BrushGlass", "#0A1828");
-        SetResourceBrush("BrushGlassBorder", "#1A3050");
-        SetResourceBrush("BrushGlassHighlight", "#142438");
+        SetColor("C_Background", "#060B14");
+        SetColor("C_Card", "#0D1522");
+        SetColor("C_CardAlt", "#121E30");
+        SetColor("C_Border", "#1A2B44");
+        SetColor("C_Primary", "#3B9EFF");
+        SetColor("C_PrimaryDim", "#1A4A7A");
+        SetColor("C_Text", "#DDE4EE");
+        SetColor("C_TextDim", "#6B7D96");
+        SetColor("C_Success", "#2DD4A0");
+        SetColor("C_Warning", "#F5A623");
+        SetColor("C_Danger", "#EF4444");
 
         ThemeButton.Content = "Light";
-        Background = (Brush)Application.Current.Resources["BrushBackground"];
+        Background = (Brush)Application.Current.Resources["B_Background"];
     }
 
     private void ApplyLightTheme()
     {
-        SetResourceBrush("BrushBackground", "#EEF2F7");
-        SetResourceBrush("BrushSurface", "#FFFFFF");
-        SetResourceBrush("BrushSurfaceAlt", "#F0F4FA");
-        SetResourceBrush("BrushSurfaceRaised", "#E4EAF3");
-        SetResourceBrush("BrushBorder", "#C8D4E3");
-        SetResourceBrush("BrushPrimary", "#0284C7");
-        SetResourceBrush("BrushPrimaryDark", "#0369A1");
-        SetResourceBrush("BrushText", "#0F172A");
-        SetResourceBrush("BrushMuted", "#5A6B82");
-        SetResourceBrush("BrushWarning", "#B45309");
-        SetResourceBrush("BrushSuccess", "#15803D");
-        SetResourceBrush("BrushDanger", "#B91C1C");
-        SetResourceBrush("BrushButtonText", "#FFFFFF");
-        SetResourceBrush("BrushGlass", "#F8FAFD");
-        SetResourceBrush("BrushGlassBorder", "#D0DAE8");
-        SetResourceBrush("BrushGlassHighlight", "#E8EEF6");
+        SetColor("C_Background", "#F0F4F8");
+        SetColor("C_Card", "#FFFFFF");
+        SetColor("C_CardAlt", "#EEF2F7");
+        SetColor("C_Border", "#CBD5E1");
+        SetColor("C_Primary", "#0284C7");
+        SetColor("C_PrimaryDim", "#0369A1");
+        SetColor("C_Text", "#0F172A");
+        SetColor("C_TextDim", "#64748B");
+        SetColor("C_Success", "#15803D");
+        SetColor("C_Warning", "#B45309");
+        SetColor("C_Danger", "#B91C1C");
 
         ThemeButton.Content = "Dark";
-        Background = (Brush)Application.Current.Resources["BrushBackground"];
+        Background = (Brush)Application.Current.Resources["B_Background"];
     }
 
-    private static void SetResourceBrush(string resourceKey, string colorHex)
+    private static void SetColor(string key, string hex)
     {
-        if (ColorConverter.ConvertFromString(colorHex) is not Color color)
-        {
+        if (ColorConverter.ConvertFromString(hex) is not Color color)
             return;
-        }
 
-        Application.Current.Resources[resourceKey] = new SolidColorBrush(color);
+        Application.Current.Resources[key] = color;
     }
 }
 

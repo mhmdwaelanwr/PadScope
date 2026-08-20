@@ -251,9 +251,9 @@ public partial class MainWindow
 
     private void SetButtonState(Button button, bool pressed)
     {
-        button.Background = pressed ? PressedBrush : (Brush)Application.Current.Resources["BrushSurfaceAlt"];
-        button.BorderBrush = pressed ? PressedBrush : (Brush)Application.Current.Resources["BrushBorder"];
-        button.Foreground = pressed ? Brushes.White : (Brush)Application.Current.Resources["BrushText"];
+        button.Background = pressed ? PressedBrush : (Brush)Application.Current.Resources["B_CardAlt"];
+        button.BorderBrush = pressed ? PressedBrush : (Brush)Application.Current.Resources["B_Border"];
+        button.Foreground = pressed ? Brushes.White : (Brush)Application.Current.Resources["B_Text"];
     }
 
     private void EnableOutputControls(bool enabled)
