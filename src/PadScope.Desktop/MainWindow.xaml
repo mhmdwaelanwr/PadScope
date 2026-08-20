@@ -171,7 +171,7 @@
                                                        VerticalAlignment="Center" />
                                         </StackPanel>
 
-                                        <DataGrid Grid.Row="1" AutoGenerateColumns="False" HeadersVisibility="Column">
+                                        <DataGrid Grid.Row="1" AutoGenerateColumns="False" HeadersVisibility="Column" ItemsSource="{Binding ProfileRows}">
                                             <DataGrid.Columns>
                                                 <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="140" IsReadOnly="True" />
                                                 <DataGridTextColumn Header="Category" Binding="{Binding Category}" Width="120" IsReadOnly="True" />
@@ -201,7 +201,7 @@
                                 </StackPanel>
 
                                 <Border Grid.Row="1" Style="{DynamicResource Card}" Padding="0">
-                                    <DataGrid x:Name="StagesGrid" AutoGenerateColumns="False" HeadersVisibility="Column">
+                                    <DataGrid x:Name="StagesGrid" AutoGenerateColumns="False" HeadersVisibility="Column" ItemsSource="{Binding StageRows}">
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="Stage" Binding="{Binding Stage}" Width="50" IsReadOnly="True" />
                                             <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="140" IsReadOnly="True" />
@@ -219,7 +219,7 @@
                                 </StackPanel>
 
                                 <Border Grid.Row="3" Style="{DynamicResource Card}" Padding="0">
-                                    <DataGrid x:Name="FeatureTestsGrid" AutoGenerateColumns="False" HeadersVisibility="Column">
+                                    <DataGrid x:Name="FeatureTestsGrid" AutoGenerateColumns="False" HeadersVisibility="Column" ItemsSource="{Binding FeatureTestRows}">
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="140" IsReadOnly="True" />
                                             <DataGridTextColumn Header="Stage" Binding="{Binding Stage}" Width="50" IsReadOnly="True" />
