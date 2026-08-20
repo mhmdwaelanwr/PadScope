@@ -181,6 +181,17 @@ public static class FeatureTestRegistry
             EnabledByDefault: true,
             Goal: "Move the Windows mouse from gyroscope input with smoothing.",
             PassCriteria: "Tilting moves the mouse and sensitivity, inversion, and smoothing are tunable."
+        ),
+        new FeatureTestDefinition(
+            DiagnosticFeature.MacroEmulation,
+            "Macros and combos",
+            TestStage.Macros,
+            RiskLevel.Controlled,
+            RequiresSelectedDevice: true,
+            RequiresUserConfirmation: true,
+            EnabledByDefault: true,
+            Goal: "Turn button chords into sends, rapid fire, toggles, and timed sequences on the virtual pad.",
+            PassCriteria: "Combo output appears on the virtual pad, rapid fire pulses at the configured rate, and sequences complete in order."
         )
     };
 }

@@ -18,5 +18,6 @@ public enum TestStage
     Remapping = 13,
     HidHideIntegration = 14,
     TouchpadMouse = 15,
-    GyroMouse = 16
+    GyroMouse = 16,
+    Macros = 17
 }

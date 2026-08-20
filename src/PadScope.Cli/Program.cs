@@ -39,6 +39,10 @@ switch (command)
         RunMouse(scanner, args);
         break;
 
+    case "profile-example":
+        RunProfileExample(args);
+        break;
+
     case "stages":
         PrintStages();
         break;
@@ -336,6 +340,24 @@ static void RunMouse(IControllerScanner scanner, string[] args)
     WaitForCtrlC();
 }
 
+static void RunProfileExample(string[] args)
+{
+    string path = GetArgValue(args, "--path") ?? Path.Combine(ProfileStore.ProfilesDirectory, "example.json");
+
+    try
+    {
+        ProfileStore.Save(ProfileStore.CreateExample(), path);
+        Console.WriteLine($"Example profile saved: {path}");
+        Console.WriteLine("Includes: rapid fire Cross while L1+R1 is held, Touchpad+Triangle as Options, and an L2 demo combo.");
+        Console.WriteLine("Use it with: PadScope.Cli virtual [--vid XXXX] [--pid XXXX] --profile \"path\"");
+    }
+    catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException or ArgumentException)
+    {
+        Console.Error.WriteLine($"Could not save the example profile: {ex.Message}");
+        Environment.ExitCode = 1;
+    }
+}
+
 static bool TrySelectDevice(
     IControllerScanner scanner,
     string[] args,
@@ -424,7 +446,7 @@ static void RunStage(IControllerScanner scanner, string[] args)
 {
     if (args.Length < 2 || !int.TryParse(args[1], out int stageNumber) || !Enum.IsDefined(typeof(TestStage), stageNumber))
     {
-        Console.Error.WriteLine("Usage: PadScope.Cli run-stage <0-16>");
+        Console.Error.WriteLine("Usage: PadScope.Cli run-stage <0-17>");
         Environment.ExitCode = 1;
         return;
     }
@@ -482,6 +504,13 @@ static void RunStage(IControllerScanner scanner, string[] args)
     {
         Console.WriteLine("Implemented: requires a connected DS4-like controller.");
         Console.WriteLine("Run: PadScope.Cli mouse [--vid XXXX] [--pid XXXX] [--touch] [--gyro] [--sensitivity 1]");
+        return;
+    }
+
+    if (stage is TestStage.Macros)
+    {
+        Console.WriteLine("Implemented: requires the ViGEmBus driver, a connected controller, and a profile with macros.");
+        Console.WriteLine("Run: PadScope.Cli profile-example [--path file.json], then virtual --profile file.json");
         return;
     }
 
@@ -565,8 +594,9 @@ static void PrintHelp()
     Console.WriteLine("  lightbar [--vid XXXX] [--pid XXXX] [--color RRGGBB] [--seconds 1]");
     Console.WriteLine("  virtual [--vid XXXX] [--pid XXXX] [--target ds4|xbox360] [--profile path.json]   Mirror the pad as a virtual controller");
     Console.WriteLine("  mouse [--vid XXXX] [--pid XXXX] [--touch] [--gyro] [--sensitivity 1]   Drive the Windows mouse from touchpad and gyro");
+    Console.WriteLine("  profile-example [--path file.json]   Save a profile with combos, rapid fire, and a sequence");
     Console.WriteLine("  stages                     Print implemented and locked stage status");
-    Console.WriteLine("  run-stage <0-16>           Run a safe implemented stage, or explain a locked stage");
+    Console.WriteLine("  run-stage <0-17>           Run a safe implemented stage, or explain a locked stage");
     Console.WriteLine("  run-safe                   Run all safe implemented stage checks");
     Console.WriteLine("  package                    Print Windows package instructions");
     Console.WriteLine("  help                       Show help");

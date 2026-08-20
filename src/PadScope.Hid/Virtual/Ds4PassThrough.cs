@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using PadScope.Core.Input;
 
 namespace PadScope.Hid.Virtual;
@@ -7,6 +8,8 @@ public sealed class Ds4PassThrough : IDisposable
     private readonly Ds4ControllerSession _physical;
     private readonly IVirtualControllerTarget _virtual;
     private readonly ControllerProfile? _profile;
+    private readonly MacroProcessor? _macros;
+    private readonly Stopwatch _macroClock = new();
     private readonly System.Threading.Timer? _rumbleResetTimer;
     private bool _disposed;
 
@@ -18,6 +21,10 @@ public sealed class Ds4PassThrough : IDisposable
         _physical = physical;
         _virtual = virtualTarget;
         _profile = profile;
+        _macros = profile is not null &&
+                  (profile.Macros.Count > 0 || profile.Sequences.Count > 0)
+            ? new MacroProcessor(profile.Macros, profile.Sequences)
+            : null;
 
         _physical.StateUpdated += ForwardInput;
         _virtual.FeedbackReceived += ForwardFeedback;
@@ -36,7 +43,13 @@ public sealed class Ds4PassThrough : IDisposable
             return false;
         }
 
-        return _physical.TryStart(out error);
+        if (!_physical.TryStart(out error))
+        {
+            return false;
+        }
+
+        _macroClock.Restart();
+        return true;
     }
 
     public void Stop()
@@ -48,6 +61,21 @@ public sealed class Ds4PassThrough : IDisposable
     private void ForwardInput(Ds4InputState state)
     {
         Ds4InputState output = _profile is null ? state : Ds4Remapper.Apply(_profile, state);
+
+        if (_macros is not null)
+        {
+            TimeSpan elapsed = _macroClock.Elapsed;
+            _macroClock.Restart();
+
+            if (elapsed > TimeSpan.FromMilliseconds(250))
+            {
+                elapsed = TimeSpan.FromMilliseconds(250);
+            }
+
+            Ds4Buttons buttons = _macros.Process(output.Buttons, elapsed);
+            output = output with { Buttons = buttons };
+        }
+
         _virtual.Update(output);
     }
 

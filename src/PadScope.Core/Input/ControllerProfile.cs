@@ -28,4 +28,7 @@ public sealed record ControllerProfile
 
     public bool ApplyRumble { get; init; } = true;
     public bool ApplyLightbar { get; init; } = true;
+
+    public IReadOnlyList<MacroDefinition> Macros { get; init; } = Array.Empty<MacroDefinition>();
+    public IReadOnlyList<MacroSequence> Sequences { get; init; } = Array.Empty<MacroSequence>();
 }

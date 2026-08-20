@@ -19,5 +19,6 @@ public enum DiagnosticFeature
     VirtualControllerOutput,
     RemappingProfiles,
     TouchpadMouseEmulation,
-    GyroMouseEmulation
+    GyroMouseEmulation,
+    MacroEmulation
 }

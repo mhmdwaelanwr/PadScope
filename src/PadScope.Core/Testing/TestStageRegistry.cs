@@ -139,6 +139,14 @@ public static class TestStageRegistry
             "Drive the Windows mouse from the gyroscope with sensitivity, inversion, and smoothing.",
             "Use the Mouse Lab tab or the CLI mouse command with --gyro.",
             "Tilting the controller moves the mouse and tuning settings change the feel."
+        ),
+        new TestStageDefinition(
+            TestStage.Macros,
+            "Macros and combos",
+            "Implemented - requires ViGEmBus and a profile with macros",
+            "Turn button chords into actions: send buttons, rapid fire, toggle latches, and timed sequences.",
+            "Save a profile with macros (profile-example creates one), then start virtual passthrough with --profile.",
+            "Combo triggers emit their mapped output on the virtual pad, rapid fire pulses at the configured rate, and sequences run their steps in order."
         )
     };
 }
