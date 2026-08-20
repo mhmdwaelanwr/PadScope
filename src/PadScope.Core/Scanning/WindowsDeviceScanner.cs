@@ -98,33 +98,44 @@ public sealed class WindowsDeviceScanner : IControllerScanner
 
     private static IEnumerable<ControllerDevice> ScanGameControllers()
     {
-        using ManagementObjectSearcher searcher = new(
-            "SELECT Name, Manufacturer, DeviceID, PNPDeviceID FROM Win32_GameController"
-        );
+        List<ControllerDevice> results = new();
 
-        foreach (ManagementObject item in searcher.Get().OfType<ManagementObject>())
+        try
         {
-            string name = ReadString(item, "Name") ?? string.Empty;
-            string pnpDeviceId = ReadString(item, "PNPDeviceID") ?? ReadString(item, "DeviceID") ?? string.Empty;
-            string manufacturer = ReadString(item, "Manufacturer") ?? string.Empty;
-
-            if (string.IsNullOrWhiteSpace(name) && string.IsNullOrWhiteSpace(pnpDeviceId))
-            {
-                continue;
-            }
-
-            (string? vendorId, string? productId) = ExtractVidPid(pnpDeviceId);
-
-            yield return new ControllerDevice(
-                DisplayName: string.IsNullOrWhiteSpace(name) ? "Game controller" : name,
-                Manufacturer: string.IsNullOrWhiteSpace(manufacturer) ? null : manufacturer,
-                VendorId: vendorId,
-                ProductId: productId,
-                DevicePath: string.IsNullOrWhiteSpace(pnpDeviceId) ? null : pnpDeviceId,
-                ConnectionType: InferConnectionType(pnpDeviceId),
-                Source: "Win32_GameController"
+            using ManagementObjectSearcher searcher = new(
+                "SELECT Name, Manufacturer, DeviceID, PNPDeviceID FROM Win32_GameController"
             );
+
+            foreach (ManagementObject item in searcher.Get().OfType<ManagementObject>())
+            {
+                string name = ReadString(item, "Name") ?? string.Empty;
+                string pnpDeviceId = ReadString(item, "PNPDeviceID") ?? ReadString(item, "DeviceID") ?? string.Empty;
+                string manufacturer = ReadString(item, "Manufacturer") ?? string.Empty;
+
+                if (string.IsNullOrWhiteSpace(name) && string.IsNullOrWhiteSpace(pnpDeviceId))
+                {
+                    continue;
+                }
+
+                (string? vendorId, string? productId) = ExtractVidPid(pnpDeviceId);
+
+                results.Add(new ControllerDevice(
+                    DisplayName: string.IsNullOrWhiteSpace(name) ? "Game controller" : name,
+                    Manufacturer: string.IsNullOrWhiteSpace(manufacturer) ? null : manufacturer,
+                    VendorId: vendorId,
+                    ProductId: productId,
+                    DevicePath: string.IsNullOrWhiteSpace(pnpDeviceId) ? null : pnpDeviceId,
+                    ConnectionType: InferConnectionType(pnpDeviceId),
+                    Source: "Win32_GameController"
+                ));
+            }
         }
+        catch (ManagementException)
+        {
+            // Win32_GameController is not available on every Windows build.
+        }
+
+        return results;
     }
 
     private static List<string> EnumerateGameControllerDeviceIds()

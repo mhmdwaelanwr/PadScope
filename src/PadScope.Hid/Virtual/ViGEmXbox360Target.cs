@@ -37,7 +37,11 @@ public sealed class ViGEmXbox360Target : IVirtualControllerTarget
                 _pad.FeedbackReceived -= OnFeedback;
             }
 
-            _pad?.Dispose();
+            _pad?.Disconnect();
+            if (_pad is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
             _pad = null;
             _client?.Dispose();
             _client = null;
@@ -67,7 +71,10 @@ public sealed class ViGEmXbox360Target : IVirtualControllerTarget
 
         _isConnected = false;
 
-        _pad?.Dispose();
+        if (_pad is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
         _pad = null;
         _client?.Dispose();
         _client = null;

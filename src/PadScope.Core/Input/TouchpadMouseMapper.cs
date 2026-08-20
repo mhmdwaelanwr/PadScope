@@ -91,15 +91,15 @@ public sealed class TouchpadMouseMapper
             int scaledX = (int)Math.Round(dx * _settings.Sensitivity);
             int scaledY = (int)Math.Round(dy * _settings.Sensitivity);
 
-            if (scaledX != 0 || scaledY != 0)
-            {
-                sink.Send(new MouseAction(MouseActionKind.Move, scaledX, scaledY));
-            }
-
             if (!_dragHeld && !_padHeld && _totalMove > _settings.TapThreshold)
             {
                 sink.Send(Down(MouseButton.Left));
                 _dragHeld = true;
+            }
+
+            if (scaledX != 0 || scaledY != 0)
+            {
+                sink.Send(new MouseAction(MouseActionKind.Move, scaledX, scaledY));
             }
         }
         else if (_lastX is not null)

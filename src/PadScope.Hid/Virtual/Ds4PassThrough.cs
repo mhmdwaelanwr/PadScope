@@ -102,7 +102,7 @@ public sealed class Ds4PassThrough : IDisposable
             return;
         }
 
-        _physical.TrySendRumble(0, 0, out _);
+        _physical.TrySendRumble((byte)0, (byte)0, out string? _);
     }
 
     public void Dispose()

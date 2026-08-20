@@ -58,7 +58,7 @@ public class ProfileStoreTests
     {
         string path = Path.Combine(Path.GetTempPath(), "padscope-missing-profile.json");
 
-        Assert.Throws<IOException>(() => ProfileStore.Load(path));
+        Assert.ThrowsAny<IOException>(() => ProfileStore.Load(path));
     }
 
     [Fact]

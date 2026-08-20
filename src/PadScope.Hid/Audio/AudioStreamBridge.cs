@@ -280,7 +280,7 @@ public sealed class AudioStreamBridge : IDisposable
             foreach (var device in devices)
             {
                 if (device.FriendlyName.Contains(info.Name, StringComparison.OrdinalIgnoreCase) ||
-                    device.DeviceID.Contains(info.PnpDeviceId, StringComparison.OrdinalIgnoreCase))
+                    device.ID.Contains(info.PnpDeviceId, StringComparison.OrdinalIgnoreCase))
                 {
                     return device;
                 }

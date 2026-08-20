@@ -67,7 +67,7 @@ public sealed class WindowsMouseSink : IMouseSink
                     MouseData = mouseData,
                     Flags = flags,
                     Time = 0,
-                    ExtraInfo = UIntPtr.Zero
+                    ExtraInfo = IntPtr.Zero
                 }
             }
         };

@@ -434,7 +434,7 @@ static void RunAudioList()
         foreach (var device in devices)
         {
             string name = device.FriendlyName;
-            string id = device.DeviceID;
+            string id = device.ID;
             string flow = device.DataFlow.ToString();
 
             bool isController = name.Contains("DualShock", StringComparison.OrdinalIgnoreCase) ||

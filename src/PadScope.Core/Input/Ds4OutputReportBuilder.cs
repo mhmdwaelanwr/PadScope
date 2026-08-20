@@ -23,9 +23,9 @@ public static class Ds4OutputReportBuilder
 
         byte[] report = new byte[reportLength];
 
-        report[0] = connectionType == ConnectionType.Bluetooth
+        report[0] = (byte)(connectionType == ConnectionType.Bluetooth
             ? BluetoothOutputReportId
-            : UsbOutputReportId;
+            : UsbOutputReportId);
 
         report[1] = rumbleSmall;
         report[2] = rumbleLarge;

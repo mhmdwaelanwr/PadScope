@@ -22,6 +22,7 @@ public class Ds4ReportParserTests
             report[2] = 0x80;
             report[3] = 0x80;
             report[4] = 0x80;
+            report[8] = 0x08;
         });
 
         Ds4InputState state = Ds4ReportParser.Parse(report);
@@ -97,7 +98,7 @@ public class Ds4ReportParserTests
     {
         byte[] report = BuildUsbReport(report =>
         {
-            report[8] = 0x30;
+            report[8] = 0x38;
         });
 
         Ds4InputState state = Ds4ReportParser.Parse(report);
@@ -174,7 +175,7 @@ public class Ds4ReportParserTests
 
         Ds4InputState state = Ds4ReportParser.Parse(report);
 
-        Assert.Equal(5, state.BatteryLevel);
+        Assert.Equal((byte?)5, state.BatteryLevel);
         Assert.True(state.Charging);
     }
 

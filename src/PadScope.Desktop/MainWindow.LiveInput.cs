@@ -154,7 +154,13 @@ public partial class MainWindow
 
     private void ResetOutputButton_Click(object sender, RoutedEventArgs e)
     {
-        if (_liveSession is null || !_liveSession.TryResetOutput(out string? error))
+        if (_liveSession is null)
+        {
+            MessageBox.Show(this, "No active session.", "PadScope", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
+        if (!_liveSession.TryResetOutput(out string? error))
         {
             MessageBox.Show(
                 this,

@@ -9,6 +9,11 @@ public class Ds4ToXboxMapperTests
     {
         byte[] report = new byte[64];
         report[0] = Ds4ReportParser.UsbReportId;
+        report[1] = 0x80;
+        report[2] = 0x80;
+        report[3] = 0x80;
+        report[4] = 0x80;
+        report[8] = 0x08;
         return report;
     }
 

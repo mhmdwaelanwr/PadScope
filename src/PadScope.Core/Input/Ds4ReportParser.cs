@@ -74,6 +74,11 @@ public static class Ds4ReportParser
 
     private static Ds4Buttons ReadButtons(byte[] report)
     {
+        if (report.Length < 10)
+        {
+            return Ds4Buttons.None;
+        }
+
         byte buttons1 = ByteAt(report, 7);
         byte buttons2 = ByteAt(report, 8);
         byte buttons3 = ByteAt(report, 9);
@@ -97,12 +102,12 @@ public static class Ds4ReportParser
         if ((buttons3 & 0x01) != 0) result |= Ds4Buttons.Ps;
         if ((buttons3 & 0x02) != 0) result |= Ds4Buttons.TouchpadClick;
 
-        ApplyDpad(result, buttons2 & 0x0F);
+        ApplyDpad(ref result, (byte)(buttons2 & 0x0F));
 
         return result;
     }
 
-    private static void ApplyDpad(Ds4Buttons result, byte dpadValue)
+    private static void ApplyDpad(ref Ds4Buttons result, byte dpadValue)
     {
         switch (dpadValue)
         {
