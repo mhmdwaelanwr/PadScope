@@ -224,6 +224,11 @@ public partial class MainWindow : Window
     private void AudioSpeakerVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         int volume = (int)e.NewValue;
+        if (AudioSpeakerVolumeText is null || _audioBridge is null)
+        {
+            return;
+        }
+
         AudioSpeakerVolumeText.Text = $"{volume}%";
         _audioBridge.SetSpeakerVolume(volume);
     }
@@ -231,6 +236,11 @@ public partial class MainWindow : Window
     private void AudioMicVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         int volume = (int)e.NewValue;
+        if (AudioMicVolumeText is null || _audioBridge is null)
+        {
+            return;
+        }
+
         AudioMicVolumeText.Text = $"{volume}%";
         _audioBridge.SetMicVolume(volume);
     }
