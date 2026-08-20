@@ -420,29 +420,39 @@ public partial class MainWindow : Window
         LastScanText.Text = _reports.Count == 0 ? "Never" : DateTime.Now.ToString("HH:mm:ss");
     }
 
+    private static readonly (string Key, string Light, string Dark)[] ThemeColors =
+    [
+        ("C_Background",  "#F8FAFC", "#0A0F1A"),
+        ("C_Card",        "#FFFFFF", "#111827"),
+        ("C_CardAlt",     "#F1F5F9", "#1F2937"),
+        ("C_Border",      "#CBD5E1", "#374151"),
+        ("C_Primary",     "#0891B2", "#06B6D4"),
+        ("C_PrimaryDim",  "#0E7490", "#0E7490"),
+        ("C_Text",        "#0F172A", "#F1F5F9"),
+        ("C_TextDim",     "#64748B", "#94A3B8"),
+        ("C_Success",     "#059669", "#10B981"),
+        ("C_Warning",     "#D97706", "#F59E0B"),
+        ("C_Danger",      "#DC2626", "#EF4444"),
+    ];
+
     private void ApplyDarkTheme()
     {
-        LoadTheme("pack://application:,,,/PadScope.Desktop;component/Themes/DarkTheme.xaml");
+        foreach (var (key, _, dark) in ThemeColors)
+        {
+            Application.Current.Resources[key] = (Color)ColorConverter.ConvertFromString(dark);
+        }
         ThemeButton.Content = "Light";
         Background = (Brush)Application.Current.Resources["B_Background"];
     }
 
     private void ApplyLightTheme()
     {
-        LoadTheme("pack://application:,,,/PadScope.Desktop;component/Themes/LightTheme.xaml");
+        foreach (var (key, light, _) in ThemeColors)
+        {
+            Application.Current.Resources[key] = (Color)ColorConverter.ConvertFromString(light);
+        }
         ThemeButton.Content = "Dark";
         Background = (Brush)Application.Current.Resources["B_Background"];
-    }
-
-    private static void LoadTheme(string packUri)
-    {
-        var dicts = Application.Current.Resources.MergedDictionaries;
-        var newDict = new ResourceDictionary { Source = new Uri(packUri) };
-        dicts.Insert(0, newDict);
-        for (int i = dicts.Count - 1; i >= 1; i--)
-        {
-            dicts.RemoveAt(i);
-        }
     }
 }
 

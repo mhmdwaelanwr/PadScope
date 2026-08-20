@@ -3,10 +3,234 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <ResourceDictionary>
-            <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="pack://application:,,,/PadScope.Desktop;component/Themes/DarkTheme.xaml" />
-            </ResourceDictionary.MergedDictionaries>
-        </ResourceDictionary>
+
+        <!-- Default = Dark colors -->
+        <Color x:Key="C_Background">#0A0F1A</Color>
+        <Color x:Key="C_Card">#111827</Color>
+        <Color x:Key="C_CardAlt">#1F2937</Color>
+        <Color x:Key="C_Border">#374151</Color>
+        <Color x:Key="C_Primary">#06B6D4</Color>
+        <Color x:Key="C_PrimaryDim">#0E7490</Color>
+        <Color x:Key="C_Text">#F1F5F9</Color>
+        <Color x:Key="C_TextDim">#94A3B8</Color>
+        <Color x:Key="C_Success">#10B981</Color>
+        <Color x:Key="C_Warning">#F59E0B</Color>
+        <Color x:Key="C_Danger">#EF4444</Color>
+
+        <SolidColorBrush x:Key="B_Background" Color="{DynamicResource C_Background}" />
+        <SolidColorBrush x:Key="B_Card" Color="{DynamicResource C_Card}" />
+        <SolidColorBrush x:Key="B_CardAlt" Color="{DynamicResource C_CardAlt}" />
+        <SolidColorBrush x:Key="B_Border" Color="{DynamicResource C_Border}" />
+        <SolidColorBrush x:Key="B_Primary" Color="{DynamicResource C_Primary}" />
+        <SolidColorBrush x:Key="B_PrimaryDim" Color="{DynamicResource C_PrimaryDim}" />
+        <SolidColorBrush x:Key="B_Text" Color="{DynamicResource C_Text}" />
+        <SolidColorBrush x:Key="B_TextDim" Color="{DynamicResource C_TextDim}" />
+        <SolidColorBrush x:Key="B_Success" Color="{DynamicResource C_Success}" />
+        <SolidColorBrush x:Key="B_Warning" Color="{DynamicResource C_Warning}" />
+        <SolidColorBrush x:Key="B_Danger" Color="{DynamicResource C_Danger}" />
+        <SolidColorBrush x:Key="B_White" Color="White" />
+
+        <!-- Window -->
+        <Style TargetType="Window">
+            <Setter Property="Background" Value="{DynamicResource B_Background}" />
+            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+            <Setter Property="FontFamily" Value="Segoe UI" />
+        </Style>
+
+        <!-- TextBlock -->
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+        </Style>
+        <Style x:Key="Dim" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource B_TextDim}" />
+        </Style>
+        <Style x:Key="Accent" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource B_Primary}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <!-- Cards -->
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource B_Card}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="Padding" Value="18" />
+        </Style>
+        <Style x:Key="CardAlt" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource B_CardAlt}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="14" />
+        </Style>
+
+        <!-- Primary button -->
+        <Style TargetType="Button">
+            <Setter Property="Height" Value="36" />
+            <Setter Property="MinWidth" Value="90" />
+            <Setter Property="Padding" Value="14,0" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Background" Value="{DynamicResource B_PrimaryDim}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource B_Primary}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource B_Primary}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="b" Property="Opacity" Value="0.75" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="b" Property="Opacity" Value="0.35" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Secondary button -->
+        <Style x:Key="Sec" TargetType="Button">
+            <Setter Property="Height" Value="36" />
+            <Setter Property="MinWidth" Value="70" />
+            <Setter Property="Padding" Value="12,0" />
+            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+            <Setter Property="Background" Value="{DynamicResource B_CardAlt}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource B_Primary}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="b" Property="Opacity" Value="0.7" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="b" Property="Opacity" Value="0.3" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PadBtn" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Padding" Value="0" />
+        </Style>
+
+        <!-- DataGrid -->
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="GridLinesVisibility" Value="None" />
+            <Setter Property="HeadersVisibility" Value="Column" />
+            <Setter Property="RowBackground" Value="Transparent" />
+            <Setter Property="AlternatingRowBackground" Value="{DynamicResource B_CardAlt}" />
+            <Setter Property="CanUserAddRows" Value="False" />
+            <Setter Property="CanUserDeleteRows" Value="False" />
+            <Setter Property="SelectionMode" Value="Single" />
+            <Setter Property="SelectionUnit" Value="FullRow" />
+        </Style>
+        <Style TargetType="DataGridCell">
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+            <Setter Property="Padding" Value="8,5" />
+        </Style>
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="{DynamicResource B_CardAlt}" />
+            <Setter Property="Foreground" Value="{DynamicResource B_TextDim}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="Padding" Value="10,7" />
+            <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+        </Style>
+
+        <!-- Tabs -->
+        <Style TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+        </Style>
+        <Style TargetType="TabItem">
+            <Setter Property="Foreground" Value="{DynamicResource B_TextDim}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="16,10" />
+            <Setter Property="Margin" Value="0,0,3,0" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="12.5" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="tb" Background="Transparent" Padding="16,10" CornerRadius="8,8,0,0">
+                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="tb" Property="Background" Value="{DynamicResource B_CardAlt}" />
+                                <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="tb" Property="Background" Value="{DynamicResource B_Card}" />
+                                <Setter Property="Foreground" Value="{DynamicResource B_Primary}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Inputs -->
+        <Style TargetType="ComboBox">
+            <Setter Property="Background" Value="{DynamicResource B_CardAlt}" />
+            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="8,5" />
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource B_CardAlt}" />
+            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="CaretBrush" Value="{DynamicResource B_Primary}" />
+        </Style>
+        <Style TargetType="Slider">
+            <Setter Property="Foreground" Value="{DynamicResource B_Primary}" />
+            <Setter Property="Background" Value="{DynamicResource B_CardAlt}" />
+        </Style>
+        <Style TargetType="ProgressBar">
+            <Setter Property="Foreground" Value="{DynamicResource B_Primary}" />
+            <Setter Property="Background" Value="{DynamicResource B_CardAlt}" />
+        </Style>
+        <Style TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+        </Style>
+
     </Application.Resources>
 </Application>
