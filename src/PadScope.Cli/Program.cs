@@ -6,6 +6,7 @@ using PadScope.Core.Models;
 using PadScope.Core.Scanning;
 using PadScope.Core.Testing;
 using PadScope.Hid;
+using PadScope.Hid.Audio;
 using PadScope.Hid.Mouse;
 using PadScope.Hid.Virtual;
 
@@ -37,6 +38,10 @@ switch (command)
 
     case "mouse":
         RunMouse(scanner, args);
+        break;
+
+    case "audio":
+        RunAudio(args);
         break;
 
     case "profile-example":
@@ -340,6 +345,132 @@ static void RunMouse(IControllerScanner scanner, string[] args)
     WaitForCtrlC();
 }
 
+static void RunAudio(string[] args)
+{
+    if (!OperatingSystem.IsWindows())
+    {
+        Console.Error.WriteLine("Audio Lab requires Windows (WASAPI).");
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    bool probe = args.Any(arg => arg.Equals("--probe", StringComparison.OrdinalIgnoreCase));
+    bool list = args.Any(arg => arg.Equals("--list", StringComparison.OrdinalIgnoreCase));
+
+    if (probe)
+    {
+        RunAudioProbe();
+        return;
+    }
+
+    if (list)
+    {
+        RunAudioList();
+        return;
+    }
+
+    Console.WriteLine("PadScope Audio Lab");
+    Console.WriteLine("==================");
+    Console.WriteLine();
+    Console.WriteLine("Commands:");
+    Console.WriteLine("  padscope audio --probe    Probe DS4/DualSense audio endpoints (WMI).");
+    Console.WriteLine("  padscope audio --list     List controller audio devices (WASAPI).");
+    Console.WriteLine();
+    Console.WriteLine("In the Desktop app, use the Audio Lab tab for full streaming controls.");
+}
+
+static void RunAudioProbe()
+{
+    Console.WriteLine("Probing controller audio endpoints...");
+    Console.WriteLine();
+
+    var endpoints = AudioProbe.FindControllerAudioEndpoints();
+
+    if (endpoints.Count == 0)
+    {
+        Console.WriteLine("No controller audio endpoints detected.");
+        Console.WriteLine("Connect a DS4/DualSense via USB or Bluetooth with audio support.");
+        return;
+    }
+
+    Console.WriteLine($"Found {endpoints.Count} audio endpoint(s):");
+    Console.WriteLine();
+
+    foreach (var ep in endpoints)
+    {
+        string marker = ep.IsControllerLike ? "[CONTROLLER]" : "[OTHER]";
+        Console.WriteLine($"  {marker} {ep.Name}");
+        Console.WriteLine($"    Device ID: {ep.DeviceId}");
+        Console.WriteLine($"    PNP ID:    {ep.PnpDeviceId}");
+        Console.WriteLine($"    Status:    {ep.Status}");
+        Console.WriteLine();
+    }
+
+    var speakers = AudioProbe.FindControllerSpeakers();
+    var mics = AudioProbe.FindControllerMicrophones();
+
+    Console.WriteLine($"Summary: {speakers.Count} speaker(s), {mics.Count} microphone(s).");
+    Console.WriteLine(AudioProbe.DescribeStatus());
+}
+
+static void RunAudioList()
+{
+    if (!OperatingSystem.IsWindows())
+    {
+        Console.Error.WriteLine("Audio device listing requires Windows (WASAPI).");
+        return;
+    }
+
+    Console.WriteLine("Listing controller audio devices via WASAPI...");
+    Console.WriteLine();
+
+    try
+    {
+        var enumerator = new NAudio.CoreAudioApi.MMDeviceEnumerator();
+        var devices = enumerator.EnumerateAudioEndPoints(NAudio.CoreAudioApi.DataFlow.All, NAudio.CoreAudioApi.DeviceState.Active);
+
+        int count = 0;
+
+        foreach (var device in devices)
+        {
+            string name = device.FriendlyName;
+            string id = device.DeviceID;
+            string flow = device.DataFlow.ToString();
+
+            bool isController = name.Contains("DualShock", StringComparison.OrdinalIgnoreCase) ||
+                                name.Contains("DS4", StringComparison.OrdinalIgnoreCase) ||
+                                name.Contains("DualSense", StringComparison.OrdinalIgnoreCase) ||
+                                name.Contains("Wireless Controller", StringComparison.OrdinalIgnoreCase) ||
+                                name.Contains("Sony", StringComparison.OrdinalIgnoreCase);
+
+            if (isController)
+            {
+                Console.WriteLine($"  [CONTROLLER] {name}");
+                Console.WriteLine($"    Flow: {flow}");
+                Console.WriteLine($"    ID:   {id}");
+                Console.WriteLine();
+                count++;
+            }
+
+            device.Dispose();
+        }
+
+        if (count == 0)
+        {
+            Console.WriteLine("No controller audio devices found in WASAPI.");
+            Console.WriteLine("The controller may not have audio support or is not connected.");
+        }
+        else
+        {
+            Console.WriteLine($"Found {count} controller audio device(s).");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.Error.WriteLine($"WASAPI enumeration failed: {ex.Message}");
+    }
+}
+
 static void RunProfileExample(string[] args)
 {
     string path = GetArgValue(args, "--path") ?? Path.Combine(ProfileStore.ProfilesDirectory, "example.json");
@@ -439,7 +570,7 @@ static void RunSafeStageSuite(IControllerScanner scanner)
         Console.WriteLine("-------------------------");
     }
 
-    Console.WriteLine("Locked stages intentionally skipped: 5, 6, 7, 8, 10.");
+    Console.WriteLine("Locked stages intentionally skipped: 5, 6, 7, 8. Stage 10 (Audio) requires a controller.");
 }
 
 static void RunStage(IControllerScanner scanner, string[] args)
@@ -504,6 +635,16 @@ static void RunStage(IControllerScanner scanner, string[] args)
     {
         Console.WriteLine("Implemented: requires a connected DS4-like controller.");
         Console.WriteLine("Run: PadScope.Cli mouse [--vid XXXX] [--pid XXXX] [--touch] [--gyro] [--sensitivity 1]");
+        return;
+    }
+
+    if (stage is TestStage.AudioProbe)
+    {
+        Console.WriteLine("Implemented: probe and list controller audio endpoints.");
+        Console.WriteLine("Run: PadScope.Cli audio --probe   (WMI probe)");
+        Console.WriteLine("Run: PadScope.Cli audio --list    (WASAPI device list)");
+        Console.WriteLine();
+        Console.WriteLine(AudioProbe.DescribeStatus());
         return;
     }
 
@@ -594,6 +735,7 @@ static void PrintHelp()
     Console.WriteLine("  lightbar [--vid XXXX] [--pid XXXX] [--color RRGGBB] [--seconds 1]");
     Console.WriteLine("  virtual [--vid XXXX] [--pid XXXX] [--target ds4|xbox360] [--profile path.json]   Mirror the pad as a virtual controller");
     Console.WriteLine("  mouse [--vid XXXX] [--pid XXXX] [--touch] [--gyro] [--sensitivity 1]   Drive the Windows mouse from touchpad and gyro");
+    Console.WriteLine("  audio [--probe] [--list]   Probe and list controller audio endpoints");
     Console.WriteLine("  profile-example [--path file.json]   Save a profile with combos, rapid fire, and a sequence");
     Console.WriteLine("  stages                     Print implemented and locked stage status");
     Console.WriteLine("  run-stage <0-17>           Run a safe implemented stage, or explain a locked stage");

@@ -86,11 +86,11 @@ public static class TestStageRegistry
         ),
         new TestStageDefinition(
             TestStage.AudioProbe,
-            "DS4 Audio Lab probe",
-            "Experimental locked - needs Stage 5 evidence",
-            "Probe DS4-style audio behavior only after safety gates pass.",
-            "Unlock only for a known DS4-like target after explicit experimental confirmation.",
-            "Result is not-run, unsupported, accepted, rejected, or error; nothing runs automatically."
+            "DS4 Audio Lab",
+            "Implemented",
+            "Probe and stream DS4/DualSense audio between controller and Windows via WASAPI.",
+            "Select a controller with audio support, enable capture/playback, and route mic-to-speaker.",
+            "Audio devices are detected, capture/playback routes are established, and status is reported."
         ),
         new TestStageDefinition(
             TestStage.Packaging,

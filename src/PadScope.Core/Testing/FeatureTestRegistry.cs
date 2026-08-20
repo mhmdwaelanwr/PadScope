@@ -109,23 +109,23 @@ public static class FeatureTestRegistry
             DiagnosticFeature.Ds4AudioProbe,
             "DS4 audio probe",
             TestStage.AudioProbe,
-            RiskLevel.Experimental,
+            RiskLevel.Controlled,
             RequiresSelectedDevice: true,
             RequiresUserConfirmation: true,
-            EnabledByDefault: false,
+            EnabledByDefault: true,
             Goal: "Probe DS4-style audio behavior on an identified DS4-like target.",
             PassCriteria: "Result is not-run, unsupported, accepted, rejected, or error."
         ),
         new FeatureTestDefinition(
             DiagnosticFeature.Ds4AudioStreaming,
-            "DS4 audio streaming experiment",
+            "DS4 audio streaming",
             TestStage.AudioProbe,
-            RiskLevel.Experimental,
+            RiskLevel.Controlled,
             RequiresSelectedDevice: true,
             RequiresUserConfirmation: true,
-            EnabledByDefault: false,
-            Goal: "Research DS4-style audio streaming after probe support is known.",
-            PassCriteria: "Experiment is opt-in, interruptible, and never part of normal scan."
+            EnabledByDefault: true,
+            Goal: "Stream audio between DS4 speaker/microphone and Windows audio endpoints via WASAPI.",
+            PassCriteria: "Capture and playback routes are established, interruptible, and report real device names."
         ),
         new FeatureTestDefinition(
             DiagnosticFeature.VirtualControllerOutput,

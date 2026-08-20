@@ -508,27 +508,68 @@
             </TabItem>
 
             <TabItem Header="Audio Lab">
-                <Border Style="{StaticResource Card}" Margin="0,16,0,0">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                <Grid Margin="0,16,0,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Style="{StaticResource Card}" Padding="16">
                         <StackPanel>
-                            <TextBlock Text="Audio Lab" FontSize="24" FontWeight="Black" />
-                            <TextBlock Text="DS4-style speaker/headset audio probing is experimental. It stays locked until the scanner identifies a safe target." Style="{StaticResource MutedText}" Margin="0,8,0,18" TextWrapping="Wrap" />
-                            <Border Style="{StaticResource SoftCard}" MaxWidth="760" HorizontalAlignment="Left">
-                                <TextBlock Text="Locked by design: no speaker/headset packets, no raw HID output, and no continuous audio stream until USB/Bluetooth identity evidence is collected." TextWrapping="Wrap" Style="{StaticResource MutedText}" />
-                            </Border>
+                            <TextBlock Text="DS4 / DualSense Audio Lab" FontSize="24" FontWeight="Black" />
+                            <TextBlock Text="Stream audio between the controller speaker/microphone and Windows via WASAPI. Requires a controller with audio support (USB or Bluetooth)." Style="{StaticResource MutedText}" Margin="0,8,0,14" TextWrapping="Wrap" />
+
+                            <StackPanel Orientation="Horizontal">
+                                <Button x:Name="AudioRefreshButton" Content="Refresh Devices" Width="140" Click="AudioRefreshButton_Click" />
+                                <TextBlock x:Name="AudioDeviceCountText" Style="{StaticResource MutedText}" VerticalAlignment="Center" Margin="14,0,0,0" Text="No devices scanned." />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                <TextBlock Text="Speaker:" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                                <ComboBox x:Name="AudioSpeakerComboBox" Width="360" Margin="10,0,0,0" VerticalAlignment="Center" DisplayMemberPath="Name" />
+                                <TextBlock Text="Volume:" Style="{StaticResource MutedText}" VerticalAlignment="Center" Margin="14,0,0,0" />
+                                <Slider x:Name="AudioSpeakerVolumeSlider" Width="140" Minimum="0" Maximum="100" Value="80" Margin="8,0,0,0" VerticalAlignment="Center" ValueChanged="AudioSpeakerVolumeSlider_ValueChanged" />
+                                <TextBlock x:Name="AudioSpeakerVolumeText" Style="{StaticResource MutedText}" VerticalAlignment="Center" Margin="6,0,0,0" Text="80%" />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                <TextBlock Text="Microphone:" Style="{StaticResource MutedText}" VerticalAlignment="Center" />
+                                <ComboBox x:Name="AudioMicComboBox" Width="360" Margin="10,0,0,0" VerticalAlignment="Center" DisplayMemberPath="Name" />
+                                <TextBlock Text="Volume:" Style="{StaticResource MutedText}" VerticalAlignment="Center" Margin="14,0,0,0" />
+                                <Slider x:Name="AudioMicVolumeSlider" Width="140" Minimum="0" Maximum="100" Value="80" Margin="8,0,0,0" VerticalAlignment="Center" ValueChanged="AudioMicVolumeSlider_ValueChanged" />
+                                <TextBlock x:Name="AudioMicVolumeText" Style="{StaticResource MutedText}" VerticalAlignment="Center" Margin="6,0,0,0" Text="80%" />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                <Button x:Name="AudioCaptureStartButton" Content="Start Capture (Mic)" Width="170" Click="AudioCaptureStartButton_Click" />
+                                <Button x:Name="AudioCaptureStopButton" Content="Stop Capture" Width="120" Margin="10,0,0,0" Style="{StaticResource SecondaryButton}" Click="AudioCaptureStopButton_Click" IsEnabled="False" />
+                                <Button x:Name="AudioPlaybackStartButton" Content="Start Playback (Speaker)" Width="190" Margin="14,0,0,0" Click="AudioPlaybackStartButton_Click" />
+                                <Button x:Name="AudioPlaybackStopButton" Content="Stop Playback" Width="130" Margin="10,0,0,0" Style="{StaticResource SecondaryButton}" Click="AudioPlaybackStopButton_Click" IsEnabled="False" />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                                <Button x:Name="AudioRouteButton" Content="Route Mic → Speaker" Width="180" Click="AudioRouteButton_Click" />
+                                <TextBlock x:Name="AudioRouteStatusText" Style="{StaticResource MutedText}" VerticalAlignment="Center" Margin="14,0,0,0" Text="Not routed." />
+                            </StackPanel>
+
+                            <TextBlock x:Name="AudioStatusText" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,12,0,0" Text="Click 'Refresh Devices' to detect controller audio endpoints." />
                         </StackPanel>
-                        <Button Grid.Column="1" Content="Open Audio Lab Warning" Width="190" VerticalAlignment="Top" Click="AudioLabButton_Click" />
-                    </Grid>
-                </Border>
+                    </Border>
+
+                    <Border Grid.Row="1" Style="{StaticResource Card}" Margin="0,14,0,0" Padding="16">
+                        <StackPanel>
+                            <TextBlock Text="Audio stream log" Style="{StaticResource AccentText}" />
+                            <ScrollViewer MaxHeight="200" Margin="0,8,0,0">
+                                <TextBlock x:Name="AudioLogText" Style="{StaticResource MutedText}" TextWrapping="Wrap" Text="No audio activity yet." />
+                            </ScrollViewer>
+                        </StackPanel>
+                    </Border>
+                </Grid>
             </TabItem>
         </TabControl>
 
         <Border Grid.Row="3" Style="{StaticResource Pill}" Margin="0,16,0,0" HorizontalAlignment="Left">
-            <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap" Text="Phase 1 diagnostics are read-only. Rumble and lightbar are manual, confirmed tests only. Speaker, headset, and raw DS4 audio packets stay locked." />
+            <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap" Text="Phase 1 diagnostics are read-only. Rumble and lightbar are manual, confirmed tests only. Audio Lab streams via WASAPI when controller audio endpoints are detected." />
         </Border>
     </Grid>
 </Window>

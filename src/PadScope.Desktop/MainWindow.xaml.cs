@@ -10,6 +10,7 @@ using PadScope.Core.Models;
 using PadScope.Core.Reports;
 using PadScope.Core.Scanning;
 using PadScope.Core.Testing;
+using PadScope.Hid.Audio;
 
 namespace PadScope.Desktop;
 
@@ -17,6 +18,7 @@ public partial class MainWindow : Window
 {
     private readonly IControllerScanner _scanner = new WindowsDeviceScanner();
     private readonly ObservableCollection<CompatibilityReport> _reports = new();
+    private readonly AudioStreamBridge _audioBridge = new();
     private bool _isLightTheme;
 
     public IReadOnlyList<StageRow> StageRows { get; } = TestStageRegistry.All
@@ -63,6 +65,7 @@ public partial class MainWindow : Window
         UpdateSummary();
         EnableOutputControls(false);
         VirtualStatusText.Text = ViGEmBusDetector.DescribeStatus();
+        _audioBridge.Log += OnAudioBridgeLog;
     }
 
     protected override void OnClosed(EventArgs e)
@@ -71,6 +74,8 @@ public partial class MainWindow : Window
         _liveSession?.Dispose();
         StopVirtualPassthrough();
         StopMouseEmulation();
+        _audioBridge.Log -= OnAudioBridgeLog;
+        _audioBridge.Dispose();
         base.OnClosed(e);
     }
 
@@ -157,15 +162,86 @@ public partial class MainWindow : Window
         StatusText.Text = $"Markdown report exported: {dialog.FileName}";
     }
 
-    private void AudioLabButton_Click(object sender, RoutedEventArgs e)
+    private void AudioRefreshButton_Click(object sender, RoutedEventArgs e)
     {
-        MessageBox.Show(
-            this,
-            "Audio Lab is locked until a known DS4-like target passes identity checks. It will stay manual and opt-in because DS4-style audio packets are experimental, especially on clone controllers.",
-            "PadScope Audio Lab",
-            MessageBoxButton.OK,
-            MessageBoxImage.Information
-        );
+        _audioBridge.RefreshDevices();
+        AudioSpeakerComboBox.ItemsSource = _audioBridge.AvailableSpeakers;
+        AudioMicComboBox.ItemsSource = _audioBridge.AvailableMicrophones;
+        AudioSpeakerComboBox.SelectedIndex = _audioBridge.AvailableSpeakers.Count > 0 ? 0 : -1;
+        AudioMicComboBox.SelectedIndex = _audioBridge.AvailableMicrophones.Count > 0 ? 0 : -1;
+
+        int speakers = _audioBridge.AvailableSpeakers.Count;
+        int mics = _audioBridge.AvailableMicrophones.Count;
+        AudioDeviceCountText.Text = $"Found {speakers} speaker(s), {mics} microphone(s).";
+        AudioStatusText.Text = _audioBridge.DescribeStatus();
+    }
+
+    private void AudioCaptureStartButton_Click(object sender, RoutedEventArgs e)
+    {
+        int micIndex = AudioMicComboBox.SelectedIndex;
+        if (_audioBridge.StartCapture(micIndex >= 0 ? micIndex : 0))
+        {
+            AudioCaptureStartButton.IsEnabled = false;
+            AudioCaptureStopButton.IsEnabled = true;
+            AudioStatusText.Text = _audioBridge.DescribeStatus();
+        }
+    }
+
+    private void AudioCaptureStopButton_Click(object sender, RoutedEventArgs e)
+    {
+        _audioBridge.StopCapture();
+        AudioCaptureStartButton.IsEnabled = true;
+        AudioCaptureStopButton.IsEnabled = false;
+        AudioStatusText.Text = _audioBridge.DescribeStatus();
+    }
+
+    private void AudioPlaybackStartButton_Click(object sender, RoutedEventArgs e)
+    {
+        int speakerIndex = AudioSpeakerComboBox.SelectedIndex;
+        if (_audioBridge.StartPlayback(speakerIndex >= 0 ? speakerIndex : 0))
+        {
+            AudioPlaybackStartButton.IsEnabled = false;
+            AudioPlaybackStopButton.IsEnabled = true;
+            AudioStatusText.Text = _audioBridge.DescribeStatus();
+        }
+    }
+
+    private void AudioPlaybackStopButton_Click(object sender, RoutedEventArgs e)
+    {
+        _audioBridge.StopPlayback();
+        AudioPlaybackStartButton.IsEnabled = true;
+        AudioPlaybackStopButton.IsEnabled = false;
+        AudioStatusText.Text = _audioBridge.DescribeStatus();
+    }
+
+    private void AudioRouteButton_Click(object sender, RoutedEventArgs e)
+    {
+        _audioBridge.RouteMicToSpeaker();
+        AudioRouteStatusText.Text = "Routing active: mic → speaker.";
+        AudioStatusText.Text = _audioBridge.DescribeStatus();
+    }
+
+    private void AudioSpeakerVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        int volume = (int)e.NewValue;
+        AudioSpeakerVolumeText.Text = $"{volume}%";
+        _audioBridge.SetSpeakerVolume(volume);
+    }
+
+    private void AudioMicVolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        int volume = (int)e.NewValue;
+        AudioMicVolumeText.Text = $"{volume}%";
+        _audioBridge.SetMicVolume(volume);
+    }
+
+    private void OnAudioBridgeLog(string message)
+    {
+        Dispatcher.Invoke(() =>
+        {
+            string timestamp = DateTime.Now.ToString("HH:mm:ss");
+            AudioLogText.Text = $"[{timestamp}] {message}\n{AudioLogText.Text}";
+        });
     }
 
     private void CopyDetailsButton_Click(object sender, RoutedEventArgs e)
