@@ -422,46 +422,23 @@ public partial class MainWindow : Window
 
     private void ApplyDarkTheme()
     {
-        SetColor("C_Background", "#060B14");
-        SetColor("C_Card", "#0D1522");
-        SetColor("C_CardAlt", "#121E30");
-        SetColor("C_Border", "#1A2B44");
-        SetColor("C_Primary", "#3B9EFF");
-        SetColor("C_PrimaryDim", "#1A4A7A");
-        SetColor("C_Text", "#DDE4EE");
-        SetColor("C_TextDim", "#6B7D96");
-        SetColor("C_Success", "#2DD4A0");
-        SetColor("C_Warning", "#F5A623");
-        SetColor("C_Danger", "#EF4444");
-
+        LoadTheme("Themes/DarkTheme.xaml");
         ThemeButton.Content = "Light";
         Background = (Brush)Application.Current.Resources["B_Background"];
     }
 
     private void ApplyLightTheme()
     {
-        SetColor("C_Background", "#F0F4F8");
-        SetColor("C_Card", "#FFFFFF");
-        SetColor("C_CardAlt", "#EEF2F7");
-        SetColor("C_Border", "#CBD5E1");
-        SetColor("C_Primary", "#0284C7");
-        SetColor("C_PrimaryDim", "#0369A1");
-        SetColor("C_Text", "#0F172A");
-        SetColor("C_TextDim", "#64748B");
-        SetColor("C_Success", "#15803D");
-        SetColor("C_Warning", "#B45309");
-        SetColor("C_Danger", "#B91C1C");
-
+        LoadTheme("Themes/LightTheme.xaml");
         ThemeButton.Content = "Dark";
         Background = (Brush)Application.Current.Resources["B_Background"];
     }
 
-    private static void SetColor(string key, string hex)
+    private static void LoadTheme(string relativePath)
     {
-        if (ColorConverter.ConvertFromString(hex) is not Color color)
-            return;
-
-        Application.Current.Resources[key] = color;
+        var dict = new ResourceDictionary { Source = new Uri(relativePath, UriKind.Relative) };
+        Application.Current.Resources.MergedDictionaries.Clear();
+        Application.Current.Resources.MergedDictionaries.Add(dict);
     }
 }
 
