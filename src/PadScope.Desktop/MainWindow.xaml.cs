@@ -422,41 +422,47 @@ public partial class MainWindow : Window
 
     private void ApplyDarkTheme()
     {
-        SetResourceBrush("BrushBackground", "#07111F");
-        SetResourceBrush("BrushSurface", "#0F172A");
-        SetResourceBrush("BrushSurfaceAlt", "#162033");
-        SetResourceBrush("BrushSurfaceRaised", "#1E293B");
-        SetResourceBrush("BrushBorder", "#2B3A55");
+        SetResourceBrush("BrushBackground", "#050A12");
+        SetResourceBrush("BrushSurface", "#0C1420");
+        SetResourceBrush("BrushSurfaceAlt", "#111C2E");
+        SetResourceBrush("BrushSurfaceRaised", "#182640");
+        SetResourceBrush("BrushBorder", "#1E3050");
         SetResourceBrush("BrushPrimary", "#38BDF8");
-        SetResourceBrush("BrushPrimaryDark", "#0369A1");
-        SetResourceBrush("BrushText", "#E5E7EB");
-        SetResourceBrush("BrushMuted", "#94A3B8");
-        SetResourceBrush("BrushWarning", "#F59E0B");
-        SetResourceBrush("BrushSuccess", "#22C55E");
-        SetResourceBrush("BrushDanger", "#EF4444");
+        SetResourceBrush("BrushPrimaryDark", "#0C4A6E");
+        SetResourceBrush("BrushText", "#E8ECF1");
+        SetResourceBrush("BrushMuted", "#7B8BA5");
+        SetResourceBrush("BrushWarning", "#FBBF24");
+        SetResourceBrush("BrushSuccess", "#34D399");
+        SetResourceBrush("BrushDanger", "#F87171");
         SetResourceBrush("BrushButtonText", "#FFFFFF");
+        SetResourceBrush("BrushGlass", "#0A1828");
+        SetResourceBrush("BrushGlassBorder", "#1A3050");
+        SetResourceBrush("BrushGlassHighlight", "#142438");
 
-        ThemeButton.Content = "Light mode";
+        ThemeButton.Content = "Light";
         Background = (Brush)Application.Current.Resources["BrushBackground"];
     }
 
     private void ApplyLightTheme()
     {
-        SetResourceBrush("BrushBackground", "#F8FAFC");
+        SetResourceBrush("BrushBackground", "#EEF2F7");
         SetResourceBrush("BrushSurface", "#FFFFFF");
-        SetResourceBrush("BrushSurfaceAlt", "#EEF4FF");
-        SetResourceBrush("BrushSurfaceRaised", "#E2E8F0");
-        SetResourceBrush("BrushBorder", "#CBD5E1");
+        SetResourceBrush("BrushSurfaceAlt", "#F0F4FA");
+        SetResourceBrush("BrushSurfaceRaised", "#E4EAF3");
+        SetResourceBrush("BrushBorder", "#C8D4E3");
         SetResourceBrush("BrushPrimary", "#0284C7");
         SetResourceBrush("BrushPrimaryDark", "#0369A1");
         SetResourceBrush("BrushText", "#0F172A");
-        SetResourceBrush("BrushMuted", "#475569");
+        SetResourceBrush("BrushMuted", "#5A6B82");
         SetResourceBrush("BrushWarning", "#B45309");
         SetResourceBrush("BrushSuccess", "#15803D");
         SetResourceBrush("BrushDanger", "#B91C1C");
         SetResourceBrush("BrushButtonText", "#FFFFFF");
+        SetResourceBrush("BrushGlass", "#F8FAFD");
+        SetResourceBrush("BrushGlassBorder", "#D0DAE8");
+        SetResourceBrush("BrushGlassHighlight", "#E8EEF6");
 
-        ThemeButton.Content = "Dark mode";
+        ThemeButton.Content = "Dark";
         Background = (Brush)Application.Current.Resources["BrushBackground"];
     }
 
