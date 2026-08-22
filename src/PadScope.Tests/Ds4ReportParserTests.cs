@@ -5,221 +5,138 @@ namespace PadScope.Tests;
 
 public class Ds4ReportParserTests
 {
-    private static byte[] BuildUsbReport(Action<byte[]>? mutate = null)
+    private static byte[] BuildReport(bool bluetooth, Action<byte[], int>? mutate = null)
     {
-        byte[] report = new byte[64];
-        report[0] = Ds4ReportParser.UsbReportId;
-        mutate?.Invoke(report);
+        byte[] report = new byte[bluetooth
+            ? Ds4ReportParser.BluetoothReportLength
+            : Ds4ReportParser.UsbReportLength];
+        report[0] = bluetooth
+            ? (byte)Ds4ReportParser.BluetoothReportId
+            : (byte)Ds4ReportParser.UsbReportId;
+        int commonOffset = bluetooth ? 3 : 1;
+        report[commonOffset + 4] = 0x08; // d-pad released
+        mutate?.Invoke(report, commonOffset);
         return report;
     }
 
-    [Fact]
-    public void NeutralReport_SticksCenter_TriggersZero_NoButtons()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FullReport_ParsesCommonStateAtTransportOffset(bool bluetooth)
     {
-        byte[] report = BuildUsbReport(report =>
+        byte[] report = BuildReport(bluetooth, (bytes, common) =>
         {
-            report[1] = 0x80;
-            report[2] = 0x80;
-            report[3] = 0x80;
-            report[4] = 0x80;
-            report[8] = 0x08;
+            bytes[common] = 0x11;
+            bytes[common + 1] = 0x22;
+            bytes[common + 2] = 0x33;
+            bytes[common + 3] = 0x44;
+            bytes[common + 7] = 0x55;
+            bytes[common + 8] = 0x66;
+            bytes[common + 4] = 0x08 | 0x20 | 0x80; // Cross + Triangle
+            bytes[common + 5] = 0x01 | 0x20; // L1 + Options
+            bytes[common + 6] = 0x03; // PS + touch click
         });
 
         Ds4InputState state = Ds4ReportParser.Parse(report);
 
-        Assert.Equal(0x80, state.LeftStickX);
-        Assert.Equal(0x80, state.LeftStickY);
-        Assert.Equal(0x80, state.RightStickX);
-        Assert.Equal(0x80, state.RightStickY);
-        Assert.Equal(0, state.LeftTrigger);
-        Assert.Equal(0, state.RightTrigger);
-        Assert.Equal(Ds4Buttons.None, state.Buttons);
-        Assert.Equal(0f, state.LeftStickXNorm, 2);
-    }
-
-    [Fact]
-    public void FaceButtons_MappedFromButtons1Byte()
-    {
-        byte[] report = BuildUsbReport(report =>
-        {
-            report[7] = 0x01 | 0x08 | 0x20;
-        });
-
-        Ds4InputState state = Ds4ReportParser.Parse(report);
-
-        Assert.True(state.Buttons.HasFlag(Ds4Buttons.Square));
+        Assert.Equal(0x11, state.LeftStickX);
+        Assert.Equal(0x22, state.LeftStickY);
+        Assert.Equal(0x33, state.RightStickX);
+        Assert.Equal(0x44, state.RightStickY);
+        Assert.Equal(0x55, state.LeftTrigger);
+        Assert.Equal(0x66, state.RightTrigger);
+        Assert.True(state.Buttons.HasFlag(Ds4Buttons.Cross));
         Assert.True(state.Buttons.HasFlag(Ds4Buttons.Triangle));
-        Assert.True(state.Buttons.HasFlag(Ds4Buttons.R1));
-        Assert.False(state.Buttons.HasFlag(Ds4Buttons.Cross));
-        Assert.False(state.Buttons.HasFlag(Ds4Buttons.Circle));
+        Assert.True(state.Buttons.HasFlag(Ds4Buttons.L1));
+        Assert.True(state.Buttons.HasFlag(Ds4Buttons.Options));
+        Assert.True(state.Buttons.HasFlag(Ds4Buttons.Ps));
+        Assert.True(state.Buttons.HasFlag(Ds4Buttons.TouchpadClick));
+        Assert.False(state.Buttons.HasFlag(Ds4Buttons.DpadUp));
     }
 
     [Fact]
-    public void TriggersAndShoulderButtons_MappedFromButtons1HighBits()
+    public void DpadDiagonal_MapsFromFirstButtonNibble()
     {
-        byte[] report = BuildUsbReport(report =>
-        {
-            report[7] = 0xC0;
-        });
-
-        Ds4InputState state = Ds4ReportParser.Parse(report);
-
-        Assert.True(state.Buttons.HasFlag(Ds4Buttons.L2));
-        Assert.True(state.Buttons.HasFlag(Ds4Buttons.R2));
-    }
-
-    [Fact]
-    public void Dpad_Up_FromLowNibble()
-    {
-        byte[] report = BuildUsbReport(report =>
-        {
-            report[8] = 0x00;
-        });
-
-        Ds4InputState state = Ds4ReportParser.Parse(report);
-        Assert.True(state.Buttons.HasFlag(Ds4Buttons.DpadUp));
-    }
-
-    [Fact]
-    public void Dpad_DownRight_FromLowNibble()
-    {
-        byte[] report = BuildUsbReport(report =>
-        {
-            report[8] = 0x03;
-        });
-
+        byte[] report = BuildReport(false, (bytes, common) => bytes[common + 4] = 0x03);
         Ds4InputState state = Ds4ReportParser.Parse(report);
         Assert.True(state.Buttons.HasFlag(Ds4Buttons.DpadDown));
         Assert.True(state.Buttons.HasFlag(Ds4Buttons.DpadRight));
     }
 
-    [Fact]
-    public void Dpad_Released_HighNibbleStillReadsOtherButtons()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ImuBatteryAndTouch_ParseFromFullReport(bool bluetooth)
     {
-        byte[] report = BuildUsbReport(report =>
+        byte[] report = BuildReport(bluetooth, (bytes, common) =>
         {
-            report[8] = 0x38;
-        });
+            WriteInt16(bytes, common + 12, 0x1234);
+            WriteInt16(bytes, common + 20, -5);
+            bytes[common + 29] = 0x15;
 
-        Ds4InputState state = Ds4ReportParser.Parse(report);
-        Assert.False(state.Buttons.HasFlag(Ds4Buttons.DpadUp));
-        Assert.True(state.Buttons.HasFlag(Ds4Buttons.Share));
-        Assert.True(state.Buttons.HasFlag(Ds4Buttons.Options));
-    }
-
-    [Fact]
-    public void PsAndTouchpadClick_FromButtons3Byte()
-    {
-        byte[] report = BuildUsbReport(report =>
-        {
-            report[9] = 0x03;
-        });
-
-        Ds4InputState state = Ds4ReportParser.Parse(report);
-        Assert.True(state.Buttons.HasFlag(Ds4Buttons.Ps));
-        Assert.True(state.Buttons.HasFlag(Ds4Buttons.TouchpadClick));
-    }
-
-    [Fact]
-    public void GyroAndAccel_ReadAsLittleEndianInt16()
-    {
-        byte[] report = BuildUsbReport(report =>
-        {
-            short gyroX = 0x1234;
-            short accelY = -5;
-
-            report[19] = (byte)(gyroX & 0xFF);
-            report[20] = (byte)((gyroX >> 8) & 0xFF);
-
-            report[27] = (byte)(accelY & 0xFF);
-            report[28] = (byte)((accelY >> 8) & 0xFF);
+            int touch = common + 32 + 1;
+            bytes[touch] = 0x77; // touch timestamp
+            bytes[touch + 1] = 0x01; // active, id 1
+            bytes[touch + 2] = 0x34;
+            bytes[touch + 3] = 0x12;
+            bytes[touch + 4] = 0x56;
+            bytes[touch + 5] = 0x82; // inactive, id 2
         });
 
         Ds4InputState state = Ds4ReportParser.Parse(report);
 
         Assert.Equal(0x1234, state.GyroX);
         Assert.Equal(-5, state.AccelY);
-    }
-
-    [Fact]
-    public void Touchpad_ReadsPoint_WhenTouching()
-    {
-        byte[] report = BuildUsbReport(report =>
-        {
-            // Touch base offset for USB reports is 35.
-            report[35] = 0x00;
-            report[36] = 0x00;
-            report[37] = 0x00;
-            report[38] = 0x80 | 0x01;
-            report[39] = 0x34; // X low byte
-            report[40] = 0x12; // X high nibble = 1, Y high nibble = 2
-            report[41] = 0x56; // Y low byte
-        });
-
-        Ds4InputState state = Ds4ReportParser.Parse(report);
-
-        Assert.NotNull(state.Touch1);
-        Assert.True(state.Touch1.Value.Touching);
-        Assert.Equal(0x234, state.Touch1.Value.X);
-        Assert.Equal(0x156, state.Touch1.Value.Y);
-        Assert.Equal(1, state.Touch1.Value.FingerId);
-    }
-
-    [Fact]
-    public void Battery_ParsedFromUsbReport()
-    {
-        byte[] report = BuildUsbReport(report =>
-        {
-            report[15] = 0x14 | 0x05; // charging bit set, level 5
-        });
-
-        Ds4InputState state = Ds4ReportParser.Parse(report);
-
         Assert.Equal((byte?)5, state.BatteryLevel);
         Assert.True(state.Charging);
+        Assert.True(state.Touch1?.Touching);
+        Assert.Equal((byte)1, state.Touch1?.FingerId);
+        Assert.Equal((ushort)0x234, state.Touch1?.X);
+        Assert.Equal((ushort)0x561, state.Touch1?.Y);
+        Assert.False(state.Touch2?.Touching);
     }
 
     [Fact]
-    public void BluetoothReport_IdRecognized_BatteryNotGuessed()
+    public void BluetoothMinimalReport_ParsesBasicStateWithoutInventingFullState()
     {
-        byte[] report = new byte[78];
-        report[0] = Ds4ReportParser.BluetoothReportId;
+        byte[] report = new byte[Ds4ReportParser.BluetoothMinimalReportLength];
+        report[0] = Ds4ReportParser.UsbReportId;
+        report[1] = 0x80;
+        report[5] = 0x28; // Cross + released d-pad
 
         Ds4InputState state = Ds4ReportParser.Parse(report);
 
-        Assert.Equal(Ds4ReportParser.BluetoothReportId, state.ReportId);
+        Assert.Equal(0x80, state.LeftStickX);
+        Assert.True(state.Buttons.HasFlag(Ds4Buttons.Cross));
+        Assert.Equal(0, state.GyroX);
         Assert.Null(state.BatteryLevel);
-        Assert.False(state.Charging);
+        Assert.Null(state.Touch1);
     }
 
     [Fact]
     public void ShortReport_DoesNotThrow()
     {
-        byte[] report = new byte[] { 0x01 };
-
-        Ds4InputState state = Ds4ReportParser.Parse(report);
-
+        Ds4InputState state = Ds4ReportParser.Parse(new byte[] { 0x01 });
         Assert.Equal(Ds4Buttons.None, state.Buttons);
-        Assert.Equal(0, state.GyroX);
         Assert.Null(state.Touch1);
     }
 
     [Theory]
-    [InlineData(0x01, true)]
-    [InlineData(0x11, true)]
-    [InlineData(0x31, false)]
-    [InlineData(0x00, false)]
-    public void LooksLikeDs4Report_ChecksReportId(byte reportId, bool expected)
+    [InlineData(0x01, 10, true)]
+    [InlineData(0x11, 78, true)]
+    [InlineData(0x11, 77, false)]
+    [InlineData(0x31, 78, false)]
+    [InlineData(0x01, 9, false)]
+    public void LooksLikeDs4Report_ValidatesIdAndTransportLength(byte reportId, int length, bool expected)
     {
-        byte[] report = new byte[16];
+        byte[] report = new byte[length];
         report[0] = reportId;
-
         Assert.Equal(expected, Ds4ReportParser.LooksLikeDs4Report(report));
     }
 
-    [Fact]
-    public void LooksLikeDs4Report_RejectsTinyBuffer()
+    private static void WriteInt16(byte[] report, int offset, short value)
     {
-        Assert.False(Ds4ReportParser.LooksLikeDs4Report(new byte[] { 0x01 }));
+        report[offset] = (byte)value;
+        report[offset + 1] = (byte)(value >> 8);
     }
 }

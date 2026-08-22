@@ -1,5 +1,6 @@
 using System.Text;
 using HidSharp;
+using PadScope.Core.Input;
 using PadScope.Core.Models;
 
 namespace PadScope.Hid;
@@ -160,16 +161,16 @@ public sealed class HidSharpHidInputReader : IHidInputReader
         int vendorId = ParseHexId(device.VendorId);
         int productId = ParseHexId(device.ProductId);
 
-        List<HidDevice> candidates = new();
+        // Never fall back to every HID interface: that can open a keyboard,
+        // mouse, or an unrelated controller when WMI did not provide IDs.
+        if (vendorId <= 0 || productId <= 0)
+        {
+            return null;
+        }
 
-        if (vendorId > 0)
-        {
-            candidates.AddRange(DeviceList.Local.GetHidDevices(vendorId, productId > 0 ? productId : null));
-        }
-        else
-        {
-            candidates.AddRange(DeviceList.Local.GetHidDevices().Cast<HidDevice>());
-        }
+        List<HidDevice> candidates = DeviceList.Local
+            .GetHidDevices(vendorId, productId)
+            .ToList();
 
         if (candidates.Count == 0)
         {
@@ -180,7 +181,7 @@ public sealed class HidSharpHidInputReader : IHidInputReader
             .Select(candidate => new
             {
                 Device = candidate,
-                Score = ScoreDevice(candidate)
+                Score = ScoreDevice(candidate, device)
             })
             .OrderByDescending(item => item.Score)
             .ThenByDescending(item => item.Device.MaxInputReportLength)
@@ -188,11 +189,17 @@ public sealed class HidSharpHidInputReader : IHidInputReader
             .FirstOrDefault();
     }
 
-    private static int ScoreDevice(HidDevice candidate)
+    private static int ScoreDevice(HidDevice candidate, ControllerDevice selected)
     {
         int score = 0;
         string name = candidate.ProductName ?? string.Empty;
         string lowered = name.ToLowerInvariant();
+
+        if (!string.IsNullOrWhiteSpace(selected.DevicePath) &&
+            PathsReferToSameInstance(candidate.DevicePath, selected.DevicePath))
+        {
+            score += 20;
+        }
 
         if (lowered.Contains("game controller") || lowered.Contains("gamepad") || lowered.Contains("wireless controller"))
         {
@@ -200,6 +207,11 @@ public sealed class HidSharpHidInputReader : IHidInputReader
         }
 
         if (candidate.MaxInputReportLength is >= 64)
+        {
+            score += 4;
+        }
+
+        if (candidate.MaxOutputReportLength is >= Ds4OutputReportBuilder.UsbOutputReportLength)
         {
             score += 2;
         }
@@ -210,6 +222,24 @@ public sealed class HidSharpHidInputReader : IHidInputReader
         }
 
         return score;
+    }
+
+    private static bool PathsReferToSameInstance(string? hidPath, string? pnpPath)
+    {
+        if (string.IsNullOrWhiteSpace(hidPath) || string.IsNullOrWhiteSpace(pnpPath))
+        {
+            return false;
+        }
+
+        static string Normalize(string value) => value
+            .Replace('#', '\\')
+            .TrimStart('\\', '?')
+            .ToUpperInvariant();
+
+        string normalizedHid = Normalize(hidPath);
+        string normalizedPnp = Normalize(pnpPath);
+        return normalizedHid.Contains(normalizedPnp, StringComparison.Ordinal) ||
+               normalizedPnp.Contains(normalizedHid, StringComparison.Ordinal);
     }
 
     private static int ParseHexId(string? value)

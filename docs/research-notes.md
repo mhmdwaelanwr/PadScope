@@ -1,6 +1,41 @@
 # Research notes
 
-This document summarizes the first research pass behind PadScope.
+This document summarizes the research behind PadScope. Protocol facts are
+implemented independently; source code from differently licensed projects is
+not copied into PadScope.
+
+## 2026 pre-hardware protocol review
+
+The August 2026 review compared PadScope with three active reference points:
+
+- The Linux `hid-playstation` driver is the primary protocol reference for DS4
+  USB/Bluetooth report IDs, fixed packet sizes, common-state layout, output
+  validity flags, and seeded CRC-32 behavior.
+- The maintained `ds4windowsapp/DS4Windows` fork is a compatibility reference
+  for real Windows deployments and driver-conflict behavior.
+- `hbashton/DS4Windows` and `khallmark/ds4mac` were reviewed for recent problem
+  areas and test strategy. Claims around Bluetooth audio remain experimental;
+  they are not treated as proof that PadScope supports that transport.
+
+Resulting PadScope decisions:
+
+- USB input is accepted as report `0x01`; full Bluetooth input uses `0x11` and
+  a distinct two-byte transport header.
+- The 10-byte Bluetooth minimal report is treated as basic state only. PadScope
+  does not invent gyro, touch, or battery values when those bytes are absent.
+- USB output is always 32 bytes. Bluetooth output is always 78 bytes, uses the
+  DS4 output seed `0xA2`, and stores CRC-32 little-endian in the final 4 bytes.
+- Rumble and lightbar validity flags are independent so changing one does not
+  unintentionally reset the other.
+- Protocol layout and CRC are covered by synthetic packet fixtures before any
+  physical output test.
+
+References:
+
+- <https://github.com/torvalds/linux/blob/master/drivers/hid/hid-playstation.c>
+- <https://github.com/ds4windowsapp/DS4Windows>
+- <https://github.com/hbashton/DS4Windows>
+- <https://github.com/khallmark/ds4mac>
 
 ## Problem space
 
@@ -30,6 +65,8 @@ Important lessons:
 - Output data settings affect rumble and lightbar.
 - Steam Input and DS4Windows can conflict.
 - Supported hardware policies often focus on first-party controllers.
+- Recent community forks make large Bluetooth-audio claims, but this work is
+  transport- and timing-sensitive and must remain behind an experimental gate.
 
 ### DS4AudioStreamer
 

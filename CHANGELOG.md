@@ -12,6 +12,7 @@ All notable changes will be documented here. PadScope follows Semantic Versionin
 - About dialog, runtime version display, and an explicit audio routing stop action.
 - Self-contained Windows packaging and tagged GitHub Release publishing.
 - Contribution, security, bug-report, and dependency-update configuration.
+- USB/Bluetooth DS4 packet-layout and output CRC regression tests.
 
 ### Changed
 
@@ -23,6 +24,15 @@ All notable changes will be documented here. PadScope follows Semantic Versionin
 - CLI no longer falls back to the first controller when a requested VID/PID does not match.
 - CLI requires explicit selection when multiple controllers are detected.
 - Audio routing cannot register the same route repeatedly.
+- DS4 buttons, triggers, IMU, touch, and battery now use the protocol-defined
+  common-state offsets for both USB and full Bluetooth reports.
+- DS4 output uses the correct 32-byte USB and 78-byte Bluetooth layouts, with
+  Bluetooth CRC-32 and independent rumble/lightbar validity flags.
+- HID opening no longer falls back to an unrelated device when VID/PID is absent.
+- Controller scanning no longer mixes controller audio endpoints into the
+  physical-controller list and now tolerates restricted WMI classes.
+- Audio Lab volume sliders now update the selected WASAPI endpoint instead of
+  only updating UI events.
 
 ### Removed
 

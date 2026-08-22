@@ -47,7 +47,8 @@ public sealed class Ds4ControllerSession : IDisposable
             _device.ConnectionType,
             rumbleSmall: smallMotor,
             rumbleLarge: largeMotor,
-            reportLength: GetOutputReportLength());
+            setRumble: true,
+            setLightbar: false);
 
         return _reader.TryWriteOutput(report, out error);
     }
@@ -59,7 +60,8 @@ public sealed class Ds4ControllerSession : IDisposable
             red: red,
             green: green,
             blue: blue,
-            reportLength: GetOutputReportLength());
+            setRumble: false,
+            setLightbar: true);
 
         return _reader.TryWriteOutput(report, out error);
     }
@@ -67,15 +69,9 @@ public sealed class Ds4ControllerSession : IDisposable
     public bool TryResetOutput(out string? error)
     {
         byte[] report = Ds4OutputReportBuilder.BuildOutputReport(
-            _device.ConnectionType,
-            reportLength: GetOutputReportLength());
+            _device.ConnectionType);
 
         return _reader.TryWriteOutput(report, out error);
-    }
-
-    private int GetOutputReportLength()
-    {
-        return _reader.MaxOutputReportLength > 0 ? _reader.MaxOutputReportLength : 64;
     }
 
     private void OnReportReceived(HidInputReport report)
