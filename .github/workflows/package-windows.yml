@@ -39,7 +39,7 @@ jobs:
         run: Compress-Archive -Path artifacts/PadScope-win-x64/* -DestinationPath artifacts/PadScope-win-x64.zip -Force
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: PadScope-win-x64
           path: artifacts/PadScope-win-x64.zip
