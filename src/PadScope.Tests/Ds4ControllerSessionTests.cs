@@ -163,7 +163,6 @@ public sealed class Ds4ControllerSessionTests
             IsRunning = false;
             Disposed = true;
             ReportReceived = null;
-            ErrorOccurred = null;
         }
     }
 }
