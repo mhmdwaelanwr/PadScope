@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using PadScope.Core.Models;
 
 namespace PadScope.Core.Scanning;
@@ -8,7 +9,7 @@ public static class DeviceSelector
         IReadOnlyList<CompatibilityReport> reports,
         string? vendorId,
         string? productId,
-        out ControllerDevice? device,
+        [NotNullWhen(true)] out ControllerDevice? device,
         out string? error)
     {
         device = null;

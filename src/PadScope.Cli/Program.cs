@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
 using PadScope.Core.Diagnostics;
@@ -492,7 +493,7 @@ static void RunProfileExample(string[] args)
 static bool TrySelectDevice(
     IControllerScanner scanner,
     string[] args,
-    out ControllerDevice? device,
+    [NotNullWhen(true)] out ControllerDevice? device,
     out string? error)
 {
     device = null;

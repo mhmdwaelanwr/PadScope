@@ -1,5 +1,6 @@
 using PadScope.Core.Models;
 using PadScope.Core.Scanning;
+using Xunit;
 
 namespace PadScope.Tests;
 
