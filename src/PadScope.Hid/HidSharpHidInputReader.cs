@@ -7,6 +7,9 @@ namespace PadScope.Hid;
 
 public sealed class HidSharpHidInputReader : IHidInputReader
 {
+    private const int HidReadTimeoutMilliseconds = 250;
+    private const int StopJoinTimeoutMilliseconds = 1000;
+
     private HidStream? _stream;
     private HidDevice? _device;
     private Thread? _readThread;
@@ -20,7 +23,7 @@ public sealed class HidSharpHidInputReader : IHidInputReader
 
     public string? DeviceDescription { get; private set; }
 
-    public int MaxOutputReportLength => _device?.MaxOutputReportLength ?? 0;
+    public int MaxOutputReportLength => SafeGetReportLength(_device, input: false);
 
     public bool TryOpen(ControllerDevice device, out string? error)
     {
@@ -53,6 +56,8 @@ public sealed class HidSharpHidInputReader : IHidInputReader
         try
         {
             _stream = _device.Open();
+            _stream.ReadTimeout = HidReadTimeoutMilliseconds;
+            _stream.WriteTimeout = 1000;
         }
         catch (Exception ex)
         {
@@ -60,7 +65,7 @@ public sealed class HidSharpHidInputReader : IHidInputReader
             return false;
         }
 
-        DeviceDescription = $"{_device.ProductName ?? "Unnamed HID device"} (VID {_device.VendorID:X4}/PID {_device.ProductID:X4})";
+        DeviceDescription = $"{SafeGetProductName(_device)} (VID {_device.VendorID:X4}/PID {_device.ProductID:X4})";
         error = null;
         return true;
     }
@@ -84,13 +89,32 @@ public sealed class HidSharpHidInputReader : IHidInputReader
     public void Stop()
     {
         _keepReading = false;
-        _readThread?.Join(TimeSpan.FromMilliseconds(500));
+        Thread? thread = _readThread;
+        if (thread is null)
+        {
+            return;
+        }
+
+        if (!thread.Join(TimeSpan.FromMilliseconds(StopJoinTimeoutMilliseconds)))
+        {
+            // Some Windows HID drivers do not honor read cancellation promptly.
+            // Closing the stream is the final bounded escape hatch.
+            _stream?.Dispose();
+            _stream = null;
+            if (!thread.Join(TimeSpan.FromMilliseconds(HidReadTimeoutMilliseconds)))
+            {
+                ErrorOccurred?.Invoke("HID read loop did not stop after the stream was closed.");
+                return;
+            }
+        }
+
         _readThread = null;
     }
 
     public bool TryWriteOutput(byte[] report, out string? error)
     {
-        if (_stream is null)
+        HidStream? stream = _stream;
+        if (stream is null)
         {
             error = "No HID device is open.";
             return false;
@@ -116,7 +140,7 @@ public sealed class HidSharpHidInputReader : IHidInputReader
             return;
         }
 
-        int bufferLength = _device?.MaxInputReportLength ?? 64;
+        int bufferLength = SafeGetReportLength(_device, input: true);
         if (bufferLength <= 0)
         {
             bufferLength = 64;
@@ -128,7 +152,7 @@ public sealed class HidSharpHidInputReader : IHidInputReader
         {
             try
             {
-                int read = _stream.Read(buffer, 0, buffer.Length);
+                int read = stream.Read(buffer, 0, buffer.Length);
                 if (read <= 0)
                 {
                     continue;
@@ -142,6 +166,10 @@ public sealed class HidSharpHidInputReader : IHidInputReader
                     ReportId: copy.Length > 0 ? copy[0] : 0,
                     Timestamp: DateTimeOffset.UtcNow
                 ));
+            }
+            catch (TimeoutException)
+            {
+                // Expected while idle. The short timeout makes Stop deterministic.
             }
             catch (Exception ex)
             {
@@ -192,7 +220,7 @@ public sealed class HidSharpHidInputReader : IHidInputReader
     private static int ScoreDevice(HidDevice candidate, ControllerDevice selected)
     {
         int score = 0;
-        string name = candidate.ProductName ?? string.Empty;
+        string name = SafeGetProductName(candidate);
         string lowered = name.ToLowerInvariant();
 
         if (!string.IsNullOrWhiteSpace(selected.DevicePath) &&
@@ -206,12 +234,12 @@ public sealed class HidSharpHidInputReader : IHidInputReader
             score += 4;
         }
 
-        if (candidate.MaxInputReportLength is >= 64)
+        if (SafeGetReportLength(candidate, input: true) is >= 64)
         {
             score += 4;
         }
 
-        if (candidate.MaxOutputReportLength is >= Ds4OutputReportBuilder.UsbOutputReportLength)
+        if (SafeGetReportLength(candidate, input: false) is >= Ds4OutputReportBuilder.UsbOutputReportLength)
         {
             score += 2;
         }
@@ -222,6 +250,35 @@ public sealed class HidSharpHidInputReader : IHidInputReader
         }
 
         return score;
+    }
+
+    private static int SafeGetReportLength(HidDevice? device, bool input)
+    {
+        if (device is null)
+        {
+            return 0;
+        }
+
+        try
+        {
+            return input ? device.GetMaxInputReportLength() : device.GetMaxOutputReportLength();
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private static string SafeGetProductName(HidDevice device)
+    {
+        try
+        {
+            return device.GetProductName() ?? "Unnamed HID device";
+        }
+        catch
+        {
+            return "Unnamed HID device";
+        }
     }
 
     private static bool PathsReferToSameInstance(string? hidPath, string? pnpPath)

@@ -111,6 +111,9 @@ Pass criteria:
 
 - The app can show report descriptor or equivalent report-shape notes.
 - Unknown devices remain locked for controlled tests.
+- Live input shows a stable report rate and records average interval, p95,
+  jitter, and spike count for the observation window.
+- Full Bluetooth reports with invalid CRC are discarded rather than displayed.
 
 ## Stage 6 — Safe rumble test
 

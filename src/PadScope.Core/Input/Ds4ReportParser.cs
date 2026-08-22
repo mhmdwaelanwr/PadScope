@@ -1,3 +1,5 @@
+using System.Buffers.Binary;
+
 namespace PadScope.Core.Input;
 
 public static class Ds4ReportParser
@@ -12,6 +14,7 @@ public static class Ds4ReportParser
     private const int BluetoothCommonOffset = 3;
     private const int CommonDataLength = 32;
     private const int TouchReportLength = 9;
+    private const byte BluetoothInputCrcSeed = 0xA1;
 
     public static Ds4InputState Parse(byte[] report)
     {
@@ -67,6 +70,20 @@ public static class Ds4ReportParser
         if (report is null) return false;
         return (report.Length >= BluetoothMinimalReportLength && report[0] == UsbReportId) ||
                (report.Length >= BluetoothReportLength && report[0] == BluetoothReportId);
+    }
+
+    public static bool HasValidBluetoothCrc(ReadOnlySpan<byte> report)
+    {
+        if (report.Length != BluetoothReportLength || report[0] != BluetoothReportId)
+        {
+            return false;
+        }
+
+        uint expected = BinaryPrimitives.ReadUInt32LittleEndian(report[^sizeof(uint)..]);
+        uint actual = Ds4OutputReportBuilder.ComputeCrc32(
+            BluetoothInputCrcSeed,
+            report[..^sizeof(uint)]);
+        return expected == actual;
     }
 
     private static Ds4Buttons ReadButtons(byte[] report, int commonOffset)
