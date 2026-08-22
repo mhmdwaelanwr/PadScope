@@ -26,7 +26,8 @@ PadScope helps you discover what a controller actually supports on PC—especial
 - Touchpad and gyro mouse emulation with adjustable sensitivity
 - Controller audio endpoint discovery through WMI and WASAPI
 - Desktop and CLI interfaces
-- Dark and light desktop themes
+- PadScope Spectral Glass desktop identity with Mica-inspired foundations, restrained glass surfaces, and dark/light themes
+- Live controller hero, input telemetry, safe output controls, virtual-controller routing, profiles, and diagnostics wired to the existing WPF backend
 - Guided diagnostics workspace with explicit empty, scanning, and no-device states
 - Automated Windows build, test, and packaging workflows
 

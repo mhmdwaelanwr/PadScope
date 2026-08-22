@@ -537,19 +537,21 @@ public partial class MainWindow : Window
 
     private static readonly (string Key, string Light, string Dark)[] ThemeColors =
     [
-        ("C_Background",  "#F8FAFC", "#0A0F1A"),
-        ("C_Card",        "#FFFFFF", "#111827"),
-        ("C_CardAlt",     "#F1F5F9", "#1F2937"),
-        ("C_Border",      "#CBD5E1", "#374151"),
-        ("C_Primary",     "#0891B2", "#06B6D4"),
-        ("C_PrimaryDim",  "#0E7490", "#0E7490"),
-        ("C_Text",        "#0F172A", "#F1F5F9"),
-        ("C_TextDim",     "#64748B", "#94A3B8"),
-        ("C_Success",     "#059669", "#10B981"),
-        ("C_Warning",     "#D97706", "#F59E0B"),
-        ("C_Danger",      "#DC2626", "#EF4444"),
-        ("C_PrimarySoft", "#E6F7FB", "#162C3A"),
-        ("C_SurfaceHover","#E2E8F0", "#263449"),
+        ("C_Background",  "#F4F6FC", "#050713"),
+        ("C_BackdropMid", "#EEF1FA", "#0A0D22"),
+        ("C_BackdropEnd", "#F7FBFF", "#071523"),
+        ("C_Card",        "#CCFFFFFF", "#B30C1021"),
+        ("C_CardAlt",     "#B3EEF1FA", "#99121830"),
+        ("C_Border",      "#99AAB5D1", "#667583B8"),
+        ("C_Primary",     "#0891B2", "#22D3EE"),
+        ("C_PrimaryDim",  "#7C3AED", "#8B5CF6"),
+        ("C_Text",        "#11162A", "#F7F9FF"),
+        ("C_TextDim",     "#66708D", "#8490AF"),
+        ("C_Success",     "#059669", "#34D399"),
+        ("C_Warning",     "#D97706", "#FBBF24"),
+        ("C_Danger",      "#E11D48", "#FB7185"),
+        ("C_PrimarySoft", "#227C3AED", "#3324264F"),
+        ("C_SurfaceHover","#CCE8ECF7", "#CC202747"),
     ];
 
     private void ApplyDarkTheme()
@@ -558,8 +560,8 @@ public partial class MainWindow : Window
         {
             Application.Current.Resources[key] = (Color)ColorConverter.ConvertFromString(dark);
         }
-        ThemeButton.Content = "Light";
-        Background = (Brush)Application.Current.Resources["B_Background"];
+        ThemeButton.Content = "☀  Light";
+        Background = (Brush)Application.Current.Resources["B_WindowBackdrop"];
     }
 
     private void ApplyLightTheme()
@@ -568,8 +570,8 @@ public partial class MainWindow : Window
         {
             Application.Current.Resources[key] = (Color)ColorConverter.ConvertFromString(light);
         }
-        ThemeButton.Content = "Dark";
-        Background = (Brush)Application.Current.Resources["B_Background"];
+        ThemeButton.Content = "◐  Dark";
+        Background = (Brush)Application.Current.Resources["B_WindowBackdrop"];
     }
 }
 
