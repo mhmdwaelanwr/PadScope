@@ -16,6 +16,8 @@
         <Color x:Key="C_Success">#10B981</Color>
         <Color x:Key="C_Warning">#F59E0B</Color>
         <Color x:Key="C_Danger">#EF4444</Color>
+        <Color x:Key="C_PrimarySoft">#162C3A</Color>
+        <Color x:Key="C_SurfaceHover">#263449</Color>
 
         <SolidColorBrush x:Key="B_Background" Color="{DynamicResource C_Background}" />
         <SolidColorBrush x:Key="B_Card" Color="{DynamicResource C_Card}" />
@@ -28,6 +30,8 @@
         <SolidColorBrush x:Key="B_Success" Color="{DynamicResource C_Success}" />
         <SolidColorBrush x:Key="B_Warning" Color="{DynamicResource C_Warning}" />
         <SolidColorBrush x:Key="B_Danger" Color="{DynamicResource C_Danger}" />
+        <SolidColorBrush x:Key="B_PrimarySoft" Color="{DynamicResource C_PrimarySoft}" />
+        <SolidColorBrush x:Key="B_SurfaceHover" Color="{DynamicResource C_SurfaceHover}" />
         <SolidColorBrush x:Key="B_White" Color="White" />
 
         <!-- Window -->
@@ -48,6 +52,21 @@
             <Setter Property="Foreground" Value="{DynamicResource B_Primary}" />
             <Setter Property="FontWeight" Value="SemiBold" />
         </Style>
+        <Style x:Key="PageTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="24" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+        </Style>
+        <Style x:Key="SectionTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+        </Style>
+        <Style x:Key="Eyebrow" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource B_TextDim}" />
+        </Style>
 
         <!-- Cards -->
         <Style x:Key="Card" TargetType="Border">
@@ -56,6 +75,18 @@
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="14" />
             <Setter Property="Padding" Value="18" />
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
+        <Style x:Key="MetricCard" TargetType="Border" BasedOn="{StaticResource Card}">
+            <Setter Property="Padding" Value="18,15" />
+            <Setter Property="CornerRadius" Value="12" />
+        </Style>
+        <Style x:Key="InfoBanner" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource B_PrimarySoft}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource B_PrimaryDim}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="12,9" />
         </Style>
         <Style x:Key="CardAlt" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource B_CardAlt}" />
@@ -94,6 +125,9 @@
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter TargetName="b" Property="Opacity" Value="0.35" />
                             </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="b" Property="BorderThickness" Value="2" />
+                            </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
@@ -121,6 +155,7 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource B_SurfaceHover}" />
                                 <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource B_Primary}" />
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
@@ -155,6 +190,23 @@
             <Setter Property="CanUserDeleteRows" Value="False" />
             <Setter Property="SelectionMode" Value="Single" />
             <Setter Property="SelectionUnit" Value="FullRow" />
+            <Setter Property="RowHeight" Value="38" />
+            <Setter Property="HorizontalGridLinesBrush" Value="Transparent" />
+        </Style>
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource B_SurfaceHover}" />
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource B_PrimarySoft}" />
+                    <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+                </Trigger>
+            </Style.Triggers>
         </Style>
         <Style TargetType="DataGridCell">
             <Setter Property="BorderThickness" Value="0" />
@@ -186,9 +238,13 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">
-                        <Border x:Name="tb" Background="Transparent" Padding="16,10" CornerRadius="8,8,0,0">
-                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                        </Border>
+                        <Grid>
+                            <Border x:Name="tb" Background="Transparent" Padding="16,10" CornerRadius="8">
+                                <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <Border x:Name="active" Height="3" Background="Transparent" CornerRadius="2"
+                                    VerticalAlignment="Bottom" Margin="12,0" />
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="tb" Property="Background" Value="{DynamicResource B_CardAlt}" />
@@ -197,6 +253,7 @@
                             <Trigger Property="IsSelected" Value="True">
                                 <Setter TargetName="tb" Property="Background" Value="{DynamicResource B_Card}" />
                                 <Setter Property="Foreground" Value="{DynamicResource B_Primary}" />
+                                <Setter TargetName="active" Property="Background" Value="{DynamicResource B_Primary}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -211,6 +268,7 @@
             <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="8,5" />
+            <Setter Property="MinHeight" Value="34" />
         </Style>
         <Style TargetType="TextBox">
             <Setter Property="Background" Value="{DynamicResource B_CardAlt}" />
@@ -219,6 +277,7 @@
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="8,6" />
             <Setter Property="CaretBrush" Value="{DynamicResource B_Primary}" />
+            <Setter Property="MinHeight" Value="34" />
         </Style>
         <Style TargetType="Slider">
             <Setter Property="Foreground" Value="{DynamicResource B_Primary}" />

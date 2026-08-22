@@ -13,11 +13,15 @@ All notable changes will be documented here. PadScope follows Semantic Versionin
 - Self-contained Windows packaging and tagged GitHub Release publishing.
 - Contribution, security, bug-report, and dependency-update configuration.
 - USB/Bluetooth DS4 packet-layout and output CRC regression tests.
+- Community-research findings translated into a product and diagnostics roadmap.
+- Explicit desktop states for first scan, scanning, and no-device results.
 
 ### Changed
 
 - Documentation now reflects the implemented desktop, CLI, virtual controller, mouse, profile, and audio features.
 - Windows packages include the runtime and can run without a separate .NET installation.
+- Desktop visual hierarchy, cards, typography, tabs, table selection, focus states,
+  status presentation, and scan guidance now form a cohesive diagnostics workspace.
 
 ### Fixed
 

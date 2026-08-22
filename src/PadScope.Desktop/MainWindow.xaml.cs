@@ -22,6 +22,9 @@ public partial class MainWindow : Window
     private readonly ObservableCollection<CompatibilityReport> _reports = new();
     private readonly AudioStreamBridge _audioBridge = new();
     private bool _isLightTheme;
+    private bool _hasScanned;
+    private bool _isScanning;
+    private DateTime? _lastScanAt;
 
     public IReadOnlyList<StageRow> StageRows { get; } = TestStageRegistry.All
         .Select(stage => new StageRow(
@@ -94,6 +97,7 @@ public partial class MainWindow : Window
         DetailsText.Text = "Run a scan, then select a device.";
         StatusText.Text = "Cleared";
         CurrentStageText.Text = "0/1 Ready";
+        _hasScanned = false;
         UpdateSummary();
         ClearLiveDeviceList();
         ClearVirtualDeviceList();
@@ -411,8 +415,10 @@ public partial class MainWindow : Window
     private async Task RunScanAsync()
     {
         _reports.Clear();
+        _isScanning = true;
         ScanButton.IsEnabled = false;
         StatusText.Text = "Scanning...";
+        ScanProgress.Visibility = Visibility.Visible;
         UpdateSummary();
 
         try
@@ -423,6 +429,9 @@ public partial class MainWindow : Window
             {
                 _reports.Add(report);
             }
+
+            _hasScanned = true;
+            _lastScanAt = DateTime.Now;
 
             CurrentStageText.Text = _reports.Count == 0 ? "1 Empty Scan" : "2 USB/BT Scan";
             StatusText.Text = _reports.Count == 0
@@ -442,7 +451,9 @@ public partial class MainWindow : Window
         }
         finally
         {
+            _isScanning = false;
             ScanButton.IsEnabled = true;
+            ScanProgress.Visibility = Visibility.Collapsed;
             UpdateSummary();
             RefreshLiveDeviceList();
             RefreshVirtualDeviceList();
@@ -495,7 +506,27 @@ public partial class MainWindow : Window
     {
         DeviceCountText.Text = _reports.Count.ToString();
         ProfileCountText.Text = _reports.Count(report => !report.ProfileName.StartsWith("Unknown", StringComparison.OrdinalIgnoreCase)).ToString();
-        LastScanText.Text = _reports.Count == 0 ? "Never" : DateTime.Now.ToString("HH:mm:ss");
+        LastScanText.Text = _lastScanAt?.ToString("HH:mm:ss") ?? "Not run";
+
+        ScanEmptyState.Visibility = _reports.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        if (_isScanning)
+        {
+            ScanEmptyTitle.Text = "Inspecting Windows controller interfaces…";
+            ScanEmptySubtitle.Text = "This scan is read-only. PadScope is collecting identity, connection, and compatibility evidence.";
+            StatusDot.Fill = (Brush)FindResource("B_Warning");
+        }
+        else if (_hasScanned && _reports.Count == 0)
+        {
+            ScanEmptyTitle.Text = "No controller-like device was detected";
+            ScanEmptySubtitle.Text = "Connect a controller by USB first, then scan again. Bluetooth pairing can be checked after the wired baseline.";
+            StatusDot.Fill = (Brush)FindResource("B_Warning");
+        }
+        else
+        {
+            ScanEmptyTitle.Text = "Start with a safe controller scan";
+            ScanEmptySubtitle.Text = "PadScope reads Windows device metadata only. It will not send rumble, lightbar, or audio output.";
+            StatusDot.Fill = (Brush)FindResource(_reports.Count > 0 ? "B_Success" : "B_Primary");
+        }
     }
 
     private static readonly (string Key, string Light, string Dark)[] ThemeColors =
@@ -511,6 +542,8 @@ public partial class MainWindow : Window
         ("C_Success",     "#059669", "#10B981"),
         ("C_Warning",     "#D97706", "#F59E0B"),
         ("C_Danger",      "#DC2626", "#EF4444"),
+        ("C_PrimarySoft", "#E6F7FB", "#162C3A"),
+        ("C_SurfaceHover","#E2E8F0", "#263449"),
     ];
 
     private void ApplyDarkTheme()
