@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using PadScope.Core.Input;
 using Xunit;
 
@@ -132,6 +133,19 @@ public class Ds4ReportParserTests
         byte[] report = new byte[length];
         report[0] = reportId;
         Assert.Equal(expected, Ds4ReportParser.LooksLikeDs4Report(report));
+    }
+
+    [Fact]
+    public void BluetoothCrc_AcceptsValidPacketAndRejectsMutation()
+    {
+        byte[] report = BuildReport(true, (bytes, common) => bytes[common] = 0x7A);
+        uint crc = Ds4OutputReportBuilder.ComputeCrc32(0xA1, report.AsSpan(0, report.Length - sizeof(uint)));
+        BinaryPrimitives.WriteUInt32LittleEndian(report.AsSpan(report.Length - sizeof(uint)), crc);
+
+        Assert.True(Ds4ReportParser.HasValidBluetoothCrc(report));
+
+        report[3] ^= 0x01;
+        Assert.False(Ds4ReportParser.HasValidBluetoothCrc(report));
     }
 
     private static void WriteInt16(byte[] report, int offset, short value)

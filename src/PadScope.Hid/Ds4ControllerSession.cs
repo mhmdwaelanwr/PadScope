@@ -1,3 +1,4 @@
+using PadScope.Core.Diagnostics;
 using PadScope.Core.Input;
 using PadScope.Core.Models;
 
@@ -7,9 +8,12 @@ public sealed class Ds4ControllerSession : IDisposable
 {
     private readonly IHidInputReader _reader;
     private readonly ControllerDevice _device;
+    private readonly ReportTimingAnalyzer _timingAnalyzer = new();
+    private int _timingPublishCounter;
     private bool _disposed;
 
     public event Action<Ds4InputState>? StateUpdated;
+    public event Action<ReportTimingSnapshot>? TimingUpdated;
     public event Action<string>? Error;
 
     public Ds4ControllerSession(IHidInputReader reader, ControllerDevice device)
@@ -27,6 +31,9 @@ public sealed class Ds4ControllerSession : IDisposable
 
     public bool TryStart(out string? error)
     {
+        _timingAnalyzer.Reset();
+        _timingPublishCounter = 0;
+
         if (!_reader.TryOpen(_device, out error))
         {
             return false;
@@ -84,6 +91,18 @@ public sealed class Ds4ControllerSession : IDisposable
         if (!Ds4ReportParser.LooksLikeDs4Report(report.Data))
         {
             return;
+        }
+
+        if (report.ReportId == Ds4ReportParser.BluetoothReportId &&
+            !Ds4ReportParser.HasValidBluetoothCrc(report.Data))
+        {
+            return;
+        }
+
+        _timingAnalyzer.Add(report.Timestamp);
+        if (++_timingPublishCounter == 1 || _timingPublishCounter % 16 == 0)
+        {
+            TimingUpdated?.Invoke(_timingAnalyzer.Snapshot());
         }
 
         StateUpdated?.Invoke(Ds4ReportParser.Parse(report.Data));

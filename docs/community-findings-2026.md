@@ -39,19 +39,24 @@ sanitized hardware captures.
 - A visible read-only scan explanation before any controller is selected.
 - Last-scan time remains truthful after an empty scan.
 - Safer visual hierarchy between scanning, exporting, and controlled actions.
+- A bounded report-timing window showing rate, average interval, p95, jitter,
+  maximum interval, and spike count without retaining an unbounded history.
+- Bluetooth input CRC validation before parsing state.
+- Short HID read timeouts and bounded reader-thread shutdown.
+- Fake-transport session tests covering open/start, input injection, corrupt
+  Bluetooth rejection, USB/Bluetooth output shape, stop, and disposal.
 
 ## Next evidence-driven improvements
 
-1. Record report arrival timestamps and show average interval, p95, jitter, and
-   spikes over a fixed observation window.
-2. Detect likely physical/virtual duplicates using VID/PID, container identity,
+1. Detect likely physical/virtual duplicates using VID/PID, container identity,
    and known ViGEm interfaces.
-3. Add a connection comparison report so USB and Bluetooth observations for the
+2. Add a connection comparison report so USB and Bluetooth observations for the
    same controller can be viewed side-by-side.
-4. Store sanitized packet fixtures supplied by contributors and run them through
+3. Store sanitized packet fixtures supplied by contributors and run them through
    parser regression tests.
-5. Add reconnect and cancellation tests around the HID reader before continuous
-   hardware sessions.
+4. Add a deterministic capture/replay format for contributor hardware sessions.
+5. Add Windows integration tests for physical disconnect/reconnect; the current
+   fake transport covers the session contract but cannot emulate OS HID teardown.
 
 ## Clean-room boundary
 

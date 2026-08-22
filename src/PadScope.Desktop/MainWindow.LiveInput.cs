@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
+using PadScope.Core.Diagnostics;
 using PadScope.Core.Input;
 using PadScope.Core.Models;
 using PadScope.Hid;
@@ -75,11 +76,13 @@ public partial class MainWindow
 
         _liveSession.Error += message => Dispatcher.BeginInvoke(() => LiveStatusText.Text = message);
         _liveSession.StateUpdated += state => _latestState = state;
+        _liveSession.TimingUpdated += OnTimingUpdated;
 
         _prevButtons = default;
         StartInputButton.IsEnabled = false;
         StopInputButton.IsEnabled = true;
         LiveStatusText.Text = $"Live: {_liveSession.DeviceDescription}";
+        TimingText.Text = "Timing: waiting for reports...";
         EnableOutputControls(true);
 
         _liveTimer?.Stop();
@@ -254,6 +257,18 @@ public partial class MainWindow
         }
     }
 
+    private void OnTimingUpdated(ReportTimingSnapshot timing)
+    {
+        Dispatcher.BeginInvoke(() =>
+        {
+            TimingText.Text = timing.ReportCount < 2
+                ? "Timing: collecting samples..."
+                : $"Timing: {timing.ReportRateHz:F0} Hz  |  avg {timing.AverageIntervalMs:F2} ms  |  " +
+                  $"p95 {timing.P95IntervalMs:F2} ms  |  jitter {timing.JitterMs:F2} ms  |  " +
+                  $"spikes {timing.SpikeCount}";
+        });
+    }
+
     private void UpdateButtonIfNeeded(Button button, Ds4Buttons current, Ds4Buttons flag)
     {
         bool pressed = current.HasFlag(flag);
@@ -319,6 +334,7 @@ public partial class MainWindow
         StopInputButton.IsEnabled = false;
         EnableOutputControls(false);
         LiveStatusText.Text = "Live input stopped.";
+        TimingText.Text = "Timing: not running";
     }
 
     private static string FormatHex(byte[] data)

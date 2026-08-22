@@ -15,6 +15,8 @@ All notable changes will be documented here. PadScope follows Semantic Versionin
 - USB/Bluetooth DS4 packet-layout and output CRC regression tests.
 - Community-research findings translated into a product and diagnostics roadmap.
 - Explicit desktop states for first scan, scanning, and no-device results.
+- Live bounded report-timing diagnostics with rate, p95, jitter, and spike counts.
+- Fake HID transport and controller-session lifecycle/input/output regression tests.
 
 ### Changed
 
@@ -22,6 +24,7 @@ All notable changes will be documented here. PadScope follows Semantic Versionin
 - Windows packages include the runtime and can run without a separate .NET installation.
 - Desktop visual hierarchy, cards, typography, tabs, table selection, focus states,
   status presentation, and scan guidance now form a cohesive diagnostics workspace.
+- HID reads use bounded timeouts so shutdown is not held by a long blocking read.
 
 ### Fixed
 
@@ -37,6 +40,7 @@ All notable changes will be documented here. PadScope follows Semantic Versionin
   physical-controller list and now tolerates restricted WMI classes.
 - Audio Lab volume sliders now update the selected WASAPI endpoint instead of
   only updating UI events.
+- Corrupt full Bluetooth input reports are rejected using the transport CRC-32.
 
 ### Removed
 
