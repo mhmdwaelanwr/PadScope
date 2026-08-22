@@ -48,6 +48,13 @@ public partial class MainWindow
             return;
         }
 
+        if (!ConfirmControlledAction(
+                "Allow this controller to move and click the Windows mouse until you press Stop.",
+                device))
+        {
+            return;
+        }
+
         StopMouseEmulation();
 
         bool touch = MouseTouchCheckBox.IsChecked == true;

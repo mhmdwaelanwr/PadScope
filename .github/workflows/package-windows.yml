@@ -6,6 +6,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   package:
     runs-on: windows-latest
@@ -25,8 +28,11 @@ jobs:
       - name: Build
         run: dotnet build src/PadScope.sln -c Release --no-restore
 
-      - name: Publish Desktop
-        run: dotnet publish src/PadScope.Desktop/PadScope.Desktop.csproj -c Release -r win-x64 --self-contained false -o artifacts/PadScope-win-x64
+      - name: Test
+        run: dotnet test src/PadScope.sln -c Release --no-build
+
+      - name: Publish self-contained Desktop
+        run: dotnet publish src/PadScope.Desktop/PadScope.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o artifacts/PadScope-win-x64
 
       - name: Compress package
         shell: pwsh
@@ -37,3 +43,10 @@ jobs:
         with:
           name: PadScope-win-x64
           path: artifacts/PadScope-win-x64.zip
+
+      - name: Attach package to tagged release
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create $env:GITHUB_REF_NAME artifacts/PadScope-win-x64.zip --generate-notes --verify-tag

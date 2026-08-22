@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
+using System.Reflection;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -65,6 +67,7 @@ public partial class MainWindow : Window
         UpdateSummary();
         EnableOutputControls(false);
         VirtualStatusText.Text = ViGEmBusDetector.DescribeStatus();
+        VersionText.Text = $"PadScope v{GetAppVersion()} · Windows gamepad toolkit";
         _audioBridge.Log += OnAudioBridgeLog;
     }
 
@@ -108,6 +111,31 @@ public partial class MainWindow : Window
         else
         {
             ApplyDarkTheme();
+        }
+    }
+
+    private void AboutButton_Click(object sender, RoutedEventArgs e)
+    {
+        MessageBoxResult result = MessageBox.Show(
+            this,
+            $"PadScope v{GetAppVersion()}\n\n" +
+            "Windows gamepad diagnostics, compatibility, remapping, and experimentation toolkit.\n\n" +
+            "Normal scans are read-only. Controlled and experimental actions may require additional drivers and explicit confirmation.\n\n" +
+            "Open the PadScope GitHub repository?",
+            "About PadScope",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Information);
+
+        if (result == MessageBoxResult.Yes)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo("https://github.com/mhmdwaelanwr/PadScope") { UseShellExecute = true });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, ex.Message, "Could not open GitHub", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 
@@ -178,6 +206,11 @@ public partial class MainWindow : Window
 
     private void AudioCaptureStartButton_Click(object sender, RoutedEventArgs e)
     {
+        if (!ConfirmControlledAction("Start microphone capture from the selected Windows controller audio endpoint."))
+        {
+            return;
+        }
+
         int micIndex = AudioMicComboBox.SelectedIndex;
         if (_audioBridge.StartCapture(micIndex >= 0 ? micIndex : 0))
         {
@@ -192,11 +225,19 @@ public partial class MainWindow : Window
         _audioBridge.StopCapture();
         AudioCaptureStartButton.IsEnabled = true;
         AudioCaptureStopButton.IsEnabled = false;
+        AudioPlaybackStartButton.IsEnabled = !_audioBridge.IsPlaying;
+        AudioPlaybackStopButton.IsEnabled = _audioBridge.IsPlaying;
+        AudioRouteStatusText.Text = _audioBridge.IsRouting ? "Routing active." : "Routing stopped.";
         AudioStatusText.Text = _audioBridge.DescribeStatus();
     }
 
     private void AudioPlaybackStartButton_Click(object sender, RoutedEventArgs e)
     {
+        if (!ConfirmControlledAction("Open the selected Windows controller speaker endpoint for playback."))
+        {
+            return;
+        }
+
         int speakerIndex = AudioSpeakerComboBox.SelectedIndex;
         if (_audioBridge.StartPlayback(speakerIndex >= 0 ? speakerIndex : 0))
         {
@@ -216,8 +257,24 @@ public partial class MainWindow : Window
 
     private void AudioRouteButton_Click(object sender, RoutedEventArgs e)
     {
+        if (!ConfirmControlledAction("Route captured controller microphone audio to the selected controller speaker until stopped."))
+        {
+            return;
+        }
+
         _audioBridge.RouteMicToSpeaker();
-        AudioRouteStatusText.Text = "Routing active: mic → speaker.";
+        AudioRouteStatusText.Text = _audioBridge.IsRouting
+            ? "Routing active: mic → speaker."
+            : "Routing did not start. Start capture and playback first.";
+        AudioStatusText.Text = _audioBridge.DescribeStatus();
+    }
+
+    private void AudioRouteStopButton_Click(object sender, RoutedEventArgs e)
+    {
+        _audioBridge.StopRoute();
+        AudioPlaybackStartButton.IsEnabled = true;
+        AudioPlaybackStopButton.IsEnabled = false;
+        AudioRouteStatusText.Text = "Routing stopped.";
         AudioStatusText.Text = _audioBridge.DescribeStatus();
     }
 
@@ -354,6 +411,7 @@ public partial class MainWindow : Window
     private async Task RunScanAsync()
     {
         _reports.Clear();
+        ScanButton.IsEnabled = false;
         StatusText.Text = "Scanning...";
         UpdateSummary();
 
@@ -384,11 +442,31 @@ public partial class MainWindow : Window
         }
         finally
         {
+            ScanButton.IsEnabled = true;
             UpdateSummary();
             RefreshLiveDeviceList();
             RefreshVirtualDeviceList();
             RefreshMouseDeviceList();
         }
+    }
+
+    private bool ConfirmControlledAction(string action, ControllerDevice? device = null)
+    {
+        string identity = device is null
+            ? "No controller identity is associated with this Windows audio action."
+            : $"Device: {device.DisplayName}\nVID/PID: {device.VendorId ?? "?"}/{device.ProductId ?? "?"}\nConnection: {device.ConnectionType}\nSource: {device.Source}";
+
+        return MessageBox.Show(
+            this,
+            $"{action}\n\n{identity}\n\nContinue only if this is the intended target.",
+            "PadScope controlled action",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning) == MessageBoxResult.Yes;
+    }
+
+    private static string GetAppVersion()
+    {
+        return Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.1.0";
     }
 
     private async Task<bool> EnsureReportDataAsync()

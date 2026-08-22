@@ -45,6 +45,8 @@
                                        Style="{DynamicResource Dim}" FontSize="11.5" />
                         </StackPanel>
                     </Border>
+                    <Button Content="About" Width="74" Height="32" Margin="0,0,8,0"
+                            Style="{DynamicResource Sec}" Click="AboutButton_Click" />
                     <Button x:Name="ThemeButton" Content="Light" Width="74" Height="32"
                             Style="{DynamicResource Sec}" Click="ToggleThemeButton_Click" />
                 </StackPanel>
@@ -100,7 +102,7 @@
 
                         <!-- Action row -->
                         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
-                            <Button Content="Scan" Click="ScanButton_Click" />
+                            <Button x:Name="ScanButton" Content="Scan" Click="ScanButton_Click" ToolTip="Run a read-only Windows device scan" />
                             <Button Content="Clear" Style="{DynamicResource Sec}" Click="ClearButton_Click" Margin="6,0,0,0" />
                             <Border Width="1" Background="{DynamicResource B_Border}" Margin="12,6" />
                             <Button Content="Export JSON" Style="{DynamicResource Sec}" Click="ExportJsonButton_Click" />
@@ -689,7 +691,11 @@
 
                                 <StackPanel Grid.Column="4">
                                     <TextBlock Text="Route Mic to Speaker" Style="{DynamicResource Dim}" FontSize="11.5" Margin="0,0,0,6" />
-                                    <Button Content="Start Routing" Click="AudioRouteButton_Click" HorizontalAlignment="Left" FontSize="11" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="Start Routing" Click="AudioRouteButton_Click" HorizontalAlignment="Left" FontSize="11" />
+                                        <Button Content="Stop Routing" Click="AudioRouteStopButton_Click" Style="{DynamicResource Sec}"
+                                                Margin="6,0,0,0" HorizontalAlignment="Left" FontSize="11" />
+                                    </StackPanel>
                                     <TextBlock x:Name="AudioRouteStatusText" Text="" Style="{DynamicResource Dim}"
                                                FontSize="11" Margin="0,6,0,0" TextWrapping="Wrap" />
                                 </StackPanel>
@@ -762,7 +768,15 @@
         <!-- ===== FOOTER ===== -->
         <Border Grid.Row="2" Background="{DynamicResource B_Card}" BorderBrush="{DynamicResource B_Border}"
                 BorderThickness="0,1,0,0" Padding="22,6">
-            <TextBlock Text="PadScope v1.0 - Gamepad diagnostics toolkit" Style="{DynamicResource Dim}" FontSize="11" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="VersionText" Text="PadScope" Style="{DynamicResource Dim}" FontSize="11" />
+                <TextBlock Grid.Column="1" Text="Diagnostics first · Unknown stays unknown"
+                           Style="{DynamicResource Dim}" FontSize="11" />
+            </Grid>
         </Border>
     </Grid>
 </Window>
