@@ -414,6 +414,12 @@ public partial class MainWindow : Window
 
     private async Task RunScanAsync()
     {
+        StopLiveInput();
+        StopVirtualPassthrough();
+        StopMouseEmulation();
+        ClearLiveDeviceList();
+        ClearVirtualDeviceList();
+        ClearMouseDeviceList();
         _reports.Clear();
         _isScanning = true;
         ScanButton.IsEnabled = false;

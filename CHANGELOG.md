@@ -44,6 +44,8 @@ All notable changes will be documented here. PadScope follows Semantic Versionin
   only updating UI events.
 - Corrupt full Bluetooth input reports are rejected using the transport CRC-32.
 - Offline replay cannot send rumble, lightbar, or other controller output.
+- Live Input, virtual passthrough, and mouse emulation now own the physical HID
+  device exclusively; starting one stops the other modes, and rescans clear stale selections.
 
 ### Removed
 

@@ -55,6 +55,8 @@ public partial class MainWindow
             return;
         }
 
+        StopLiveInput();
+        StopVirtualPassthrough();
         StopMouseEmulation();
 
         bool touch = MouseTouchCheckBox.IsChecked == true;

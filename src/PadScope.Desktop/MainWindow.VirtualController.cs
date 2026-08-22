@@ -64,6 +64,8 @@ public partial class MainWindow
             return;
         }
 
+        StopLiveInput();
+        StopMouseEmulation();
         StopVirtualPassthrough();
 
         IVirtualControllerTarget target = VirtualTargetComboBox.SelectedIndex == 1
