@@ -62,6 +62,8 @@ public partial class MainWindow
             return;
         }
 
+        StopVirtualPassthrough();
+        StopMouseEmulation();
         StartLiveSession(new HidSharpHidInputReader(), device, allowOutput: true);
     }
 
