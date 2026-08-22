@@ -122,7 +122,7 @@ public sealed class HidSharpHidInputReader : IHidInputReader
 
         try
         {
-            _stream.Write(report);
+            stream.Write(report);
             error = null;
             return true;
         }
@@ -135,7 +135,8 @@ public sealed class HidSharpHidInputReader : IHidInputReader
 
     private void ReadLoop()
     {
-        if (_stream is null)
+        HidStream? stream = _stream;
+        if (stream is null)
         {
             return;
         }
@@ -212,7 +213,7 @@ public sealed class HidSharpHidInputReader : IHidInputReader
                 Score = ScoreDevice(candidate, device)
             })
             .OrderByDescending(item => item.Score)
-            .ThenByDescending(item => item.Device.MaxInputReportLength)
+            .ThenByDescending(item => SafeGetReportLength(item.Device, input: true))
             .Select(item => item.Device)
             .FirstOrDefault();
     }
