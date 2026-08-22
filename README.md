@@ -1,170 +1,223 @@
 # PadScope
 
-**Gamepad diagnostics and compatibility toolkit for Windows.**
+[![.NET](https://github.com/mhmdwaelanwr/PadScope/actions/workflows/dotnet.yml/badge.svg)](https://github.com/mhmdwaelanwr/PadScope/actions/workflows/dotnet.yml)
+[![Package Windows](https://github.com/mhmdwaelanwr/PadScope/actions/workflows/package-windows.yml/badge.svg)](https://github.com/mhmdwaelanwr/PadScope/actions/workflows/package-windows.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Platform](https://img.shields.io/badge/platform-Windows%2010%20%7C%2011-0078D6)
+![.NET](https://img.shields.io/badge/.NET-8.0-512BD4)
 
-PadScope is an open-source toolkit for inspecting, testing, and documenting gamepads on PC, with a special focus on DualShock 4-compatible controllers and low-cost DS4 clones such as Marvo, SkyTech, Zero, and generic PS4-style controllers.
+**A Windows gamepad diagnostics, compatibility, remapping, and experimentation toolkit.**
 
-The goal is not to promise that every clone controller can magically support every feature. The goal is to tell the truth clearly:
+PadScope helps you discover what a controller actually supports on PC—especially DualShock 4-compatible controllers and low-cost PS4-style clones. It combines a WPF desktop app and a command-line interface for scanning devices, inspecting live HID input, testing selected features, creating virtual controllers, applying profiles, and exporting evidence-based compatibility reports.
 
-- What does Windows detect?
-- Is the controller connected through USB or Bluetooth?
-- Does it behave like a real DS4, a DirectInput device, or a generic HID gamepad?
-- Do rumble, lightbar, gyro, touchpad, headset jack, or internal speaker features work?
-- Is the problem fixable through software, or is the controller firmware/hardware missing the required protocol?
+> PadScope is under active development. Hardware support varies, particularly with clone controllers. Unknown capabilities remain reported as unknown instead of being presented as working.
 
-## Current GitHub stage
+## Highlights
 
-PadScope is currently at **Stage 0 / Stage 1 readiness**:
+- Read-only Windows controller discovery with USB/Bluetooth hints
+- Device identity, VID/PID, manufacturer, path, and known-profile matching
+- JSON and Markdown compatibility report export
+- Live buttons, sticks, triggers, battery, gyro, and touchpad monitoring
+- Controlled rumble and lightbar tests with explicit confirmation
+- Virtual DualShock 4 or Xbox 360 passthrough through ViGEmBus
+- JSON-based remapping profiles, combos, rapid fire, and macros
+- Touchpad and gyro mouse emulation with adjustable sensitivity
+- Controller audio endpoint discovery through WMI and WASAPI
+- Desktop and CLI interfaces
+- Dark and light desktop themes
+- Automated Windows build, test, and packaging workflows
 
-- Stage 0: build verification is ready.
-- Stage 1: no-controller scan is ready to test.
-- Stage 2: USB scan is the first real controller test.
-- Stage 3: Bluetooth scan comes after USB.
+## Current status
 
-Do **not** start rumble, lightbar, gyro, touchpad, or audio experiments yet. Those features are planned and registered, but locked until scanner and identity evidence are validated.
+| Area | Status | Notes |
+| --- | --- | --- |
+| Device scanning | Implemented | Read-only Windows scan and profile matching |
+| Report export | Implemented | JSON and Markdown |
+| Live HID input | Implemented | Intended for DS4-style reports |
+| Rumble/lightbar | Implemented, controlled | Sends output reports only after confirmation |
+| Virtual controller | Implemented | Requires ViGEmBus |
+| Remapping/macros | Implemented | Applied through JSON profiles |
+| Touchpad/gyro mouse | Implemented | Requires compatible input reports |
+| Audio endpoint lab | Experimental | Enumerates and routes Windows audio endpoints; it cannot add hardware support |
+| Clone compatibility | Device-dependent | Must be verified per controller and connection mode |
 
-## Quick build without Visual Studio
+## Requirements
 
-This is the lowest-data setup for testing:
+- Windows 10 or Windows 11
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) for building from source
+- A USB or Bluetooth gamepad
+- [ViGEmBus](https://github.com/nefarius/ViGEmBus) only for virtual DS4/Xbox 360 output
+- HidHide is optional and useful when preventing games from seeing both the physical and virtual controller
 
-Requirements:
+The packaged desktop build is framework-dependent, so the .NET 8 Desktop Runtime must be installed on the target PC.
 
-- Windows 10/11
-- .NET 8 SDK
-- Git for Windows
+## Build and run
 
-Commands:
+From PowerShell:
 
 ```powershell
-cd Desktop
 git clone https://github.com/mhmdwaelanwr/PadScope.git
-cd PadScope\src
-dotnet restore
-dotnet build PadScope.sln
-dotnet run --project PadScope.Desktop
+cd PadScope
+dotnet restore src\PadScope.sln
+dotnet build src\PadScope.sln
 ```
 
-If the repository already exists:
+Start the desktop app:
 
 ```powershell
-cd Desktop\PadScope
-git pull
-cd src
-dotnet restore
-dotnet build PadScope.sln
-dotnet run --project PadScope.Desktop
+dotnet run --project src\PadScope.Desktop
 ```
 
-## First test order
+Show CLI help or run a safe scan:
 
-1. Build the solution.
-2. Run the desktop app.
-3. Scan with no controller connected.
-4. Connect Marvo GT-84 by USB.
-5. Scan again.
-6. Export JSON and Markdown.
-7. Disconnect USB, connect Bluetooth, and scan again.
-8. Compare USB and Bluetooth reports.
+```powershell
+dotnet run --project src\PadScope.Cli -- help
+dotnet run --project src\PadScope.Cli -- scan
+dotnet run --project src\PadScope.Cli -- scan --json
+```
 
-## Why this project exists
+Run the test suite:
 
-Many PC players buy affordable PS4-style controllers and discover that features work inconsistently:
+```powershell
+dotnet test src\PadScope.sln
+```
 
-- Bluetooth reconnect works randomly.
-- Rumble works over USB but not Bluetooth.
-- Games show Xbox button prompts instead of PlayStation prompts.
-- DS4Windows detects the controller sometimes and ignores it other times.
-- Lightbar behavior changes between games.
-- The 3.5mm jack or internal speaker never appears as a Windows audio device.
-- Steam, DS4Windows, HidHide, and the game may fight over the same input device.
+## Desktop workflow
 
-PadScope turns this mess into a structured compatibility report.
+1. Connect the controller—USB is recommended for the first scan.
+2. Start PadScope Desktop and select **Scan**.
+3. Review the detected device, identity, profile confidence, risk level, and recommended next action.
+4. Use Live Input to confirm report parsing.
+5. Export the result as JSON or Markdown.
+6. Only then try controlled output, virtual-controller, mouse, or audio features as appropriate.
+7. Repeat the scan over Bluetooth and compare the results.
 
-## Project scope
+The desktop app includes dedicated areas for scanning and reports, staged tests, compatibility profiles, live input/output, virtual controllers and profiles, mouse emulation, and the Audio Lab.
 
-### Phase 1 — Scanner
+## CLI commands
 
-The first version scans connected gamepads and produces a report containing:
+All commands may be run with:
 
-- Device name
-- Vendor ID / Product ID
-- USB/Bluetooth connection hints
-- Windows audio-device visibility
-- Known controller profile match
-- Compatibility notes
-- JSON export
-- Markdown export
+```powershell
+dotnet run --project src\PadScope.Cli -- <command> [options]
+```
 
-### Phase 2 — Feature tests
+| Command | Purpose |
+| --- | --- |
+| `scan [--json]` | Scan controller-like Windows devices |
+| `input [--vid XXXX] [--pid XXXX]` | Stream live controller state |
+| `rumble ...` | Send a confirmed, timed rumble test |
+| `lightbar ...` | Send a confirmed lightbar color test |
+| `virtual ... --target ds4\|xbox360` | Mirror the physical pad to a ViGEm virtual controller |
+| `mouse [--touch] [--gyro] [--sensitivity N]` | Control the Windows mouse |
+| `audio --probe\|--list` | Inspect controller audio endpoints |
+| `profile-example [--path file.json]` | Create an example remapping/macro profile |
+| `stages` | Display all development/test stages |
+| `run-stage <0-17>` | Run or explain a specific stage |
+| `run-safe` | Run implemented read-only and packaging checks |
+| `package` | Print the Windows publish command |
 
-The next version will add controlled tests:
+Examples:
 
-- Button test
-- Analog stick test
-- Trigger test
-- Rumble test
-- Lightbar test
-- Touchpad test
-- Gyro/IMU test
-- Bluetooth reconnect test
-- Speaker/headset protocol probe
+```powershell
+# Inspect a specific controller
+dotnet run --project src\PadScope.Cli -- input --vid 054C --pid 09CC
 
-### Phase 3 — Audio Lab
+# Controlled output tests (PadScope asks for confirmation)
+dotnet run --project src\PadScope.Cli -- rumble --small 255 --large 128 --seconds 1
+dotnet run --project src\PadScope.Cli -- lightbar --color 00AEEF --seconds 2
 
-The advanced audio experiment will investigate DS4-style audio streaming:
+# Virtual Xbox 360 controller with a profile
+dotnet run --project src\PadScope.Cli -- virtual --target xbox360 --profile .\profile.json
 
-1. Capture default Windows output audio.
-2. Downmix/resample to a DS4-compatible format.
-3. Encode audio as SBC frames.
-4. Send DS4-style HID audio packets.
-5. Report whether the controller accepts or rejects the protocol.
+# Touchpad and gyro mouse
+dotnet run --project src\PadScope.Cli -- mouse --touch --gyro --sensitivity 1.2
 
-This feature will be experimental and will not be enabled blindly for unknown devices.
+# Audio discovery
+dotnet run --project src\PadScope.Cli -- audio --probe
+dotnet run --project src\PadScope.Cli -- audio --list
+```
 
-## What PadScope is not
+When multiple devices are present, use `--vid` and `--pid` to select one. If no match is found, the current CLI falls back to the first detected controller, so verify the selected device before controlled tests.
 
-PadScope is **not** a kernel driver, not a DS4Windows replacement, and not a magic fix for missing hardware features.
+## Safety model
 
-If a clone controller does not implement the DS4 audio protocol, PadScope should say that clearly instead of pretending there is a software setting that can fix it.
+PadScope is diagnostics-first:
 
-## Compatibility database
+- **Safe:** enumeration, profile matching, audio endpoint discovery, and report export
+- **Controlled:** rumble and lightbar output to a selected controller, with a warning and confirmation
+- **Experimental:** protocol research and continuous audio/output experiments
 
-PadScope maintains JSON profiles for tested and research-needed controllers under `data/controllers`.
+A normal scan never sends HID output reports. Controller names and profiles are hints, not proof of full compatibility. See [the safety policy](docs/safety-policy.md) before experimenting with unknown hardware.
 
-Current starter profiles include:
+## Compatibility profiles
 
+Starter profiles are stored in [`data/controllers`](data/controllers) for:
+
+- Sony DualShock 4
+- Sony DualSense
 - Marvo GT-84
 - SkyTech DS4-style clone
 - Zero DS4-style clone
 - Generic Wireless Controller
 - AULA G1000
-- Sony DualShock 4
-- Sony DualSense
 
-Profiles are evidence records. Unknown features should remain `unknown` until a scan or controlled test proves otherwise.
+Profiles are evidence records. USB and Bluetooth modes may expose different identities or capabilities, and a clone may implement only part of the DS4 protocol.
 
-## Engineering principles
+## Project structure
 
-- Diagnose before attempting fixes.
-- Never send risky HID packets to unknown devices without user confirmation.
-- Keep protocol notes documented.
-- Prefer clean-room implementation and avoid copying GPL code into MIT-licensed modules.
-- Make clone-controller compatibility visible and searchable.
+```text
+src/
+├── PadScope.Core       Scanning models, diagnostics, profiles, mapping, tests, and reports
+├── PadScope.Hid        HID I/O, virtual controllers, mouse bridge, and audio integration
+├── PadScope.Desktop    Windows WPF application
+├── PadScope.Cli        Command-line interface
+└── PadScope.Tests      Unit tests
+data/controllers/       Compatibility profiles
+docs/                   Architecture, research, safety, and test documentation
+```
 
-## Tech stack
+## Packaging
 
-- Windows 10/11
-- .NET 8
-- C#
-- WPF desktop app
-- CLI app
-- GitHub Actions Windows build
+Create a framework-dependent Windows x64 build:
 
-## Key docs
+```powershell
+dotnet publish src\PadScope.Desktop\PadScope.Desktop.csproj -c Release -r win-x64 --self-contained false -o artifacts\PadScope-win-x64
+```
 
-- `docs/getting-started.md`
-- `docs/a-to-z-feature-map.md`
-- `docs/staged-test-plan.md`
-- `docs/safety-policy.md`
-- `docs/compatibility-profiles.md`
-- `docs/ds4-audio-protocol.md`
+The **Package Windows** GitHub Actions workflow also produces a `PadScope-win-x64.zip` artifact when run manually or when a `v*` tag is pushed.
+
+## Known limitations
+
+- PadScope currently targets Windows and `net8.0-windows`.
+- DS4-style report parsing does not guarantee correct behavior for every clone.
+- Virtual-controller output requires the separately installed ViGEmBus driver.
+- A virtual controller can cause double input unless the physical controller is hidden or the game is configured correctly.
+- Audio endpoint detection or routing does not mean that a controller implements Sony's DS4 HID audio protocol.
+- PadScope cannot restore a feature missing from the controller's firmware or hardware.
+
+## Documentation
+
+- [Getting started](docs/getting-started.md)
+- [Architecture](docs/architecture.md)
+- [A-to-Z feature map](docs/a-to-z-feature-map.md)
+- [Staged test plan](docs/staged-test-plan.md)
+- [Safety policy](docs/safety-policy.md)
+- [Compatibility profiles](docs/compatibility-profiles.md)
+- [DS4 audio protocol notes](docs/ds4-audio-protocol.md)
+- [Research notes](docs/research-notes.md)
+
+## Contributing
+
+Compatibility evidence is especially valuable. When reporting a controller, include:
+
+- Exact model and connection mode
+- VID/PID and the displayed Windows device name
+- Whether input, rumble, lightbar, gyro, touchpad, and audio endpoints were actually observed
+- A PadScope JSON or Markdown report when possible
+
+Use the repository's compatibility-report or feature-test issue templates so observed results remain separate from assumptions.
+
+## License
+
+PadScope is available under the [MIT License](LICENSE).
