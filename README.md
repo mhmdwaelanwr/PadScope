@@ -25,6 +25,7 @@ PadScope helps you discover what a controller actually supports on PC—especial
 - Controller audio endpoint discovery through WMI and WASAPI
 - Desktop and CLI interfaces
 - Dark and light desktop themes
+- Guided diagnostics workspace with explicit empty, scanning, and no-device states
 - Automated Windows build, test, and packaging workflows
 
 ## Current status
@@ -207,6 +208,7 @@ The **Package Windows** GitHub Actions workflow also produces a `PadScope-win-x6
 - [Compatibility profiles](docs/compatibility-profiles.md)
 - [DS4 audio protocol notes](docs/ds4-audio-protocol.md)
 - [Research notes](docs/research-notes.md)
+- [2026 community findings and product decisions](docs/community-findings-2026.md)
 
 ## Contributing
 
