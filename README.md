@@ -49,7 +49,7 @@ PadScope helps you discover what a controller actually supports on PC—especial
 - [ViGEmBus](https://github.com/nefarius/ViGEmBus) only for virtual DS4/Xbox 360 output
 - HidHide is optional and useful when preventing games from seeing both the physical and virtual controller
 
-The packaged desktop build is framework-dependent, so the .NET 8 Desktop Runtime must be installed on the target PC.
+Tagged packages are self-contained and do not require a separate .NET installation. Building from source still requires the .NET 8 SDK.
 
 ## Build and run
 
@@ -138,7 +138,7 @@ dotnet run --project src\PadScope.Cli -- audio --probe
 dotnet run --project src\PadScope.Cli -- audio --list
 ```
 
-When multiple devices are present, use `--vid` and `--pid` to select one. If no match is found, the current CLI falls back to the first detected controller, so verify the selected device before controlled tests.
+When multiple devices are present, use `--vid` and `--pid` to select exactly one. PadScope refuses to continue when the identity is missing, ambiguous, or does not match; it never silently targets the first controller.
 
 ## Safety model
 
@@ -182,7 +182,7 @@ docs/                   Architecture, research, safety, and test documentation
 Create a framework-dependent Windows x64 build:
 
 ```powershell
-dotnet publish src\PadScope.Desktop\PadScope.Desktop.csproj -c Release -r win-x64 --self-contained false -o artifacts\PadScope-win-x64
+dotnet publish src\PadScope.Desktop\PadScope.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o artifacts\PadScope-win-x64
 ```
 
 The **Package Windows** GitHub Actions workflow also produces a `PadScope-win-x64.zip` artifact when run manually or when a `v*` tag is pushed.

@@ -1,0 +1,55 @@
+name: Bug report
+description: Report a reproducible PadScope problem
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Never include private device paths, account names, or other personal information in public reports.
+  - type: input
+    id: version
+    attributes:
+      label: PadScope version or commit
+      placeholder: v0.1.0 or commit SHA
+    validations:
+      required: true
+  - type: dropdown
+    id: windows
+    attributes:
+      label: Windows version
+      options: [Windows 10, Windows 11, Other]
+    validations:
+      required: true
+  - type: textarea
+    id: hardware
+    attributes:
+      label: Controller and connection
+      description: Exact model, USB/Bluetooth, and VID/PID if known.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open PadScope\n2. Select...\n3. Observe..."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior and logs
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed private paths and personal information from reports and logs.
+          required: true

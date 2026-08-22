@@ -100,7 +100,9 @@ public partial class MainWindow
             return;
         }
 
-        if (!ConfirmOutput("Send a rumble pulse to this controller?\n\nThe controller must implement the DS4 output report or nothing will vibrate."))
+        if (!ConfirmControlledAction(
+                "Send a rumble output report. The controller may ignore an unsupported DS4 report.",
+                DeviceComboBox.SelectedItem as ControllerDevice))
         {
             return;
         }
@@ -130,7 +132,9 @@ public partial class MainWindow
             return;
         }
 
-        if (!ConfirmOutput("Set the lightbar color on this controller?\n\nThe controller must implement the DS4 output report or the lightbar will not change."))
+        if (!ConfirmControlledAction(
+                "Send a lightbar output report. The controller may ignore an unsupported DS4 report.",
+                DeviceComboBox.SelectedItem as ControllerDevice))
         {
             return;
         }
@@ -315,18 +319,6 @@ public partial class MainWindow
         StopInputButton.IsEnabled = false;
         EnableOutputControls(false);
         LiveStatusText.Text = "Live input stopped.";
-    }
-
-    private bool ConfirmOutput(string message)
-    {
-        MessageBoxResult result = MessageBox.Show(
-            this,
-            message,
-            "PadScope output test",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning
-        );
-        return result == MessageBoxResult.Yes;
     }
 
     private static string FormatHex(byte[] data)

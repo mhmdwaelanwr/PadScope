@@ -57,6 +57,13 @@ public partial class MainWindow
             return;
         }
 
+        if (!ConfirmControlledAction(
+                "Start virtual-controller passthrough. Games may see both the physical and virtual controllers unless HidHide is configured.",
+                device))
+        {
+            return;
+        }
+
         StopVirtualPassthrough();
 
         IVirtualControllerTarget target = VirtualTargetComboBox.SelectedIndex == 1

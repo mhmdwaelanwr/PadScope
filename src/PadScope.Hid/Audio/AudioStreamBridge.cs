@@ -8,11 +8,13 @@ public sealed class AudioStreamBridge : IDisposable
 {
     private WasapiCapture? _capture;
     private WasapiOut? _playback;
+    private MediaFoundationResampler? _routeResampler;
     private bool _disposed;
     private readonly object _lock = new();
 
     public bool IsCapturing { get; private set; }
     public bool IsPlaying { get; private set; }
+    public bool IsRouting { get; private set; }
 
     public event Action<string>? Log;
     public event Action<byte[]>? MicDataCaptured;
@@ -81,6 +83,11 @@ public sealed class AudioStreamBridge : IDisposable
 
     public void StopCapture()
     {
+        if (IsRouting)
+        {
+            StopRoute();
+        }
+
         lock (_lock)
         {
             if (!IsCapturing || _capture is null)
@@ -153,6 +160,11 @@ public sealed class AudioStreamBridge : IDisposable
 
     public void StopPlayback()
     {
+        if (IsRouting)
+        {
+            StopRoute();
+        }
+
         lock (_lock)
         {
             if (!IsPlaying || _playback is null)
@@ -179,6 +191,12 @@ public sealed class AudioStreamBridge : IDisposable
 
     public void RouteMicToSpeaker()
     {
+        if (IsRouting)
+        {
+            Log?.Invoke("Audio route already running.");
+            return;
+        }
+
         if (!IsCapturing || _capture is null)
         {
             Log?.Invoke("Start capture first before routing.");
@@ -199,9 +217,10 @@ public sealed class AudioStreamBridge : IDisposable
 
         MicDataCaptured += OnMicDataForRoute;
 
-        var resampler = new MediaFoundationResampler(_routeBuffer, _playback.OutputWaveFormat);
-        _playback.Init(resampler);
+        _routeResampler = new MediaFoundationResampler(_routeBuffer, _playback.OutputWaveFormat);
+        _playback.Init(_routeResampler);
         _playback.Play();
+        IsRouting = true;
 
         Log?.Invoke($"Routing active: mic ({_capture.WaveFormat}) → speaker ({_playback.OutputWaveFormat}).");
     }
@@ -210,11 +229,18 @@ public sealed class AudioStreamBridge : IDisposable
     {
         MicDataCaptured -= OnMicDataForRoute;
         _routeBuffer = null;
+        IsRouting = false;
 
         lock (_lock)
         {
             _playback?.Stop();
+            _playback?.Dispose();
+            _playback = null;
+            IsPlaying = false;
         }
+
+        _routeResampler?.Dispose();
+        _routeResampler = null;
 
         Log?.Invoke("Audio route stopped.");
     }
@@ -245,7 +271,8 @@ public sealed class AudioStreamBridge : IDisposable
         int speakers = AvailableSpeakers.Count;
         int mics = AvailableMicrophones.Count;
 
-        return $"Audio Lab: capture={captureStatus}, playback={playbackStatus}, speakers={speakers}, mics={mics}.";
+        string routeStatus = IsRouting ? "ACTIVE" : "stopped";
+        return $"Audio Lab: capture={captureStatus}, playback={playbackStatus}, route={routeStatus}, speakers={speakers}, mics={mics}.";
     }
 
     private void OnCaptureDataAvailable(object? sender, WaveInEventArgs e)

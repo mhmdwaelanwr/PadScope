@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
 using PadScope.Core.Diagnostics;
@@ -492,49 +493,15 @@ static void RunProfileExample(string[] args)
 static bool TrySelectDevice(
     IControllerScanner scanner,
     string[] args,
-    out ControllerDevice? device,
+    [NotNullWhen(true)] out ControllerDevice? device,
     out string? error)
 {
     device = null;
 
     var reports = scanner.Scan().Select(ReportBuilder.BuildInitialReport).ToList();
-
-    if (reports.Count == 0)
-    {
-        error = "No controller-like device was detected. Connect the controller first, then try again.";
-        return false;
-    }
-
     string? vid = GetArgValue(args, "--vid");
     string? pid = GetArgValue(args, "--pid");
-
-    IEnumerable<CompatibilityReport> candidates = reports;
-
-    if (vid is not null)
-    {
-        candidates = candidates.Where(report => string.Equals(report.Device.VendorId, vid, StringComparison.OrdinalIgnoreCase));
-    }
-
-    if (pid is not null)
-    {
-        candidates = candidates.Where(report => string.Equals(report.Device.ProductId, pid, StringComparison.OrdinalIgnoreCase));
-    }
-
-    List<CompatibilityReport> filtered = candidates.ToList();
-    if (filtered.Count == 0)
-    {
-        filtered = reports.ToList();
-    }
-
-    if (filtered.Count == 0)
-    {
-        error = "No matching device was found.";
-        return false;
-    }
-
-    device = filtered[0].Device;
-    error = null;
-    return true;
+    return DeviceSelector.TrySelect(reports, vid, pid, out device, out error);
 }
 
 static string FormatInputState(PadScope.Core.Input.Ds4InputState state)

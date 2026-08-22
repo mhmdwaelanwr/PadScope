@@ -74,7 +74,7 @@ public sealed class TouchpadMouseMapper
             int x = point.X;
             int y = point.Y;
 
-            if (_lastX is null)
+            if (_lastX is not int lastX || _lastY is not int lastY)
             {
                 _lastX = x;
                 _lastY = y;
@@ -82,8 +82,8 @@ public sealed class TouchpadMouseMapper
                 return;
             }
 
-            int dx = x - _lastX.Value;
-            int dy = y - _lastY.Value;
+            int dx = x - lastX;
+            int dy = y - lastY;
             _lastX = x;
             _lastY = y;
             _totalMove += Math.Abs(dx) + Math.Abs(dy);

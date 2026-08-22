@@ -13,5 +13,7 @@ Goals:
 Recommended command:
 
 ```powershell
-dotnet publish src\PadScope.Desktop\PadScope.Desktop.csproj -c Release -r win-x64 --self-contained false -o artifacts\PadScope-win-x64
+dotnet publish src\PadScope.Desktop\PadScope.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o artifacts\PadScope-win-x64
 ```
+
+The GitHub Actions packaging workflow runs the build and tests, uploads the ZIP artifact, and attaches it to a GitHub Release when a `v*` tag is pushed.
