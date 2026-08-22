@@ -11,6 +11,8 @@ public sealed class AudioStreamBridge : IDisposable
     private MediaFoundationResampler? _routeResampler;
     private bool _disposed;
     private readonly object _lock = new();
+    private int _speakerDeviceIndex;
+    private int _microphoneDeviceIndex;
 
     public bool IsCapturing { get; private set; }
     public bool IsPlaying { get; private set; }
@@ -69,6 +71,7 @@ public sealed class AudioStreamBridge : IDisposable
                 _capture.RecordingStopped += OnCaptureStopped;
                 _capture.StartRecording();
 
+                _microphoneDeviceIndex = deviceIndex;
                 IsCapturing = true;
                 Log?.Invoke($"Capture started on '{devices[deviceIndex].Name}' ({_capture.WaveFormat}).");
                 return true;
@@ -146,6 +149,7 @@ public sealed class AudioStreamBridge : IDisposable
                 }
 
                 _playback = new WasapiOut(device, AudioClientShareMode.Shared, false, 100);
+                _speakerDeviceIndex = deviceIndex;
                 IsPlaying = true;
                 Log?.Invoke($"Playback ready on '{devices[deviceIndex].Name}' ({_playback.OutputWaveFormat}).");
                 return true;
@@ -253,15 +257,29 @@ public sealed class AudioStreamBridge : IDisposable
     public void SetSpeakerVolume(int volumePercent)
     {
         volumePercent = Math.Clamp(volumePercent, 0, 100);
-        SpeakerVolumeChanged?.Invoke(volumePercent);
-        Log?.Invoke($"Speaker volume set to {volumePercent}%.");
+        if (TrySetEndpointVolume(AvailableSpeakers, _speakerDeviceIndex, DataFlow.Render, volumePercent, out string? error))
+        {
+            SpeakerVolumeChanged?.Invoke(volumePercent);
+            Log?.Invoke($"Speaker volume set to {volumePercent}%.");
+        }
+        else
+        {
+            Log?.Invoke($"Speaker volume was not changed: {error}");
+        }
     }
 
     public void SetMicVolume(int volumePercent)
     {
         volumePercent = Math.Clamp(volumePercent, 0, 100);
-        MicVolumeChanged?.Invoke(volumePercent);
-        Log?.Invoke($"Microphone volume set to {volumePercent}%.");
+        if (TrySetEndpointVolume(AvailableMicrophones, _microphoneDeviceIndex, DataFlow.Capture, volumePercent, out string? error))
+        {
+            MicVolumeChanged?.Invoke(volumePercent);
+            Log?.Invoke($"Microphone volume set to {volumePercent}%.");
+        }
+        else
+        {
+            Log?.Invoke($"Microphone volume was not changed: {error}");
+        }
     }
 
     public string DescribeStatus()
@@ -321,6 +339,45 @@ public sealed class AudioStreamBridge : IDisposable
         }
 
         return null;
+    }
+
+    private static bool TrySetEndpointVolume(
+        IReadOnlyList<AudioDeviceInfo> devices,
+        int selectedIndex,
+        DataFlow flow,
+        int volumePercent,
+        out string? error)
+    {
+        if (devices.Count == 0)
+        {
+            error = "no matching controller audio endpoint is available";
+            return false;
+        }
+
+        if (selectedIndex < 0 || selectedIndex >= devices.Count)
+        {
+            selectedIndex = 0;
+        }
+
+        try
+        {
+            using MMDeviceEnumerator enumerator = new();
+            using MMDevice? device = FindWasapiDevice(enumerator, devices[selectedIndex], flow);
+            if (device is null)
+            {
+                error = $"WASAPI endpoint '{devices[selectedIndex].Name}' was not found";
+                return false;
+            }
+
+            device.AudioEndpointVolume.MasterVolumeLevelScalar = volumePercent / 100f;
+            error = null;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+            return false;
+        }
     }
 
     public void Dispose()

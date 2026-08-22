@@ -33,8 +33,8 @@ PadScope helps you discover what a controller actually supports on PC—especial
 | --- | --- | --- |
 | Device scanning | Implemented | Read-only Windows scan and profile matching |
 | Report export | Implemented | JSON and Markdown |
-| Live HID input | Implemented | Intended for DS4-style reports |
-| Rumble/lightbar | Implemented, controlled | Sends output reports only after confirmation |
+| Live HID input | Implemented | USB/full-Bluetooth layouts covered by protocol tests; clones still require observation |
+| Rumble/lightbar | Implemented, controlled | Fixed-size USB/BT packets and BT CRC; sends only after confirmation |
 | Virtual controller | Implemented | Requires ViGEmBus |
 | Remapping/macros | Implemented | Applied through JSON profiles |
 | Touchpad/gyro mouse | Implemented | Requires compatible input reports |
@@ -191,6 +191,7 @@ The **Package Windows** GitHub Actions workflow also produces a `PadScope-win-x6
 
 - PadScope currently targets Windows and `net8.0-windows`.
 - DS4-style report parsing does not guarantee correct behavior for every clone.
+- Bluetooth full-report activation and clone-specific quirks still require real-hardware validation.
 - Virtual-controller output requires the separately installed ViGEmBus driver.
 - A virtual controller can cause double input unless the physical controller is hidden or the game is configured correctly.
 - Audio endpoint detection or routing does not mean that a controller implements Sony's DS4 HID audio protocol.

@@ -53,14 +53,34 @@ public sealed class WindowsDeviceScanner : IControllerScanner
         }
 
         List<ControllerDevice> devices = new();
-        devices.AddRange(ScanPnPDevices());
-        devices.AddRange(ScanGameControllers());
-        devices.AddRange(ScanAudioDevices());
+        TryAddDevices(devices, ScanPnPDevices);
+        TryAddDevices(devices, ScanGameControllers);
 
         return devices
             .DistinctBy(device => device.DevicePath ?? $"{device.DisplayName}:{device.VendorId}:{device.ProductId}:{device.Source}")
             .OrderBy(device => device.DisplayName, StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    private static void TryAddDevices(
+        ICollection<ControllerDevice> destination,
+        Func<IEnumerable<ControllerDevice>> scan)
+    {
+        try
+        {
+            foreach (ControllerDevice device in scan())
+            {
+                destination.Add(device);
+            }
+        }
+        catch (ManagementException)
+        {
+            // A missing or restricted WMI class must not abort the whole scan.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Keep results from the other controller discovery path.
+        }
     }
 
     private static IEnumerable<ControllerDevice> ScanPnPDevices()
@@ -165,37 +185,6 @@ public sealed class WindowsDeviceScanner : IControllerScanner
         return ids;
     }
 
-    private static IEnumerable<ControllerDevice> ScanAudioDevices()
-    {
-        using ManagementObjectSearcher searcher = new(
-            "SELECT Name, Manufacturer, DeviceID, PNPDeviceID FROM Win32_SoundDevice"
-        );
-
-        foreach (ManagementObject item in searcher.Get().OfType<ManagementObject>())
-        {
-            string name = ReadString(item, "Name") ?? string.Empty;
-            string pnpDeviceId = ReadString(item, "PNPDeviceID") ?? ReadString(item, "DeviceID") ?? string.Empty;
-            string manufacturer = ReadString(item, "Manufacturer") ?? string.Empty;
-
-            if (!LooksLikeControllerAudioEndpoint(name, pnpDeviceId, manufacturer))
-            {
-                continue;
-            }
-
-            (string? vendorId, string? productId) = ExtractVidPid(pnpDeviceId);
-
-            yield return new ControllerDevice(
-                DisplayName: string.IsNullOrWhiteSpace(name) ? "Unknown controller audio endpoint" : name,
-                Manufacturer: string.IsNullOrWhiteSpace(manufacturer) ? null : manufacturer,
-                VendorId: vendorId,
-                ProductId: productId,
-                DevicePath: string.IsNullOrWhiteSpace(pnpDeviceId) ? null : pnpDeviceId,
-                ConnectionType: InferConnectionType(pnpDeviceId),
-                Source: "Win32_SoundDevice"
-            );
-        }
-    }
-
     private static bool LooksLikeController(
         string name,
         string pnpDeviceId,
@@ -217,13 +206,6 @@ public sealed class WindowsDeviceScanner : IControllerScanner
 
         return gameControllerIds.Any(id =>
             id.Equals(pnpDeviceId, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static bool LooksLikeControllerAudioEndpoint(string name, string pnpDeviceId, string manufacturer)
-    {
-        string combined = $"{name} {pnpDeviceId} {manufacturer}";
-        return ContainsAny(combined, StrongControllerKeywords) &&
-               !ContainsAny(combined, ExcludedControllerLikeKeywords);
     }
 
     private static bool ContainsAny(string value, IEnumerable<string> keywords)

@@ -13,7 +13,7 @@ public class Ds4ToXboxMapperTests
         report[2] = 0x80;
         report[3] = 0x80;
         report[4] = 0x80;
-        report[8] = 0x08;
+        report[5] = 0x08;
         return report;
     }
 
@@ -34,7 +34,7 @@ public class Ds4ToXboxMapperTests
     public void FaceButtons_MapToXInput()
     {
         byte[] report = BuildUsbReport();
-        report[7] = 0x0F; // Square, Cross, Circle, Triangle
+        report[5] = 0xF8; // released d-pad + Square, Cross, Circle, Triangle
 
         Xbox360InputState x = Ds4ToXboxMapper.Map(Ds4ReportParser.Parse(report));
 
@@ -48,8 +48,8 @@ public class Ds4ToXboxMapperTests
     public void SystemAndMenuButtons_MapToXInput()
     {
         byte[] report = BuildUsbReport();
-        report[8] = 0x30; // Share, Options
-        report[9] = 0x01; // PS
+        report[6] = 0x30; // Share, Options
+        report[7] = 0x01; // PS
 
         Xbox360InputState x = Ds4ToXboxMapper.Map(Ds4ReportParser.Parse(report));
 
@@ -62,7 +62,7 @@ public class Ds4ToXboxMapperTests
     public void DpadDirection_IsCarried()
     {
         byte[] report = BuildUsbReport();
-        report[8] = 0x03; // Down + Right
+        report[5] = 0x03; // Down + Right
 
         Xbox360InputState x = Ds4ToXboxMapper.Map(Ds4ReportParser.Parse(report));
 
@@ -123,8 +123,8 @@ public class Ds4ToXboxMapperTests
     public void Triggers_MapDirectly()
     {
         byte[] report = BuildUsbReport();
-        report[5] = 200;
-        report[6] = 50;
+        report[8] = 200;
+        report[9] = 50;
 
         Xbox360InputState x = Ds4ToXboxMapper.Map(Ds4ReportParser.Parse(report));
 
