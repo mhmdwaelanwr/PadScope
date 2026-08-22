@@ -314,6 +314,23 @@
                                 </StackPanel>
                             </Border>
 
+                            <Border Style="{DynamicResource Card}" Margin="0,6,0,0">
+                                <StackPanel>
+                                    <TextBlock Text="Capture &amp; Replay" Style="{DynamicResource Dim}" FontSize="11.5" />
+                                    <TextBlock Text="Record raw input for offline regression testing. Replay never sends controller output."
+                                               Style="{DynamicResource Dim}" FontSize="10.5" TextWrapping="Wrap" Margin="0,4,0,7" />
+                                    <WrapPanel>
+                                        <Button x:Name="StartCaptureButton" Content="Record" Click="StartCaptureButton_Click" IsEnabled="False" FontSize="11" />
+                                        <Button x:Name="SaveCaptureButton" Content="Stop &amp; Save" Click="SaveCaptureButton_Click" IsEnabled="False"
+                                                Style="{DynamicResource Sec}" Margin="6,0,0,0" FontSize="11" />
+                                        <Button x:Name="ReplayCaptureButton" Content="Replay File" Click="ReplayCaptureButton_Click"
+                                                Style="{DynamicResource Sec}" Margin="6,0,0,0" FontSize="11" />
+                                    </WrapPanel>
+                                    <TextBlock x:Name="CaptureStatusText" Text="No capture active."
+                                               Style="{DynamicResource Dim}" FontSize="10.5" TextWrapping="Wrap" Margin="0,6,0,0" />
+                                </StackPanel>
+                            </Border>
+
                             <!-- D-Pad -->
                             <Border Style="{DynamicResource CardAlt}">
                                 <StackPanel>

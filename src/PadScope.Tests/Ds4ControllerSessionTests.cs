@@ -125,7 +125,11 @@ public sealed class Ds4ControllerSessionTests
     private sealed class FakeHidInputReader : IHidInputReader
     {
         public event Action<HidInputReport>? ReportReceived;
-        public event Action<string>? ErrorOccurred;
+        public event Action<string>? ErrorOccurred
+        {
+            add { }
+            remove { }
+        }
 
         public bool IsRunning { get; private set; }
         public string? DeviceDescription => "Fake HID";
@@ -159,7 +163,6 @@ public sealed class Ds4ControllerSessionTests
             IsRunning = false;
             Disposed = true;
             ReportReceived = null;
-            ErrorOccurred = null;
         }
     }
 }

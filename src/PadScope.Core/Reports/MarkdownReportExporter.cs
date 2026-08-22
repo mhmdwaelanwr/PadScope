@@ -63,6 +63,20 @@ public static class MarkdownReportExporter
             builder.AppendLine($"| Windows audio endpoint | {report.WindowsAudioEndpoint} |");
             builder.AppendLine($"| DS4 audio protocol | {report.Ds4AudioProtocol} |");
             builder.AppendLine();
+            if (report.ReportTiming is { } timing)
+            {
+                builder.AppendLine("#### Report health");
+                builder.AppendLine();
+                builder.AppendLine($"- **Reports:** {timing.ReportCount}");
+                builder.AppendLine($"- **Rate:** {timing.ReportRateHz:F1} Hz");
+                builder.AppendLine($"- **Average interval:** {timing.AverageIntervalMs:F2} ms");
+                builder.AppendLine($"- **P95 interval:** {timing.P95IntervalMs:F2} ms");
+                builder.AppendLine($"- **Maximum interval:** {timing.MaximumIntervalMs:F2} ms");
+                builder.AppendLine($"- **Jitter:** {timing.JitterMs:F2} ms");
+                builder.AppendLine($"- **Spikes:** {timing.SpikeCount}");
+                builder.AppendLine();
+            }
+
             builder.AppendLine("#### Notes");
             builder.AppendLine();
 

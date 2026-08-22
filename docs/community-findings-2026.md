@@ -45,6 +45,9 @@ sanitized hardware captures.
 - Short HID read timeouts and bounded reader-thread shutdown.
 - Fake-transport session tests covering open/start, input injection, corrupt
   Bluetooth rejection, USB/Bluetooth output shape, stop, and disposal.
+- A clean-room capture/replay path that reuses PadScope's own parser and session
+  contract, validates per-frame integrity, bounds resource use, and disables output.
+- Report-health evidence is retained in compatibility exports and capture metadata.
 
 ## Next evidence-driven improvements
 
@@ -52,10 +55,9 @@ sanitized hardware captures.
    and known ViGEm interfaces.
 2. Add a connection comparison report so USB and Bluetooth observations for the
    same controller can be viewed side-by-side.
-3. Store sanitized packet fixtures supplied by contributors and run them through
-   parser regression tests.
-4. Add a deterministic capture/replay format for contributor hardware sessions.
-5. Add Windows integration tests for physical disconnect/reconnect; the current
+3. Collect opt-in, reviewed capture fixtures from real controllers and run them
+   through parser regression tests.
+4. Add Windows integration tests for physical disconnect/reconnect; the current
    fake transport covers the session contract but cannot emulate OS HID teardown.
 
 ## Clean-room boundary
@@ -63,3 +65,7 @@ sanitized hardware captures.
 PadScope does not copy source code or visual assets from the reviewed projects.
 External projects inform problem selection, protocol facts are independently
 implemented, and PadScope retains its own diagnostics-first interface.
+
+The capture format, integrity validation, replay scheduler, UI, and tests in
+PadScope are original MIT-licensed implementations. GPL projects were used only
+to study observable protocol behavior and useful test scenarios.

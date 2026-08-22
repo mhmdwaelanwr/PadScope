@@ -14,6 +14,7 @@ public sealed class Ds4ControllerSession : IDisposable
 
     public event Action<Ds4InputState>? StateUpdated;
     public event Action<ReportTimingSnapshot>? TimingUpdated;
+    public event Action<HidInputReport>? ReportObserved;
     public event Action<string>? Error;
 
     public Ds4ControllerSession(IHidInputReader reader, ControllerDevice device)
@@ -87,6 +88,8 @@ public sealed class Ds4ControllerSession : IDisposable
         {
             return;
         }
+
+        ReportObserved?.Invoke(report);
 
         if (!Ds4ReportParser.LooksLikeDs4Report(report.Data))
         {
