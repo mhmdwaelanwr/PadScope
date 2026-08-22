@@ -5,19 +5,21 @@
     <Application.Resources>
 
         <!-- Default = Dark colors -->
-        <Color x:Key="C_Background">#0A0F1A</Color>
-        <Color x:Key="C_Card">#111827</Color>
-        <Color x:Key="C_CardAlt">#1F2937</Color>
-        <Color x:Key="C_Border">#374151</Color>
-        <Color x:Key="C_Primary">#06B6D4</Color>
-        <Color x:Key="C_PrimaryDim">#0E7490</Color>
-        <Color x:Key="C_Text">#F1F5F9</Color>
-        <Color x:Key="C_TextDim">#94A3B8</Color>
-        <Color x:Key="C_Success">#10B981</Color>
-        <Color x:Key="C_Warning">#F59E0B</Color>
-        <Color x:Key="C_Danger">#EF4444</Color>
-        <Color x:Key="C_PrimarySoft">#162C3A</Color>
-        <Color x:Key="C_SurfaceHover">#263449</Color>
+        <Color x:Key="C_Background">#050713</Color>
+        <Color x:Key="C_BackdropMid">#0A0D22</Color>
+        <Color x:Key="C_BackdropEnd">#071523</Color>
+        <Color x:Key="C_Card">#B30C1021</Color>
+        <Color x:Key="C_CardAlt">#99121830</Color>
+        <Color x:Key="C_Border">#667583B8</Color>
+        <Color x:Key="C_Primary">#22D3EE</Color>
+        <Color x:Key="C_PrimaryDim">#8B5CF6</Color>
+        <Color x:Key="C_Text">#F7F9FF</Color>
+        <Color x:Key="C_TextDim">#8490AF</Color>
+        <Color x:Key="C_Success">#34D399</Color>
+        <Color x:Key="C_Warning">#FBBF24</Color>
+        <Color x:Key="C_Danger">#FB7185</Color>
+        <Color x:Key="C_PrimarySoft">#3324264F</Color>
+        <Color x:Key="C_SurfaceHover">#CC202747</Color>
 
         <SolidColorBrush x:Key="B_Background" Color="{DynamicResource C_Background}" />
         <SolidColorBrush x:Key="B_Card" Color="{DynamicResource C_Card}" />
@@ -34,9 +36,23 @@
         <SolidColorBrush x:Key="B_SurfaceHover" Color="{DynamicResource C_SurfaceHover}" />
         <SolidColorBrush x:Key="B_White" Color="White" />
 
+        <LinearGradientBrush x:Key="B_WindowBackdrop" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="{DynamicResource C_Background}" Offset="0" />
+            <GradientStop Color="{DynamicResource C_BackdropMid}" Offset="0.55" />
+            <GradientStop Color="{DynamicResource C_BackdropEnd}" Offset="1" />
+        </LinearGradientBrush>
+        <LinearGradientBrush x:Key="B_BrandGradient" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#8B5CF6" Offset="0" />
+            <GradientStop Color="#3B82F6" Offset="0.52" />
+            <GradientStop Color="#22D3EE" Offset="1" />
+        </LinearGradientBrush>
+
+        <DropShadowEffect x:Key="GlassShadow" BlurRadius="28" ShadowDepth="10"
+                          Direction="270" Color="#B0000000" Opacity="0.38" />
+
         <!-- Window -->
         <Style TargetType="Window">
-            <Setter Property="Background" Value="{DynamicResource B_Background}" />
+            <Setter Property="Background" Value="{DynamicResource B_WindowBackdrop}" />
             <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
             <Setter Property="FontFamily" Value="Segoe UI" />
         </Style>
@@ -73,19 +89,20 @@
             <Setter Property="Background" Value="{DynamicResource B_Card}" />
             <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="14" />
+            <Setter Property="CornerRadius" Value="18" />
             <Setter Property="Padding" Value="18" />
             <Setter Property="SnapsToDevicePixels" Value="True" />
+            <Setter Property="Effect" Value="{StaticResource GlassShadow}" />
         </Style>
         <Style x:Key="MetricCard" TargetType="Border" BasedOn="{StaticResource Card}">
             <Setter Property="Padding" Value="18,15" />
-            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="CornerRadius" Value="16" />
         </Style>
         <Style x:Key="InfoBanner" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource B_PrimarySoft}" />
             <Setter Property="BorderBrush" Value="{DynamicResource B_PrimaryDim}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="CornerRadius" Value="14" />
             <Setter Property="Padding" Value="12,9" />
         </Style>
         <Style x:Key="CardAlt" TargetType="Border">
@@ -112,7 +129,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9" Padding="{TemplateBinding Padding}">
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -150,7 +167,7 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
                         <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="9" Padding="{TemplateBinding Padding}">
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="12" Padding="{TemplateBinding Padding}">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
@@ -239,7 +256,8 @@
                 <Setter.Value>
                     <ControlTemplate TargetType="TabItem">
                         <Grid>
-                            <Border x:Name="tb" Background="Transparent" Padding="16,10" CornerRadius="8">
+                            <Border x:Name="tb" Background="Transparent" BorderBrush="Transparent" BorderThickness="1"
+                                    Padding="16,10" CornerRadius="18">
                                 <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
                             <Border x:Name="active" Height="3" Background="Transparent" CornerRadius="2"
@@ -251,8 +269,9 @@
                                 <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
                             </Trigger>
                             <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="tb" Property="Background" Value="{DynamicResource B_Card}" />
-                                <Setter Property="Foreground" Value="{DynamicResource B_Primary}" />
+                                <Setter TargetName="tb" Property="Background" Value="{DynamicResource B_PrimarySoft}" />
+                                <Setter TargetName="tb" Property="BorderBrush" Value="{DynamicResource B_PrimaryDim}" />
+                                <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
                                 <Setter TargetName="active" Property="Background" Value="{DynamicResource B_Primary}" />
                             </Trigger>
                         </ControlTemplate.Triggers>
