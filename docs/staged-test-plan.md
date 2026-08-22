@@ -114,6 +114,8 @@ Pass criteria:
 - Live input shows a stable report rate and records average interval, p95,
   jitter, and spike count for the observation window.
 - Full Bluetooth reports with invalid CRC are discarded rather than displayed.
+- A short raw capture can be saved, reopened offline, and replayed with output disabled.
+- Exported JSON and Markdown retain the measured report-health snapshot.
 
 ## Stage 6 — Safe rumble test
 

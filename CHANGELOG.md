@@ -17,6 +17,8 @@ All notable changes will be documented here. PadScope follows Semantic Versionin
 - Explicit desktop states for first scan, scanning, and no-device results.
 - Live bounded report-timing diagnostics with rate, p95, jitter, and spike counts.
 - Fake HID transport and controller-session lifecycle/input/output regression tests.
+- Versioned, bounded HID capture/replay with per-frame SHA-256 integrity checks.
+- Report-health measurements in JSON and Markdown compatibility exports.
 
 ### Changed
 
@@ -41,6 +43,7 @@ All notable changes will be documented here. PadScope follows Semantic Versionin
 - Audio Lab volume sliders now update the selected WASAPI endpoint instead of
   only updating UI events.
 - Corrupt full Bluetooth input reports are rejected using the transport CRC-32.
+- Offline replay cannot send rumble, lightbar, or other controller output.
 
 ### Removed
 

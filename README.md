@@ -19,6 +19,7 @@ PadScope helps you discover what a controller actually supports on PC—especial
 - JSON and Markdown compatibility report export
 - Live buttons, sticks, triggers, battery, gyro, and touchpad monitoring
 - Live report-rate, interval, p95, jitter, and latency-spike diagnostics
+- Integrity-checked raw HID capture and offline replay with controller output disabled
 - Controlled rumble and lightbar tests with explicit confirmation
 - Virtual DualShock 4 or Xbox 360 passthrough through ViGEmBus
 - JSON-based remapping profiles, combos, rapid fire, and macros
@@ -37,6 +38,7 @@ PadScope helps you discover what a controller actually supports on PC—especial
 | Report export | Implemented | JSON and Markdown |
 | Live HID input | Implemented | USB/full-Bluetooth layouts, Bluetooth input CRC, bounded read timeouts, and fake-transport session tests |
 | Report health | Implemented | Live rate, average interval, p95, jitter, and spike count over a bounded window |
+| Capture/replay | Implemented | Versioned JSON, per-frame SHA-256, strict size/count/duration limits, output disabled during replay |
 | Rumble/lightbar | Implemented, controlled | Fixed-size USB/BT packets and BT CRC; sends only after confirmation |
 | Virtual controller | Implemented | Requires ViGEmBus |
 | Remapping/macros | Implemented | Applied through JSON profiles |
@@ -92,9 +94,10 @@ dotnet test src\PadScope.sln
 3. Review the detected device, identity, profile confidence, risk level, and recommended next action.
 4. Use Live Input to confirm report parsing.
 5. Watch **Report health** for unstable intervals or spikes before enabling output.
-6. Export the result as JSON or Markdown.
-7. Only then try controlled output, virtual-controller, mouse, or audio features as appropriate.
-8. Repeat the scan over Bluetooth and compare the results.
+6. Record a short HID capture and save it for offline regression testing.
+7. Export the result as JSON or Markdown; report-health measurements are included.
+8. Only then try controlled output, virtual-controller, mouse, or audio features as appropriate.
+9. Repeat the scan over Bluetooth and compare the results.
 
 The desktop app includes dedicated areas for scanning and reports, staged tests, compatibility profiles, live input/output, virtual controllers and profiles, mouse emulation, and the Audio Lab.
 
@@ -197,6 +200,7 @@ The **Package Windows** GitHub Actions workflow also produces a `PadScope-win-x6
 - DS4-style report parsing does not guarantee correct behavior for every clone.
 - Bluetooth full-report activation and clone-specific quirks still require real-hardware validation.
 - Timing metrics measure host-side report arrival intervals; they are diagnostic evidence, not end-to-end game latency.
+- Capture files contain raw controller input and device identifiers. Review them before sharing; PadScope limits and integrity-checks files but does not anonymize them automatically.
 - Virtual-controller output requires the separately installed ViGEmBus driver.
 - A virtual controller can cause double input unless the physical controller is hidden or the game is configured correctly.
 - Audio endpoint detection or routing does not mean that a controller implements Sony's DS4 HID audio protocol.

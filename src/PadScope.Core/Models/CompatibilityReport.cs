@@ -1,3 +1,5 @@
+using PadScope.Core.Diagnostics;
+
 namespace PadScope.Core.Models;
 
 public sealed record CompatibilityReport(
@@ -13,5 +15,6 @@ public sealed record CompatibilityReport(
     FeatureStatus Touchpad,
     FeatureStatus WindowsAudioEndpoint,
     FeatureStatus Ds4AudioProtocol,
-    IReadOnlyList<string> Notes
+    IReadOnlyList<string> Notes,
+    ReportTimingSnapshot? ReportTiming = null
 );

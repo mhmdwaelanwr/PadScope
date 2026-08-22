@@ -16,6 +16,10 @@ public partial class MainWindow
     private volatile Ds4InputState? _latestState;
     private DispatcherTimer? _liveTimer;
     private Ds4Buttons _prevButtons;
+    private HidCaptureRecorder? _captureRecorder;
+    private ReportTimingSnapshot? _latestTiming;
+    private bool _isCapturing;
+    private int _captureLimitNotified;
 
     private static readonly Brush PressedBrush = new SolidColorBrush(Color.FromRgb(34, 197, 94));
 
@@ -57,8 +61,17 @@ public partial class MainWindow
             return;
         }
 
+        StartLiveSession(new HidSharpHidInputReader(), device, allowOutput: true);
+    }
+
+    private void StartLiveSession(IHidInputReader reader, ControllerDevice device, bool allowOutput)
+    {
         _liveSession?.Dispose();
-        _liveSession = new Ds4ControllerSession(new HidSharpHidInputReader(), device);
+        _liveSession = new Ds4ControllerSession(reader, device);
+        _liveSession.Error += message => Dispatcher.BeginInvoke(() => LiveStatusText.Text = message);
+        _liveSession.StateUpdated += state => _latestState = state;
+        _liveSession.TimingUpdated += OnTimingUpdated;
+        _liveSession.ReportObserved += OnReportObserved;
 
         if (!_liveSession.TryStart(out string? error))
         {
@@ -74,21 +87,122 @@ public partial class MainWindow
             return;
         }
 
-        _liveSession.Error += message => Dispatcher.BeginInvoke(() => LiveStatusText.Text = message);
-        _liveSession.StateUpdated += state => _latestState = state;
-        _liveSession.TimingUpdated += OnTimingUpdated;
-
         _prevButtons = default;
+        _latestTiming = null;
         StartInputButton.IsEnabled = false;
         StopInputButton.IsEnabled = true;
         LiveStatusText.Text = $"Live: {_liveSession.DeviceDescription}";
         TimingText.Text = "Timing: waiting for reports...";
-        EnableOutputControls(true);
+        EnableOutputControls(allowOutput);
+        StartCaptureButton.IsEnabled = allowOutput && _captureRecorder is null;
+        SaveCaptureButton.IsEnabled = _captureRecorder?.Count > 0;
 
         _liveTimer?.Stop();
         _liveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
         _liveTimer.Tick += (_, _) => RenderLatestState();
         _liveTimer.Start();
+    }
+
+    private void StartCaptureButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_liveSession is null || DeviceComboBox.SelectedItem is not ControllerDevice device)
+        {
+            MessageBox.Show(this, "Start live input on a selected device first.", "PadScope Capture", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        _captureRecorder = new HidCaptureRecorder(device);
+        _isCapturing = true;
+        _captureLimitNotified = 0;
+        StartCaptureButton.IsEnabled = false;
+        SaveCaptureButton.IsEnabled = true;
+        CaptureStatusText.Text = $"Recording up to {HidCaptureRecorder.MaximumFrames:N0} raw reports...";
+    }
+
+    private void SaveCaptureButton_Click(object sender, RoutedEventArgs e)
+    {
+        HidCaptureRecorder? recorder = _captureRecorder;
+        _isCapturing = false;
+        StartCaptureButton.IsEnabled = false;
+        SaveCaptureButton.IsEnabled = false;
+        if (recorder is null || recorder.Count == 0)
+        {
+            CaptureStatusText.Text = "No reports were captured.";
+            return;
+        }
+
+        SaveFileDialog dialog = new()
+        {
+            Title = "Save PadScope HID capture",
+            Filter = "PadScope HID capture (*.padscope-hid.json)|*.padscope-hid.json|JSON file (*.json)|*.json",
+            FileName = $"padscope-hid-{DateTime.Now:yyyyMMdd-HHmmss}.padscope-hid.json"
+        };
+        if (dialog.ShowDialog(this) != true)
+        {
+            CaptureStatusText.Text = $"Capture paused with {recorder.Count:N0} reports; not saved.";
+            SaveCaptureButton.IsEnabled = true;
+            return;
+        }
+
+        try
+        {
+            HidCaptureStore.Save(dialog.FileName, recorder.CreateDocument(_latestTiming));
+            _captureRecorder = null;
+            StartCaptureButton.IsEnabled = _liveSession is { IsRunning: true } &&
+                                           !(_liveSession.DeviceDescription?.StartsWith("Replay:", StringComparison.OrdinalIgnoreCase) ?? false);
+            CaptureStatusText.Text = $"Saved {recorder.Count:N0} reports: {dialog.FileName}";
+        }
+        catch (Exception ex)
+        {
+            SaveCaptureButton.IsEnabled = true;
+            MessageBox.Show(this, ex.Message, "Capture save failed", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void ReplayCaptureButton_Click(object sender, RoutedEventArgs e)
+    {
+        OpenFileDialog dialog = new()
+        {
+            Title = "Open PadScope HID capture",
+            Filter = "PadScope HID capture (*.padscope-hid.json)|*.padscope-hid.json|JSON file (*.json)|*.json"
+        };
+        if (dialog.ShowDialog(this) != true)
+        {
+            return;
+        }
+
+        try
+        {
+            HidCaptureDocument capture = HidCaptureStore.Load(dialog.FileName);
+            StopLiveInput();
+            StartLiveSession(new RecordedHidInputReader(capture), capture.Device, allowOutput: false);
+            CaptureStatusText.Text = $"Replaying {capture.Frames.Count:N0} reports; output is disabled.";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, "Capture replay failed", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void OnReportObserved(HidInputReport report)
+    {
+        HidCaptureRecorder? recorder = _captureRecorder;
+        if (!_isCapturing || recorder is null)
+        {
+            return;
+        }
+
+        if (!recorder.TryAdd(report.Data, report.ReportId, report.Timestamp) &&
+            recorder.IsFull &&
+            Interlocked.Exchange(ref _captureLimitNotified, 1) == 0)
+        {
+            _isCapturing = false;
+            Dispatcher.BeginInvoke(() =>
+            {
+                SaveCaptureButton.IsEnabled = true;
+                CaptureStatusText.Text = $"Capture limit reached ({recorder.Count:N0} reports). Save the recording.";
+            });
+        }
     }
 
     private void StopInputButton_Click(object sender, RoutedEventArgs e)
@@ -261,11 +375,21 @@ public partial class MainWindow
     {
         Dispatcher.BeginInvoke(() =>
         {
+            _latestTiming = timing;
             TimingText.Text = timing.ReportCount < 2
                 ? "Timing: collecting samples..."
                 : $"Timing: {timing.ReportRateHz:F0} Hz  |  avg {timing.AverageIntervalMs:F2} ms  |  " +
                   $"p95 {timing.P95IntervalMs:F2} ms  |  jitter {timing.JitterMs:F2} ms  |  " +
                   $"spikes {timing.SpikeCount}";
+
+            if (DeviceComboBox.SelectedItem is ControllerDevice device)
+            {
+                int index = _reports.ToList().FindIndex(report => report.Device == device);
+                if (index >= 0)
+                {
+                    _reports[index] = _reports[index] with { ReportTiming = timing };
+                }
+            }
         });
     }
 
@@ -327,12 +451,20 @@ public partial class MainWindow
         _liveSession?.Stop();
         _liveSession?.Dispose();
         _liveSession = null;
+        _isCapturing = false;
+        _latestTiming = null;
         _latestState = null;
         _prevButtons = default;
 
         StartInputButton.IsEnabled = DeviceComboBox.Items.Count > 0;
         StopInputButton.IsEnabled = false;
         EnableOutputControls(false);
+        StartCaptureButton.IsEnabled = false;
+        SaveCaptureButton.IsEnabled = _captureRecorder?.Count > 0;
+        if (_captureRecorder?.Count > 0)
+        {
+            CaptureStatusText.Text = $"Capture paused with {_captureRecorder.Count:N0} reports. Save it before starting another capture.";
+        }
         LiveStatusText.Text = "Live input stopped.";
         TimingText.Text = "Timing: not running";
     }
