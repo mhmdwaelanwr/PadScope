@@ -1,5 +1,5 @@
 using System.Windows;
-using System.Windows.Threading;
+using System.Windows.Controls;
 
 namespace PadScope.Desktop;
 
@@ -7,7 +7,8 @@ public partial class ControllerDiagnosticsLab
 {
     private bool _externalOutputAvailable;
     private string _externalOutputStatus = "Start live input first";
-    private DispatcherTimer? _externalOutputStateTimer;
+    private bool _externalOutputGuardInstalled;
+    private bool _applyingExternalOutputState;
 
     public void SetOutputAvailability(bool available, string? status)
     {
@@ -17,50 +18,98 @@ public partial class ControllerDiagnosticsLab
             _externalOutputStatus = status;
         }
 
-        EnsureExternalOutputStateTimer();
+        EnsureExternalOutputGuard();
         ApplyExternalOutputState();
     }
 
     public void SetOutputStatus(string status)
     {
-        if (!string.IsNullOrWhiteSpace(status))
-        {
-            _externalOutputStatus = status;
-            VibrationStatusText.Text = status;
-        }
-    }
-
-    private void EnsureExternalOutputStateTimer()
-    {
-        if (_externalOutputStateTimer is not null)
+        if (string.IsNullOrWhiteSpace(status))
         {
             return;
         }
 
-        _externalOutputStateTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(100) };
-        _externalOutputStateTimer.Tick += (_, _) => ApplyExternalOutputState();
-        _externalOutputStateTimer.Start();
-        Unloaded += (_, _) => _externalOutputStateTimer?.Stop();
-        Loaded += (_, _) => _externalOutputStateTimer?.Start();
+        _externalOutputStatus = status;
+        VibrationStatusText.Text = status;
+    }
+
+    private void EnsureExternalOutputGuard()
+    {
+        if (_externalOutputGuardInstalled)
+        {
+            return;
+        }
+
+        _externalOutputGuardInstalled = true;
+        foreach (UIElement element in OutputElements())
+        {
+            element.IsEnabledChanged += OutputElement_IsEnabledChanged;
+        }
+    }
+
+    private void OutputElement_IsEnabledChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (_applyingExternalOutputState)
+        {
+            return;
+        }
+
+        // RefreshModernDashboard calls SetSessionState every 50 ms. That method is
+        // allowed to enable general diagnostics, but it must not be able to reopen
+        // the vibration controls after the HID output path has been rejected.
+        bool shouldBeEnabled = _sessionRunning && _externalOutputAvailable;
+        if (sender is UIElement element && element.IsEnabled != shouldBeEnabled)
+        {
+            ApplyExternalOutputState();
+        }
     }
 
     internal void ApplyExternalOutputState()
     {
-        bool enabled = _sessionRunning && _externalOutputAvailable;
-        StartVibrationButton.IsEnabled = enabled;
-        StopVibrationButton.IsEnabled = enabled;
-        LargeMotorSlider.IsEnabled = enabled;
-        SmallMotorSlider.IsEnabled = enabled;
-        VibrationDurationSlider.IsEnabled = enabled;
-        VibrationStatusText.Text = _externalOutputStatus;
-
-        if (!enabled)
+        if (_applyingExternalOutputState)
         {
-            StartVibrationButton.ToolTip = _externalOutputStatus;
+            return;
         }
-        else
+
+        _applyingExternalOutputState = true;
+        try
         {
-            StartVibrationButton.ClearValue(FrameworkElement.ToolTipProperty);
+            bool enabled = _sessionRunning && _externalOutputAvailable;
+            foreach (UIElement element in OutputElements())
+            {
+                element.IsEnabled = enabled;
+                element.IsHitTestVisible = enabled;
+                element.Opacity = enabled ? 1.0 : 0.55;
+            }
+
+            VibrationStatusText.Text = _externalOutputStatus;
+            VibrationStatusText.SetResourceReference(
+                TextBlock.ForegroundProperty,
+                _sessionRunning && !_externalOutputAvailable ? "B_Warning" : "B_TextDim");
+
+            if (!enabled)
+            {
+                StartVibrationButton.ToolTip = _externalOutputStatus;
+                StartVibrationButton.Focusable = false;
+            }
+            else
+            {
+                StartVibrationButton.ClearValue(FrameworkElement.ToolTipProperty);
+                StartVibrationButton.Focusable = true;
+            }
+        }
+        finally
+        {
+            _applyingExternalOutputState = false;
         }
     }
+
+    private UIElement[] OutputElements() =>
+    [
+        StartVibrationButton,
+        StopVibrationButton,
+        LargeMotorSlider,
+        SmallMotorSlider,
+        VibrationDurationSlider
+    ];
 }
