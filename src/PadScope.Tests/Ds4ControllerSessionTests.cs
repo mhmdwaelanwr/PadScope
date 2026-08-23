@@ -76,6 +76,8 @@ public sealed class Ds4ControllerSessionTests
         Assert.Equal(length, packet.Length);
         Assert.Equal(reportId, packet[0]);
         int common = connection == ConnectionType.Bluetooth ? 3 : 1;
+        Assert.Equal(0x07, packet[common]);
+        Assert.Equal(0x04, packet[common + 1]);
         Assert.Equal(7, packet[common + 3]);
         Assert.Equal(11, packet[common + 4]);
     }
@@ -127,7 +129,7 @@ public sealed class Ds4ControllerSessionTests
     }
 
     [Fact]
-    public void ResetRumble_SendsMotorOnlyNeutralPacket()
+    public void ResetRumble_UsesStandardHeaderAndNeutralMotors()
     {
         FakeHidInputReader reader = new();
         using Ds4ControllerSession session = new(reader, Device(ConnectionType.Usb));
@@ -137,9 +139,47 @@ public sealed class Ds4ControllerSessionTests
 
         Assert.Null(error);
         byte[] packet = Assert.Single(reader.Writes);
-        Assert.Equal(0x01, packet[1]);
+        Assert.Equal(0x07, packet[1]);
+        Assert.Equal(0x04, packet[2]);
         Assert.Equal(0, packet[4]);
         Assert.Equal(0, packet[5]);
+    }
+
+    [Fact]
+    public void ResetRumble_PreservesPreviouslySetLightbar()
+    {
+        FakeHidInputReader reader = new();
+        using Ds4ControllerSession session = new(reader, Device(ConnectionType.Usb));
+        session.TryStart(out _);
+
+        Assert.True(session.TrySendLightbar(0x11, 0x22, 0x33, out _));
+        Assert.True(session.TryResetRumble(out _));
+
+        Assert.Equal(2, reader.Writes.Count);
+        byte[] reset = reader.Writes[1];
+        Assert.Equal(0, reset[4]);
+        Assert.Equal(0, reset[5]);
+        Assert.Equal(0x11, reset[6]);
+        Assert.Equal(0x22, reset[7]);
+        Assert.Equal(0x33, reset[8]);
+    }
+
+    [Fact]
+    public void ValidatedReports_ExposeRawIntervalsForPollingDiagnostics()
+    {
+        FakeHidInputReader reader = new();
+        using Ds4ControllerSession session = new(reader, Device(ConnectionType.Usb));
+        session.TryStart(out _);
+
+        reader.Inject(UsbReport(), DateTimeOffset.UnixEpoch);
+        reader.Inject(UsbReport(), DateTimeOffset.UnixEpoch.AddMilliseconds(10));
+        reader.Inject(UsbReport(), DateTimeOffset.UnixEpoch.AddMilliseconds(20.5));
+
+        IReadOnlyList<double> intervals = session.DrainReportIntervals();
+        Assert.Equal(2, intervals.Count);
+        Assert.Equal(10.0, intervals[0], 3);
+        Assert.Equal(10.5, intervals[1], 3);
+        Assert.Empty(session.DrainReportIntervals());
     }
 
     [Fact]
