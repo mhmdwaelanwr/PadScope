@@ -7,17 +7,19 @@ namespace PadScope.Desktop;
 public partial class MainWindow
 {
     private bool _runtimeUiFixesInitialized;
+    private ResourceDictionary? _polishedControlResources;
 
     /// <summary>
-    /// Applies layout corrections that are intentionally kept in code-behind so
-    /// existing XAML names/handlers stay untouched while the diagnostics shell is
-    /// hardened against smaller window heights and theme resource refresh issues.
+    /// Applies layout and visual corrections at runtime so the existing XAML
+    /// names/handlers stay untouched while the desktop shell remains responsive
+    /// and consistently themed.
     /// </summary>
     private void ApplyRuntimeUiFixes()
     {
         if (!_runtimeUiFixesInitialized)
         {
             ThemeButton.Click += ThemeButton_PostClick;
+            ApplyPolishedControlStyles();
             _runtimeUiFixesInitialized = true;
         }
 
@@ -34,6 +36,68 @@ public partial class MainWindow
         ApplySystemBrushPatch();
         InvalidateVisual();
         UpdateLayout();
+    }
+
+    private void ApplyPolishedControlStyles()
+    {
+        _polishedControlResources ??= new ResourceDictionary
+        {
+            Source = new Uri("Themes/PolishedControls.xaml", UriKind.Relative)
+        };
+
+        Style tabControlStyle = (Style)_polishedControlResources["PolishedTabControlStyle"];
+        Style tabItemStyle = (Style)_polishedControlResources["PolishedTabItemStyle"];
+        Style comboBoxStyle = (Style)_polishedControlResources["PolishedComboBoxStyle"];
+        FontFamily bodyFont = (FontFamily)_polishedControlResources["PadScopeBodyFont"];
+
+        // MainWindow.xaml historically pinned Segoe UI as a local value. Replace
+        // it after InitializeComponent so Windows 11 can use Segoe UI Variable,
+        // while Windows 10 automatically falls back to Segoe UI.
+        FontFamily = bodyFont;
+
+        // Publish the polished styles as the current implicit application styles
+        // as well. This covers controls created later (for example ComboBoxItem
+        // containers generated when a drop-down first opens).
+        ResourceDictionary appResources = Application.Current.Resources;
+        appResources[typeof(TabControl)] = tabControlStyle;
+        appResources[typeof(TabItem)] = tabItemStyle;
+        appResources[typeof(ComboBox)] = comboBoxStyle;
+
+        // Existing XAML elements may already have resolved their previous
+        // implicit styles, so update the logical tree explicitly once at startup.
+        foreach (DependencyObject item in WalkLogicalTree(this))
+        {
+            switch (item)
+            {
+                case TabControl tabControl:
+                    tabControl.Style = tabControlStyle;
+                    break;
+                case TabItem tabItem:
+                    tabItem.Style = tabItemStyle;
+                    break;
+                case ComboBox comboBox:
+                    comboBox.Style = comboBoxStyle;
+                    break;
+            }
+        }
+    }
+
+    private static IEnumerable<DependencyObject> WalkLogicalTree(DependencyObject root)
+    {
+        yield return root;
+
+        foreach (object child in LogicalTreeHelper.GetChildren(root))
+        {
+            if (child is not DependencyObject dependencyObject)
+            {
+                continue;
+            }
+
+            foreach (DependencyObject nested in WalkLogicalTree(dependencyObject))
+            {
+                yield return nested;
+            }
+        }
     }
 
     private void FixScanPaneLayout()
