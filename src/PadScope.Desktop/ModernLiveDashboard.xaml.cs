@@ -25,6 +25,7 @@ public partial class ModernLiveDashboard : UserControl
     public ModernLiveDashboard()
     {
         InitializeComponent();
+        InstallIntegratedControllerVisuals();
         StopButton.IsEnabled = false;
         SetOutputEnabled(false);
     }
@@ -102,6 +103,7 @@ public partial class ModernLiveDashboard : UserControl
         SetShapeState(DpadLeftShape, state.Buttons.HasFlag(Ds4Buttons.DpadLeft), primary);
         SetShapeState(DpadRightShape, state.Buttons.HasFlag(Ds4Buttons.DpadRight), primary);
         SetShapeState(PsShape, state.Buttons.HasFlag(Ds4Buttons.Ps), ResolveBrush("B_PrimaryDim"));
+        UpdateIntegratedControllerVisuals(state);
 
         Ds4Buttons[] pressed = Enum.GetValues<Ds4Buttons>()
             .Where(button => button != Ds4Buttons.None && state.Buttons.HasFlag(button))
