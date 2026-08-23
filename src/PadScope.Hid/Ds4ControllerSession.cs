@@ -36,15 +36,18 @@ public sealed class Ds4ControllerSession : IDisposable
     public ControllerDevice Device => _device;
 
     /// <summary>
-    /// Transport inferred from live DS4 report shape when possible. This is more
-    /// reliable than WMI for clone controllers whose PnP path can look like USB
-    /// even while the gamepad HID interface is using the Bluetooth report format.
+    /// Transport inferred from validated live DS4 report shape when possible.
+    /// This is more reliable than WMI for clone controllers whose PnP path can
+    /// look like USB even while the HID interface uses Bluetooth framing.
     /// </summary>
     public ConnectionType EffectiveConnectionType => _effectiveConnectionType;
 
     public int? LastObservedReportId => _lastObservedReportId;
 
     public int MaxOutputReportLength => _reader.MaxOutputReportLength;
+
+    public string? LastOutputWriteStatus =>
+        (_reader as HidSharpHidInputReader)?.LastOutputWriteStatus;
 
     public bool TryStart(out string? error)
     {
@@ -124,21 +127,6 @@ public sealed class Ds4ControllerSession : IDisposable
         ReportObserved?.Invoke(report);
         _lastObservedReportId = report.ReportId;
 
-        // Derive the transport from the actual packet on the wire. Full DS4
-        // Bluetooth input is report 0x11 / 78 bytes; native USB input is
-        // report 0x01 / 64 bytes. Do not treat the tiny Bluetooth minimal
-        // report 0x01 as USB.
-        if (report.ReportId == Ds4ReportParser.BluetoothReportId &&
-            report.Data.Length >= Ds4ReportParser.BluetoothReportLength)
-        {
-            _effectiveConnectionType = ConnectionType.Bluetooth;
-        }
-        else if (report.ReportId == Ds4ReportParser.UsbReportId &&
-                 report.Data.Length >= Ds4ReportParser.UsbReportLength)
-        {
-            _effectiveConnectionType = ConnectionType.Usb;
-        }
-
         if (!Ds4ReportParser.LooksLikeDs4Report(report.Data))
         {
             return;
@@ -148,6 +136,21 @@ public sealed class Ds4ControllerSession : IDisposable
             !Ds4ReportParser.HasValidBluetoothCrc(report.Data))
         {
             return;
+        }
+
+        // Derive transport only from a report that passed DS4 shape/CRC checks.
+        // Full DS4 Bluetooth input is report 0x11 / 78 bytes; native USB input
+        // is report 0x01 / 64 bytes. A tiny Bluetooth minimal 0x01 report must
+        // not switch output framing to USB.
+        if (report.ReportId == Ds4ReportParser.BluetoothReportId &&
+            report.Data.Length >= Ds4ReportParser.BluetoothReportLength)
+        {
+            _effectiveConnectionType = ConnectionType.Bluetooth;
+        }
+        else if (report.ReportId == Ds4ReportParser.UsbReportId &&
+                 report.Data.Length >= Ds4ReportParser.UsbReportLength)
+        {
+            _effectiveConnectionType = ConnectionType.Usb;
         }
 
         _timingAnalyzer.Add(report.Timestamp);
