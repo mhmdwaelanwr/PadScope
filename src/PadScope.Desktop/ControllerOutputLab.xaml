@@ -1,0 +1,158 @@
+<UserControl x:Class="PadScope.Desktop.ControllerOutputLab"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Top"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
+             FontFamily="{DynamicResource PadScopeBodyFont}">
+    <UserControl.Resources>
+        <Style x:Key="OutputCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource B_Card}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="Padding" Value="18" />
+        </Style>
+        <Style x:Key="OutputSubCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource B_CardAlt}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="13" />
+            <Setter Property="Padding" Value="12" />
+        </Style>
+        <Style x:Key="OutputTitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+            <Setter Property="FontFamily" Value="{DynamicResource PadScopeDisplayFont}" />
+            <Setter Property="FontSize" Value="17" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style x:Key="OutputLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource B_TextDim}" />
+            <Setter Property="FontSize" Value="11" />
+        </Style>
+    </UserControl.Resources>
+
+    <StackPanel Margin="4,8,4,18">
+        <Border Style="{StaticResource OutputCard}" Margin="0,0,0,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="Controller Output Lab" Style="{StaticResource OutputTitle}" FontSize="20" />
+                    <TextBlock Text="Non-blocking controlled vibration and lightbar tests. Input diagnostics keep running if output is rejected."
+                               Style="{StaticResource OutputLabel}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                </StackPanel>
+                <Border Grid.Column="1" Background="{DynamicResource B_PrimarySoft}" BorderBrush="{DynamicResource B_Border}"
+                        BorderThickness="1" CornerRadius="11" Padding="10,6" VerticalAlignment="Center">
+                    <TextBlock x:Name="CapabilityText" Text="Start live input" Style="{StaticResource OutputLabel}" FontWeight="SemiBold" />
+                </Border>
+            </Grid>
+        </Border>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.1*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="1*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource OutputCard}">
+                <StackPanel>
+                    <TextBlock Text="Vibration Motor Lab" Style="{StaticResource OutputTitle}" Foreground="{DynamicResource B_Warning}" />
+                    <TextBlock Text="Low/high-frequency motor mix with bounded duration."
+                               Style="{StaticResource OutputLabel}" Margin="0,3,0,12" />
+
+                    <Grid Margin="0,3">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="140" /><ColumnDefinition Width="*" /><ColumnDefinition Width="54" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="Low-frequency motor" Style="{StaticResource OutputLabel}" VerticalAlignment="Center" />
+                        <Slider x:Name="LowMotorSlider" Grid.Column="1" Minimum="0" Maximum="255" Value="80" Margin="8,0" />
+                        <TextBlock x:Name="LowMotorValue" Grid.Column="2" Text="80" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="SemiBold" />
+                    </Grid>
+                    <Grid Margin="0,3">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="140" /><ColumnDefinition Width="*" /><ColumnDefinition Width="54" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="High-frequency motor" Style="{StaticResource OutputLabel}" VerticalAlignment="Center" />
+                        <Slider x:Name="HighMotorSlider" Grid.Column="1" Minimum="0" Maximum="255" Value="160" Margin="8,0" />
+                        <TextBlock x:Name="HighMotorValue" Grid.Column="2" Text="160" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="SemiBold" />
+                    </Grid>
+                    <Grid Margin="0,3">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="140" /><ColumnDefinition Width="*" /><ColumnDefinition Width="70" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="Duration" Style="{StaticResource OutputLabel}" VerticalAlignment="Center" />
+                        <Slider x:Name="DurationSlider" Grid.Column="1" Minimum="50" Maximum="3000" Value="450" TickFrequency="50" IsSnapToTickEnabled="True" Margin="8,0" />
+                        <TextBlock x:Name="DurationValue" Grid.Column="2" Text="450 ms" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="SemiBold" />
+                    </Grid>
+
+                    <TextBlock Text="QUICK PRESETS" Style="{StaticResource OutputLabel}" FontWeight="SemiBold" Margin="0,14,0,7" />
+                    <UniformGrid Columns="4">
+                        <Button Content="Heartbeat" Style="{DynamicResource Sec}" Margin="0,0,6,0" Click="Heartbeat_Click" />
+                        <Button Content="Explosion" Style="{DynamicResource Sec}" Margin="0,0,6,0" Click="Explosion_Click" />
+                        <Button Content="Click" Style="{DynamicResource Sec}" Margin="0,0,6,0" Click="ClickPreset_Click" />
+                        <Button Content="Balanced" Style="{DynamicResource Sec}" Click="Balanced_Click" />
+                    </UniformGrid>
+
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="10" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Button x:Name="StartVibrationButton" Content="Start vibration" Height="40" Click="StartVibration_Click" />
+                        <Button x:Name="StopVibrationButton" Grid.Column="2" Content="Stop motors" Style="{DynamicResource Sec}" Height="40" Click="StopVibration_Click" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Column="2" Style="{StaticResource OutputCard}">
+                <StackPanel>
+                    <TextBlock Text="Lightbar Lab" Style="{StaticResource OutputTitle}" Foreground="#22D3EE" />
+                    <TextBlock Text="Preview RGB/HEX locally before sending it to the controller."
+                               Style="{StaticResource OutputLabel}" Margin="0,3,0,12" />
+
+                    <Border Style="{StaticResource OutputSubCard}" Padding="12">
+                        <Grid>
+                            <Grid.ColumnDefinitions><ColumnDefinition Width="70" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                            <Border x:Name="LightbarPreview" Width="54" Height="54" CornerRadius="14" BorderBrush="{DynamicResource B_Border}" BorderThickness="1" />
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock x:Name="LightbarHexText" Text="#000000" FontFamily="Consolas" FontSize="16" FontWeight="SemiBold" />
+                                <TextBlock x:Name="LightbarRgbText" Text="RGB 0, 0, 0" Style="{StaticResource OutputLabel}" Margin="0,3,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Grid Margin="0,12,0,3">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="50" /><ColumnDefinition Width="*" /><ColumnDefinition Width="40" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="Red" Style="{StaticResource OutputLabel}" VerticalAlignment="Center" />
+                        <Slider x:Name="RedSlider" Grid.Column="1" Minimum="0" Maximum="255" Value="0" Margin="7,0" />
+                        <TextBlock x:Name="RedValue" Grid.Column="2" Text="0" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                    </Grid>
+                    <Grid Margin="0,3">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="50" /><ColumnDefinition Width="*" /><ColumnDefinition Width="40" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="Green" Style="{StaticResource OutputLabel}" VerticalAlignment="Center" />
+                        <Slider x:Name="GreenSlider" Grid.Column="1" Minimum="0" Maximum="255" Value="80" Margin="7,0" />
+                        <TextBlock x:Name="GreenValue" Grid.Column="2" Text="80" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                    </Grid>
+                    <Grid Margin="0,3">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="50" /><ColumnDefinition Width="*" /><ColumnDefinition Width="40" /></Grid.ColumnDefinitions>
+                        <TextBlock Text="Blue" Style="{StaticResource OutputLabel}" VerticalAlignment="Center" />
+                        <Slider x:Name="BlueSlider" Grid.Column="1" Minimum="0" Maximum="255" Value="255" Margin="7,0" />
+                        <TextBlock x:Name="BlueValue" Grid.Column="2" Text="255" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                    </Grid>
+
+                    <Grid Margin="0,14,0,0">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="8" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                        <Button Content="Pick color" Style="{DynamicResource Sec}" Height="38" Click="PickColor_Click" />
+                        <Button x:Name="SetLightbarButton" Grid.Column="2" Content="Set lightbar" Height="38" Click="SetLightbar_Click" />
+                    </Grid>
+                    <Button x:Name="ResetOutputButton" Content="Reset all output" Style="{DynamicResource Sec}" Height="38" Margin="0,8,0,0" Click="ResetOutput_Click" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Border Style="{StaticResource OutputCard}" Margin="0,12,0,0" Padding="14">
+            <StackPanel>
+                <TextBlock Text="OUTPUT STATUS" Style="{StaticResource OutputLabel}" FontWeight="SemiBold" />
+                <TextBlock x:Name="StatusText" Text="Start a live session to use controlled output tests."
+                           Foreground="{DynamicResource B_Text}" TextWrapping="Wrap" Margin="0,5,0,0" />
+                <TextBlock x:Name="TechnicalDetailText" Text="" Style="{StaticResource OutputLabel}" TextWrapping="Wrap" Margin="0,4,0,0" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

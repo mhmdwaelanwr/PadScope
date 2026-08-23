@@ -48,7 +48,7 @@ public partial class MainWindow
         LiveStatusText.Text = "Pick a detected device, then press Start.";
     }
 
-    private void StartInputButton_Click(object sender, RoutedEventArgs e)
+    private async void StartInputButton_Click(object sender, RoutedEventArgs e)
     {
         if (DeviceComboBox.SelectedItem is not ControllerDevice device)
         {
@@ -57,14 +57,12 @@ public partial class MainWindow
                 "Scan first, then select a device from the list.",
                 "PadScope Live Input",
                 MessageBoxButton.OK,
-                MessageBoxImage.Information
-            );
+                MessageBoxImage.Information);
             return;
         }
 
-        StopVirtualPassthrough();
-        StopMouseEmulation();
-        StartLiveSession(new HidSharpHidInputReader(), device, allowOutput: true);
+        await StartLiveSessionResponsiveAsync(device);
+        RefreshModernDashboard(forceDeviceRefresh: false);
     }
 
     private void StartLiveSession(IHidInputReader reader, ControllerDevice device, bool allowOutput)
@@ -83,8 +81,7 @@ public partial class MainWindow
                 error ?? "Could not start live input.",
                 "PadScope Live Input",
                 MessageBoxButton.OK,
-                MessageBoxImage.Error
-            );
+                MessageBoxImage.Error);
             _liveSession.Dispose();
             _liveSession = null;
             return;
@@ -208,12 +205,13 @@ public partial class MainWindow
         }
     }
 
-    private void StopInputButton_Click(object sender, RoutedEventArgs e)
+    private async void StopInputButton_Click(object sender, RoutedEventArgs e)
     {
-        StopLiveInput();
+        await StopLiveSessionResponsiveAsync();
+        RefreshModernDashboard(forceDeviceRefresh: false);
     }
 
-    private void PulseRumbleButton_Click(object sender, RoutedEventArgs e)
+    private async void PulseRumbleButton_Click(object sender, RoutedEventArgs e)
     {
         if (_liveSession is null)
         {
@@ -229,23 +227,21 @@ public partial class MainWindow
 
         byte small = (byte)RumbleSmallSlider.Value;
         byte large = (byte)RumbleLargeSlider.Value;
-
-        if (!_liveSession.TrySendRumble(small, large, out string? error))
+        EnableOutputControls(false);
+        (bool success, string? error) = await SendRumbleResponsiveAsync(small, large);
+        if (!success)
         {
-            MessageBox.Show(
-                this,
-                error ?? "Rumble write failed.",
-                "PadScope",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error
-            );
+            LiveStatusText.Text = "Rumble unavailable on this HID path; live input remains active.";
+            LiveStatusText.ToolTip = error;
             return;
         }
 
+        EnableOutputControls(true);
+        LiveStatusText.ToolTip = null;
         LiveStatusText.Text = $"Rumble sent (small {small}, large {large}). Did the controller vibrate?";
     }
 
-    private void SetLightbarButton_Click(object sender, RoutedEventArgs e)
+    private async void SetLightbarButton_Click(object sender, RoutedEventArgs e)
     {
         if (_liveSession is null)
         {
@@ -262,42 +258,39 @@ public partial class MainWindow
         byte red = (byte)LightbarRedSlider.Value;
         byte green = (byte)LightbarGreenSlider.Value;
         byte blue = (byte)LightbarBlueSlider.Value;
-
-        if (!_liveSession.TrySendLightbar(red, green, blue, out string? error))
+        EnableOutputControls(false);
+        (bool success, string? error) = await SendLightbarResponsiveAsync(red, green, blue);
+        if (!success)
         {
-            MessageBox.Show(
-                this,
-                error ?? "Lightbar write failed.",
-                "PadScope",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error
-            );
+            LiveStatusText.Text = "Lightbar output unavailable on this HID path; live input remains active.";
+            LiveStatusText.ToolTip = error;
             return;
         }
 
+        EnableOutputControls(true);
+        LiveStatusText.ToolTip = null;
         LiveStatusText.Text = $"Lightbar set to RGB({red}, {green}, {blue}). Did the color change?";
     }
 
-    private void ResetOutputButton_Click(object sender, RoutedEventArgs e)
+    private async void ResetOutputButton_Click(object sender, RoutedEventArgs e)
     {
         if (_liveSession is null)
         {
-            MessageBox.Show(this, "No active session.", "PadScope", MessageBoxButton.OK, MessageBoxImage.Error);
+            LiveStatusText.Text = "No active controller session to reset.";
             return;
         }
 
-        if (!_liveSession.TryResetOutput(out string? error))
+        EnableOutputControls(false);
+        (bool success, string? error) = await ResetOutputResponsiveAsync();
+        if (!success)
         {
-            MessageBox.Show(
-                this,
-                error ?? "Output reset failed.",
-                "PadScope",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error
-            );
+            LiveStatusText.Text = "Output reset unavailable on this HID path; live input remains active.";
+            LiveStatusText.ToolTip = error;
             return;
         }
 
+        EnableOutputControls(true);
+        LiveStatusText.ToolTip = null;
         LiveStatusText.Text = "Output reset to neutral.";
     }
 
@@ -370,7 +363,7 @@ public partial class MainWindow
         }
         catch (Exception)
         {
-            // UI element may be null after theme swap — ignore
+            // Ignore controls that are being recreated during a theme transition.
         }
     }
 
@@ -437,7 +430,7 @@ public partial class MainWindow
         }
         catch (Exception)
         {
-            // ignore during theme transition
+            // Ignore during theme transition.
         }
     }
 
@@ -458,6 +451,8 @@ public partial class MainWindow
         _latestTiming = null;
         _latestState = null;
         _prevButtons = default;
+        _nativeOutputRejected = false;
+        _nativeOutputFailure = null;
 
         StartInputButton.IsEnabled = DeviceComboBox.Items.Count > 0;
         StopInputButton.IsEnabled = false;

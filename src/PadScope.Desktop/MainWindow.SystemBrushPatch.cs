@@ -26,6 +26,10 @@ public partial class MainWindow
                     window.ApplySystemBrushPatch();
                     window.InitializeReportSelectionPersistence();
                     window.InstallModernLiveDashboard();
+                    window.InstallControllerOutputLab();
+                    window.PolishLegacyInputButtonsSafe();
+                    window.InstallScanListPanelControls();
+                    window.ApplyTopNavigationPolish();
                 }),
                 DispatcherPriority.Background);
         }
@@ -49,9 +53,6 @@ public partial class MainWindow
             }
             else if (item is DataGrid dataGrid)
             {
-                // WPF otherwise falls back to system white/gray when a selected
-                // DataGrid loses keyboard focus. Keep both active and inactive
-                // selection states inside the PadScope palette.
                 dataGrid.Resources[SystemColors.HighlightBrushKey] = selectedBackground;
                 dataGrid.Resources[SystemColors.HighlightTextBrushKey] = selectedText;
                 dataGrid.Resources[SystemColors.InactiveSelectionHighlightBrushKey] = selectedBackground;
