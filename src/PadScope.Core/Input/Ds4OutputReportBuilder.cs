@@ -10,13 +10,9 @@ public static class Ds4OutputReportBuilder
     public const int UsbOutputReportLength = 32;
     public const int BluetoothOutputReportLength = 78;
 
-    // Standard DS4 output framing used by the native controller protocol.
-    // The feature byte enables rumble, lightbar and flash fields; callers that
-    // only want to change rumble must therefore preserve the current lightbar
-    // values in the report (Ds4ControllerSession does this).
-    private const byte StandardFeatureFlags = 0x07;
-    private const byte StandardSecondaryFlags = 0x04;
-    private const byte BluetoothTransportFlags = 0xC0;
+    private const byte ValidMotor = 0x01;
+    private const byte ValidLightbar = 0x02;
+    private const byte BluetoothHwControl = 0xC4;
     private const byte OutputCrcSeed = 0xA2;
 
     public static byte[] BuildOutputReport(
@@ -29,13 +25,6 @@ public static class Ds4OutputReportBuilder
         bool setRumble = true,
         bool setLightbar = true)
     {
-        // setRumble/setLightbar are retained for API compatibility and to make
-        // caller intent explicit. DS4 hardware is most interoperable when the
-        // standard feature header is sent, so the payload always includes both
-        // current motor and lightbar state.
-        _ = setRumble;
-        _ = setLightbar;
-
         bool bluetooth = connectionType == ConnectionType.Bluetooth;
         byte[] report = new byte[bluetooth ? BluetoothOutputReportLength : UsbOutputReportLength];
         report[0] = bluetooth ? (byte)BluetoothOutputReportId : (byte)UsbOutputReportId;
@@ -43,8 +32,8 @@ public static class Ds4OutputReportBuilder
         int commonOffset;
         if (bluetooth)
         {
-            report[1] = BluetoothTransportFlags;
-            report[2] = 0x00;
+            report[1] = BluetoothHwControl;
+            report[2] = 0;
             commonOffset = 3;
         }
         else
@@ -52,8 +41,11 @@ public static class Ds4OutputReportBuilder
             commonOffset = 1;
         }
 
-        report[commonOffset] = StandardFeatureFlags;
-        report[commonOffset + 1] = StandardSecondaryFlags;
+        byte validFlags = 0;
+        if (setRumble) validFlags |= ValidMotor;
+        if (setLightbar) validFlags |= ValidLightbar;
+
+        report[commonOffset] = validFlags;
         report[commonOffset + 3] = rumbleSmall;
         report[commonOffset + 4] = rumbleLarge;
         report[commonOffset + 5] = red;

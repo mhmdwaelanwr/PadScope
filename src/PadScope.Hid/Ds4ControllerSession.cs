@@ -9,19 +9,8 @@ public sealed class Ds4ControllerSession : IDisposable
     private readonly IHidInputReader _reader;
     private readonly ControllerDevice _device;
     private readonly ReportTimingAnalyzer _timingAnalyzer = new();
-    private readonly object _intervalSync = new();
-    private readonly Queue<double> _reportIntervalsMs = new();
     private int _timingPublishCounter;
     private bool _disposed;
-    private ConnectionType _effectiveConnectionType;
-    private int? _lastObservedReportId;
-    private DateTimeOffset? _lastValidatedReportTimestamp;
-    private byte _rumbleSmall;
-    private byte _rumbleLarge;
-    private byte _lightbarRed;
-    private byte _lightbarGreen;
-    private byte _lightbarBlue;
-    private string? _lastOutputWriteStatus;
 
     public event Action<Ds4InputState>? StateUpdated;
     public event Action<ReportTimingSnapshot>? TimingUpdated;
@@ -32,7 +21,6 @@ public sealed class Ds4ControllerSession : IDisposable
     {
         _reader = reader;
         _device = device;
-        _effectiveConnectionType = device.ConnectionType;
 
         _reader.ReportReceived += OnReportReceived;
         _reader.ErrorOccurred += OnError;
@@ -42,34 +30,10 @@ public sealed class Ds4ControllerSession : IDisposable
 
     public string? DeviceDescription => _reader.DeviceDescription;
 
-    public ControllerDevice Device => _device;
-
-    public ConnectionType EffectiveConnectionType => _effectiveConnectionType;
-
-    public int? LastObservedReportId => _lastObservedReportId;
-
-    public int MaxOutputReportLength => _reader.MaxOutputReportLength;
-
-    public string? LastOutputWriteStatus =>
-        _lastOutputWriteStatus ?? (_reader as HidSharpHidInputReader)?.LastOutputWriteStatus;
-
     public bool TryStart(out string? error)
     {
         _timingAnalyzer.Reset();
         _timingPublishCounter = 0;
-        _lastObservedReportId = null;
-        _effectiveConnectionType = _device.ConnectionType;
-        _lastValidatedReportTimestamp = null;
-        _rumbleSmall = 0;
-        _rumbleLarge = 0;
-        _lightbarRed = 0;
-        _lightbarGreen = 0;
-        _lightbarBlue = 0;
-        _lastOutputWriteStatus = null;
-        lock (_intervalSync)
-        {
-            _reportIntervalsMs.Clear();
-        }
 
         if (!_reader.TryOpen(_device, out error))
         {
@@ -88,129 +52,34 @@ public sealed class Ds4ControllerSession : IDisposable
     public bool TrySendRumble(byte smallMotor, byte largeMotor, out string? error)
     {
         byte[] report = Ds4OutputReportBuilder.BuildOutputReport(
-            ResolveOutputConnectionType(),
+            _device.ConnectionType,
             rumbleSmall: smallMotor,
             rumbleLarge: largeMotor,
-            red: _lightbarRed,
-            green: _lightbarGreen,
-            blue: _lightbarBlue,
             setRumble: true,
-            setLightbar: true);
+            setLightbar: false);
 
-        if (!TryWriteOutput(report, out error))
-        {
-            return false;
-        }
-
-        _rumbleSmall = smallMotor;
-        _rumbleLarge = largeMotor;
-        return true;
+        return _reader.TryWriteOutput(report, out error);
     }
-
-    public bool TryResetRumble(out string? error) => TrySendRumble(0, 0, out error);
 
     public bool TrySendLightbar(byte red, byte green, byte blue, out string? error)
     {
         byte[] report = Ds4OutputReportBuilder.BuildOutputReport(
-            ResolveOutputConnectionType(),
-            rumbleSmall: _rumbleSmall,
-            rumbleLarge: _rumbleLarge,
+            _device.ConnectionType,
             red: red,
             green: green,
             blue: blue,
-            setRumble: true,
+            setRumble: false,
             setLightbar: true);
 
-        if (!TryWriteOutput(report, out error))
-        {
-            return false;
-        }
-
-        _lightbarRed = red;
-        _lightbarGreen = green;
-        _lightbarBlue = blue;
-        return true;
+        return _reader.TryWriteOutput(report, out error);
     }
 
     public bool TryResetOutput(out string? error)
     {
         byte[] report = Ds4OutputReportBuilder.BuildOutputReport(
-            ResolveOutputConnectionType(),
-            rumbleSmall: 0,
-            rumbleLarge: 0,
-            red: 0,
-            green: 0,
-            blue: 0);
+            _device.ConnectionType);
 
-        if (!TryWriteOutput(report, out error))
-        {
-            return false;
-        }
-
-        _rumbleSmall = 0;
-        _rumbleLarge = 0;
-        _lightbarRed = 0;
-        _lightbarGreen = 0;
-        _lightbarBlue = 0;
-        return true;
-    }
-
-    public IReadOnlyList<double> DrainReportIntervals(int maxSamples = 512)
-    {
-        maxSamples = Math.Clamp(maxSamples, 1, 4096);
-        List<double> samples = new(Math.Min(maxSamples, 128));
-        lock (_intervalSync)
-        {
-            while (_reportIntervalsMs.Count > 0 && samples.Count < maxSamples)
-            {
-                samples.Add(_reportIntervalsMs.Dequeue());
-            }
-
-            while (_reportIntervalsMs.Count > 4096)
-            {
-                _reportIntervalsMs.Dequeue();
-            }
-        }
-        return samples;
-    }
-
-    private bool TryWriteOutput(byte[] report, out string? error)
-    {
-        // First try a short-lived write-only stream. This avoids a class of
-        // Windows HID drivers that stall writes on the handle currently blocked
-        // in a continuous input read loop.
-        if (HidSharpIndependentOutput.TryWrite(_device, report, out string? independentStatus, out string? independentError))
-        {
-            _lastOutputWriteStatus = independentStatus;
-            error = null;
-            return true;
-        }
-
-        // Fall back to the adaptive writer on the live reader: same-handle
-        // interrupt output, Windows HidD_SetOutputReport and writable siblings.
-        if (_reader.TryWriteOutput(report, out string? readerError))
-        {
-            _lastOutputWriteStatus = (_reader as HidSharpHidInputReader)?.LastOutputWriteStatus ??
-                                     $"Output OK · adaptive live HID path · report 0x{report[0]:X2}";
-            error = null;
-            return true;
-        }
-
-        error = $"independent stream: {independentError} | adaptive live path: {readerError}";
-        _lastOutputWriteStatus = error;
-        return false;
-    }
-
-    private ConnectionType ResolveOutputConnectionType()
-    {
-        return _effectiveConnectionType switch
-        {
-            ConnectionType.Bluetooth => ConnectionType.Bluetooth,
-            ConnectionType.Usb => ConnectionType.Usb,
-            _ => _device.ConnectionType == ConnectionType.Bluetooth
-                ? ConnectionType.Bluetooth
-                : ConnectionType.Usb
-        };
+        return _reader.TryWriteOutput(report, out error);
     }
 
     private void OnReportReceived(HidInputReport report)
@@ -221,7 +90,6 @@ public sealed class Ds4ControllerSession : IDisposable
         }
 
         ReportObserved?.Invoke(report);
-        _lastObservedReportId = report.ReportId;
 
         if (!Ds4ReportParser.LooksLikeDs4Report(report.Data))
         {
@@ -232,35 +100,6 @@ public sealed class Ds4ControllerSession : IDisposable
             !Ds4ReportParser.HasValidBluetoothCrc(report.Data))
         {
             return;
-        }
-
-        if (report.ReportId == Ds4ReportParser.BluetoothReportId &&
-            report.Data.Length >= Ds4ReportParser.BluetoothReportLength)
-        {
-            _effectiveConnectionType = ConnectionType.Bluetooth;
-        }
-        else if (report.ReportId == Ds4ReportParser.UsbReportId &&
-                 report.Data.Length >= Ds4ReportParser.UsbReportLength)
-        {
-            _effectiveConnectionType = ConnectionType.Usb;
-        }
-
-        DateTimeOffset? previous = _lastValidatedReportTimestamp;
-        _lastValidatedReportTimestamp = report.Timestamp;
-        if (previous.HasValue)
-        {
-            double intervalMs = (report.Timestamp - previous.Value).TotalMilliseconds;
-            if (intervalMs > 0 && intervalMs < 1000)
-            {
-                lock (_intervalSync)
-                {
-                    _reportIntervalsMs.Enqueue(intervalMs);
-                    while (_reportIntervalsMs.Count > 4096)
-                    {
-                        _reportIntervalsMs.Dequeue();
-                    }
-                }
-            }
         }
 
         _timingAnalyzer.Add(report.Timestamp);
