@@ -18,6 +18,7 @@ public sealed class Ds4ControllerSessionTests
         Assert.Null(error);
         Assert.Equal(1, reader.OpenCount);
         Assert.True(reader.IsRunning);
+        Assert.False(session.OutputPrimed);
     }
 
     [Fact]
@@ -79,7 +80,7 @@ public sealed class Ds4ControllerSessionTests
     [Theory]
     [InlineData(ConnectionType.Usb, Ds4OutputReportBuilder.UsbOutputReportLength, Ds4OutputReportBuilder.UsbOutputReportId)]
     [InlineData(ConnectionType.Bluetooth, Ds4OutputReportBuilder.BluetoothOutputReportLength, Ds4OutputReportBuilder.BluetoothOutputReportId)]
-    public void Output_UsesTransportSpecificPacket(ConnectionType connection, int length, int reportId)
+    public void FirstStatefulOutput_PrimesThenSendsRequestedPacket(ConnectionType connection, int length, int reportId)
     {
         FakeHidInputReader reader = new();
         using Ds4ControllerSession session = new(reader, Device(connection));
@@ -88,12 +89,56 @@ public sealed class Ds4ControllerSessionTests
         Assert.True(session.TrySendRumble(7, 11, out string? error));
 
         Assert.Null(error);
-        byte[] packet = Assert.Single(reader.Writes);
-        Assert.Equal(length, packet.Length);
-        Assert.Equal(reportId, packet[0]);
+        Assert.True(session.OutputPrimed);
+        Assert.Equal(2, reader.Writes.Count);
+
         int common = connection == ConnectionType.Bluetooth ? 3 : 1;
-        Assert.Equal(7, packet[common + 3]);
-        Assert.Equal(11, packet[common + 4]);
+        byte[] prime = reader.Writes[0];
+        Assert.Equal(length, prime.Length);
+        Assert.Equal(reportId, prime[0]);
+        Assert.Equal(0, prime[common + 3]);
+        Assert.Equal(0, prime[common + 4]);
+
+        byte[] requested = reader.Writes[1];
+        Assert.Equal(length, requested.Length);
+        Assert.Equal(reportId, requested[0]);
+        Assert.Equal(7, requested[common + 3]);
+        Assert.Equal(11, requested[common + 4]);
+    }
+
+    [Fact]
+    public void ResetRumble_PrimesSessionSoNextRumbleNeedsOneWrite()
+    {
+        FakeHidInputReader reader = new();
+        using Ds4ControllerSession session = new(reader, Device(ConnectionType.Usb));
+        session.TryStart(out _);
+
+        Assert.True(session.TryResetRumble(out _));
+        Assert.True(session.OutputPrimed);
+        Assert.Single(reader.Writes);
+
+        Assert.True(session.TrySendRumble(40, 220, out _));
+        Assert.Equal(2, reader.Writes.Count);
+        Assert.Equal(40, reader.Writes[1][4]);
+        Assert.Equal(220, reader.Writes[1][5]);
+    }
+
+    [Fact]
+    public void FirstLightbarWrite_PrimesThenAppliesRequestedColor()
+    {
+        FakeHidInputReader reader = new();
+        using Ds4ControllerSession session = new(reader, Device(ConnectionType.Usb));
+        session.TryStart(out _);
+
+        Assert.True(session.TrySendLightbar(0x22, 0x44, 0x66, out _));
+
+        Assert.Equal(2, reader.Writes.Count);
+        Assert.Equal(0, reader.Writes[0][6]);
+        Assert.Equal(0, reader.Writes[0][7]);
+        Assert.Equal(0, reader.Writes[0][8]);
+        Assert.Equal(0x22, reader.Writes[1][6]);
+        Assert.Equal(0x44, reader.Writes[1][7]);
+        Assert.Equal(0x66, reader.Writes[1][8]);
     }
 
     [Fact]
@@ -106,8 +151,8 @@ public sealed class Ds4ControllerSessionTests
         Assert.True(session.TrySendLightbar(0x22, 0x44, 0x66, out _));
         Assert.True(session.TrySendRumble(0x11, 0x77, out _));
 
-        Assert.Equal(2, reader.Writes.Count);
-        byte[] rumblePacket = reader.Writes[1];
+        Assert.Equal(3, reader.Writes.Count);
+        byte[] rumblePacket = reader.Writes[^1];
         Assert.Equal(0x11, rumblePacket[4]);
         Assert.Equal(0x77, rumblePacket[5]);
         Assert.Equal(0x22, rumblePacket[6]);
