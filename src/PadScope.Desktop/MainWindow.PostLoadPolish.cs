@@ -14,11 +14,24 @@ public partial class MainWindow
             return;
         }
 
-        _postLoadPolishInstalled = true;
-        InstallAdvancedLivePolish(this);
-        _modernLiveDashboard?.EnsureControllerPolish();
-        PolishWorkspaceNavigationRuntime();
-        HookExtendedDashboardTelemetry();
+        // This layer is presentation-only. A cosmetic enhancement must never be
+        // able to terminate PadScope or block access to Live Input.
+        try
+        {
+            PrepareLegacyOutputControlsForReparenting();
+            InstallAdvancedLivePolish(this);
+            _modernLiveDashboard?.EnsureControllerPolish();
+            PolishWorkspaceNavigationRuntime();
+            HookExtendedDashboardTelemetry();
+            _postLoadPolishInstalled = true;
+        }
+        catch (Exception ex)
+        {
+            // Do not repeatedly retry a partially applied visual transformation.
+            // The original/live controls remain functional even when polish falls back.
+            _postLoadPolishInstalled = true;
+            ReportNonCriticalPolishFailure(ex);
+        }
     }
 
     private void HookExtendedDashboardTelemetry()
