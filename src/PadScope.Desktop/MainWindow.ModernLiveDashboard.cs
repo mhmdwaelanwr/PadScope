@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -9,14 +10,25 @@ namespace PadScope.Desktop;
 public partial class MainWindow
 {
     private ModernLiveDashboard? _modernLiveDashboard;
+    private ControllerDiagnosticsLab? _controllerDiagnosticsLab;
     private DispatcherTimer? _modernDashboardTimer;
     private string _modernDeviceFingerprint = string.Empty;
+    private CancellationTokenSource? _diagnosticsVibrationCts;
 
     private ContentControl? _liveWorkspaceContent;
     private Button? _overviewWorkspaceButton;
+    private Button? _diagnosticsWorkspaceButton;
     private Button? _advancedWorkspaceButton;
     private UIElement? _overviewWorkspacePage;
+    private UIElement? _diagnosticsWorkspacePage;
     private UIElement? _advancedWorkspacePage;
+
+    private enum LiveWorkspacePage
+    {
+        Overview,
+        Diagnostics,
+        Advanced
+    }
 
     private void InstallModernLiveDashboard()
     {
@@ -49,12 +61,29 @@ public partial class MainWindow
         _modernLiveDashboard.RumblePresetRequested += ModernDashboard_RumblePresetRequested;
         _modernLiveDashboard.ResetRumbleRequested += ModernDashboard_ResetRumbleRequested;
 
+        _controllerDiagnosticsLab = new ControllerDiagnosticsLab
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Top,
+            MinWidth = 0
+        };
+        _controllerDiagnosticsLab.VibrationRequested += DiagnosticsLab_VibrationRequested;
+        _controllerDiagnosticsLab.StopVibrationRequested += DiagnosticsLab_StopVibrationRequested;
+
         ScrollViewer overviewScroll = new()
         {
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
             CanContentScroll = false,
             Content = _modernLiveDashboard
+        };
+
+        ScrollViewer diagnosticsScroll = new()
+        {
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            CanContentScroll = false,
+            Content = _controllerDiagnosticsLab
         };
 
         Border advancedSurface = new()
@@ -77,11 +106,12 @@ public partial class MainWindow
         };
 
         _overviewWorkspacePage = overviewScroll;
+        _diagnosticsWorkspacePage = diagnosticsScroll;
         _advancedWorkspacePage = advancedScroll;
 
         Grid workspaceHost = CreateLiveWorkspaceHost();
         liveTab.Content = workspaceHost;
-        SwitchLiveWorkspace(showAdvanced: false);
+        SwitchLiveWorkspace(LiveWorkspacePage.Overview);
 
         RefreshModernDashboard(forceDeviceRefresh: true);
 
@@ -92,7 +122,12 @@ public partial class MainWindow
         _modernDashboardTimer.Tick += (_, _) => RefreshModernDashboard(forceDeviceRefresh: false);
         _modernDashboardTimer.Start();
 
-        Closed += (_, _) => _modernDashboardTimer?.Stop();
+        Closed += (_, _) =>
+        {
+            _modernDashboardTimer?.Stop();
+            _diagnosticsVibrationCts?.Cancel();
+            _diagnosticsVibrationCts?.Dispose();
+        };
     }
 
     /// <summary>
@@ -135,16 +170,23 @@ public partial class MainWindow
             "Overview",
             minWidth: 112,
             "Live controller overview and telemetry");
+        _diagnosticsWorkspaceButton = CreateWorkspaceNavigationButton(
+            "Diagnostics Lab",
+            minWidth: 138,
+            "Stick drift, range, polling rate, touchpad and vibration diagnostics");
         _advancedWorkspaceButton = CreateWorkspaceNavigationButton(
             "Advanced HID tools",
             minWidth: 168,
             "Capture/replay, raw HID, lightbar, detailed motion data and manual output controls");
 
         _overviewWorkspaceButton.Margin = new Thickness(0, 0, 6, 0);
-        _overviewWorkspaceButton.Click += (_, _) => SwitchLiveWorkspace(showAdvanced: false);
-        _advancedWorkspaceButton.Click += (_, _) => SwitchLiveWorkspace(showAdvanced: true);
+        _diagnosticsWorkspaceButton.Margin = new Thickness(0, 0, 6, 0);
+        _overviewWorkspaceButton.Click += (_, _) => SwitchLiveWorkspace(LiveWorkspacePage.Overview);
+        _diagnosticsWorkspaceButton.Click += (_, _) => SwitchLiveWorkspace(LiveWorkspacePage.Diagnostics);
+        _advancedWorkspaceButton.Click += (_, _) => SwitchLiveWorkspace(LiveWorkspacePage.Advanced);
 
         navigationButtons.Children.Add(_overviewWorkspaceButton);
+        navigationButtons.Children.Add(_diagnosticsWorkspaceButton);
         navigationButtons.Children.Add(_advancedWorkspaceButton);
         navigationRail.Child = navigationButtons;
         host.Children.Add(navigationRail);
@@ -184,23 +226,32 @@ public partial class MainWindow
         return button;
     }
 
-    private void SwitchLiveWorkspace(bool showAdvanced)
+    private void SwitchLiveWorkspace(bool showAdvanced) =>
+        SwitchLiveWorkspace(showAdvanced ? LiveWorkspacePage.Advanced : LiveWorkspacePage.Overview);
+
+    private void SwitchLiveWorkspace(LiveWorkspacePage page)
     {
         if (_liveWorkspaceContent is null ||
             _overviewWorkspaceButton is null ||
+            _diagnosticsWorkspaceButton is null ||
             _advancedWorkspaceButton is null ||
             _overviewWorkspacePage is null ||
+            _diagnosticsWorkspacePage is null ||
             _advancedWorkspacePage is null)
         {
             return;
         }
 
-        _liveWorkspaceContent.Content = showAdvanced
-            ? _advancedWorkspacePage
-            : _overviewWorkspacePage;
+        _liveWorkspaceContent.Content = page switch
+        {
+            LiveWorkspacePage.Diagnostics => _diagnosticsWorkspacePage,
+            LiveWorkspacePage.Advanced => _advancedWorkspacePage,
+            _ => _overviewWorkspacePage
+        };
 
-        SetWorkspaceNavigationState(_overviewWorkspaceButton, isSelected: !showAdvanced);
-        SetWorkspaceNavigationState(_advancedWorkspaceButton, isSelected: showAdvanced);
+        SetWorkspaceNavigationState(_overviewWorkspaceButton, page == LiveWorkspacePage.Overview);
+        SetWorkspaceNavigationState(_diagnosticsWorkspaceButton, page == LiveWorkspacePage.Diagnostics);
+        SetWorkspaceNavigationState(_advancedWorkspaceButton, page == LiveWorkspacePage.Advanced);
     }
 
     private static void SetWorkspaceNavigationState(Button button, bool isSelected)
@@ -257,6 +308,7 @@ public partial class MainWindow
     private void RefreshModernDashboard(bool forceDeviceRefresh)
     {
         ModernLiveDashboard? dashboard = _modernLiveDashboard;
+        ControllerDiagnosticsLab? diagnostics = _controllerDiagnosticsLab;
         if (dashboard is null)
         {
             return;
@@ -280,11 +332,14 @@ public partial class MainWindow
         bool running = _liveSession is { IsRunning: true };
         dashboard.SetSessionState(running, running ? LiveStatusText.Text : "Waiting for live input");
         dashboard.SetOutputEnabled(running && PulseRumbleButton.IsEnabled);
+        diagnostics?.SetSessionState(running);
+        diagnostics?.SetDevice(dashboard.SelectedDevice);
 
         var state = _latestState;
         if (state is not null)
         {
             dashboard.UpdateTelemetry(state, _latestTiming);
+            diagnostics?.UpdateTelemetry(state, _latestTiming);
         }
     }
 
@@ -338,5 +393,110 @@ public partial class MainWindow
         }
 
         ResetOutputButton_Click(this, new RoutedEventArgs());
+    }
+
+    private async void DiagnosticsLab_VibrationRequested(object? sender, VibrationRequestEventArgs e)
+    {
+        if (_liveSession is not { IsRunning: true } session || !PulseRumbleButton.IsEnabled)
+        {
+            MessageBox.Show(
+                this,
+                "Start a live hardware session before running a vibration diagnostic.",
+                "PadScope Vibration Lab",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        if (!ConfirmControlledAction(
+                $"Run the {e.Pattern} vibration diagnostic for up to {e.DurationMs} ms. PadScope will reset output automatically.",
+                DeviceComboBox.SelectedItem as ControllerDevice))
+        {
+            return;
+        }
+
+        _diagnosticsVibrationCts?.Cancel();
+        _diagnosticsVibrationCts?.Dispose();
+        CancellationTokenSource cts = new();
+        _diagnosticsVibrationCts = cts;
+
+        try
+        {
+            await RunDiagnosticsVibrationPatternAsync(session, e, cts.Token);
+            LiveStatusText.Text = $"Vibration diagnostic completed ({e.Pattern}). Output reset to neutral.";
+        }
+        catch (OperationCanceledException)
+        {
+            LiveStatusText.Text = "Vibration diagnostic stopped. Output reset to neutral.";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(this, ex.Message, "PadScope Vibration Lab", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            session.TryResetOutput(out _);
+            if (ReferenceEquals(_diagnosticsVibrationCts, cts))
+            {
+                _diagnosticsVibrationCts = null;
+            }
+            cts.Dispose();
+        }
+    }
+
+    private void DiagnosticsLab_StopVibrationRequested(object? sender, EventArgs e)
+    {
+        _diagnosticsVibrationCts?.Cancel();
+        _liveSession?.TryResetOutput(out _);
+    }
+
+    private static async Task RunDiagnosticsVibrationPatternAsync(
+        Ds4ControllerSession session,
+        VibrationRequestEventArgs request,
+        CancellationToken cancellationToken)
+    {
+        static byte Scale(byte value, double factor) =>
+            (byte)Math.Clamp((int)Math.Round(value * factor), 0, 255);
+
+        async Task Segment(byte small, byte large, int durationMs)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!session.TrySendRumble(small, large, out string? error))
+            {
+                throw new InvalidOperationException(error ?? "Rumble write failed.");
+            }
+            await Task.Delay(Math.Max(20, durationMs), cancellationToken);
+        }
+
+        async Task Pause(int durationMs)
+        {
+            session.TrySendRumble(0, 0, out _);
+            await Task.Delay(Math.Max(20, durationMs), cancellationToken);
+        }
+
+        int duration = Math.Clamp(request.DurationMs, 80, 3000);
+        switch (request.Pattern)
+        {
+            case VibrationPattern.Heartbeat:
+                await Segment(request.SmallMotor, request.LargeMotor, Math.Min(180, duration / 3));
+                await Pause(90);
+                await Segment(Scale(request.SmallMotor, 0.85), Scale(request.LargeMotor, 0.90), Math.Min(240, duration / 2));
+                break;
+
+            case VibrationPattern.Explosion:
+                int third = Math.Max(70, duration / 3);
+                await Segment(request.SmallMotor, request.LargeMotor, third);
+                await Segment(Scale(request.SmallMotor, 0.65), Scale(request.LargeMotor, 0.72), third);
+                await Segment(Scale(request.SmallMotor, 0.30), Scale(request.LargeMotor, 0.38), third);
+                break;
+
+            case VibrationPattern.Click:
+                await Segment(request.SmallMotor, request.LargeMotor, Math.Min(duration, 140));
+                break;
+
+            default:
+                await Segment(request.SmallMotor, request.LargeMotor, duration);
+                break;
+        }
     }
 }
