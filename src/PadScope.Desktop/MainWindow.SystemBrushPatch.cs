@@ -27,6 +27,7 @@ public partial class MainWindow
                     window.InitializeReportSelectionPersistence();
                     window.InstallModernLiveDashboard();
                     window.InstallScanListPanelControls();
+                    window.ApplyTopNavigationPolish();
                 }),
                 DispatcherPriority.Background);
         }
