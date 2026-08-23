@@ -34,14 +34,15 @@ public partial class MainWindow
 
         Brush text = (Brush)FindResource("B_Text");
         Brush textDim = (Brush)FindResource("B_TextDim");
-        Brush activeSurface = (Brush)FindResource("B_PrimarySoft");
-        Brush hoverSurface = (Brush)FindResource("B_CardAlt");
         Brush accent = (Brush)FindResource("B_Primary");
+        Brush accentDim = (Brush)FindResource("B_PrimaryDim");
 
-        Style style = CreateTopNavigationTabStyle(text, textDim, activeSurface, hoverSurface, accent);
+        Style style = CreateTopNavigationTabStyle(text, textDim, accent, accentDim);
 
+        mainTabs.Background = Brushes.Transparent;
+        mainTabs.BorderThickness = new Thickness(0);
         mainTabs.Margin = new Thickness(8, 0, 8, 0);
-        mainTabs.Padding = new Thickness(0, 0, 0, 8);
+        mainTabs.Padding = new Thickness(0, 0, 0, 10);
         mainTabs.HorizontalContentAlignment = HorizontalAlignment.Stretch;
         mainTabs.VerticalContentAlignment = VerticalAlignment.Stretch;
 
@@ -53,10 +54,13 @@ public partial class MainWindow
             }
 
             tab.Style = style;
-            tab.Height = 46;
+            tab.Background = Brushes.Transparent;
+            tab.BorderBrush = Brushes.Transparent;
+            tab.BorderThickness = new Thickness(0);
+            tab.Height = 44;
             tab.MinWidth = 0;
-            tab.Margin = new Thickness(0, 0, 14, 8);
-            tab.Padding = new Thickness(18, 9, 18, 9);
+            tab.Margin = new Thickness(0, 0, 22, 0);
+            tab.Padding = new Thickness(12, 8, 12, 8);
         }
 
         if (!_topNavigationThemeHooked)
@@ -71,44 +75,38 @@ public partial class MainWindow
     private static Style CreateTopNavigationTabStyle(
         Brush text,
         Brush textDim,
-        Brush activeSurface,
-        Brush hoverSurface,
-        Brush accent)
+        Brush accent,
+        Brush accentDim)
     {
         Style style = new(typeof(TabItem));
         style.Setters.Add(new Setter(Control.ForegroundProperty, textDim));
         style.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
-        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(18, 9, 18, 9)));
+        style.Setters.Add(new Setter(Control.BorderBrushProperty, Brushes.Transparent));
+        style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
+        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(12, 8, 12, 8)));
         style.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
         style.Setters.Add(new Setter(Control.FontSizeProperty, 13d));
         style.Setters.Add(new Setter(FrameworkElement.MinWidthProperty, 0d));
-        style.Setters.Add(new Setter(FrameworkElement.HeightProperty, 46d));
+        style.Setters.Add(new Setter(FrameworkElement.HeightProperty, 44d));
         style.Setters.Add(new Setter(Control.FocusVisualStyleProperty, null));
 
         FrameworkElementFactory root = new(typeof(Grid));
         root.SetValue(FrameworkElement.SnapsToDevicePixelsProperty, true);
-
-        FrameworkElementFactory surface = new(typeof(Border), "Surface");
-        surface.SetValue(Border.BackgroundProperty, Brushes.Transparent);
-        surface.SetValue(Border.BorderBrushProperty, Brushes.Transparent);
-        surface.SetValue(Border.BorderThicknessProperty, new Thickness(0));
-        surface.SetValue(Border.CornerRadiusProperty, new CornerRadius(12));
-        surface.SetValue(Border.PaddingProperty, new Thickness(18, 9, 18, 9));
-        surface.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 0, 4));
+        root.SetValue(Panel.BackgroundProperty, Brushes.Transparent);
 
         FrameworkElementFactory presenter = new(typeof(ContentPresenter));
         presenter.SetValue(ContentPresenter.ContentSourceProperty, "Header");
         presenter.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
         presenter.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
-        surface.AppendChild(presenter);
-        root.AppendChild(surface);
+        presenter.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 0, 5));
+        root.AppendChild(presenter);
 
         FrameworkElementFactory indicator = new(typeof(Border), "AccentLine");
-        indicator.SetValue(FrameworkElement.WidthProperty, 36d);
+        indicator.SetValue(FrameworkElement.WidthProperty, 0d);
         indicator.SetValue(FrameworkElement.HeightProperty, 3d);
         indicator.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
         indicator.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Bottom);
-        indicator.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 0, 1));
+        indicator.SetValue(FrameworkElement.MarginProperty, new Thickness(0, 0, 0, 2));
         indicator.SetValue(Border.CornerRadiusProperty, new CornerRadius(2));
         indicator.SetValue(Border.BackgroundProperty, Brushes.Transparent);
         indicator.SetValue(UIElement.IsHitTestVisibleProperty, false);
@@ -124,8 +122,9 @@ public partial class MainWindow
             Property = UIElement.IsMouseOverProperty,
             Value = true
         };
-        hover.Setters.Add(new Setter(Border.BackgroundProperty, hoverSurface, "Surface"));
         hover.Setters.Add(new Setter(Control.ForegroundProperty, text));
+        hover.Setters.Add(new Setter(FrameworkElement.WidthProperty, 22d, "AccentLine"));
+        hover.Setters.Add(new Setter(Border.BackgroundProperty, accentDim, "AccentLine"));
         template.Triggers.Add(hover);
 
         Trigger selected = new()
@@ -133,9 +132,9 @@ public partial class MainWindow
             Property = TabItem.IsSelectedProperty,
             Value = true
         };
-        selected.Setters.Add(new Setter(Border.BackgroundProperty, activeSurface, "Surface"));
-        selected.Setters.Add(new Setter(Border.BackgroundProperty, accent, "AccentLine"));
         selected.Setters.Add(new Setter(Control.ForegroundProperty, text));
+        selected.Setters.Add(new Setter(FrameworkElement.WidthProperty, 42d, "AccentLine"));
+        selected.Setters.Add(new Setter(Border.BackgroundProperty, accent, "AccentLine"));
         template.Triggers.Add(selected);
 
         Trigger disabled = new()
