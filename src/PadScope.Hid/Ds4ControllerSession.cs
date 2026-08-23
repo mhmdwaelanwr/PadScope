@@ -6,6 +6,8 @@ namespace PadScope.Hid;
 
 public sealed class Ds4ControllerSession : IDisposable
 {
+    private const int OutputPrimeDelayMilliseconds = 12;
+
     private readonly IHidInputReader _reader;
     private readonly ControllerDevice _device;
     private readonly ReportTimingAnalyzer _timingAnalyzer = new();
@@ -20,6 +22,7 @@ public sealed class Ds4ControllerSession : IDisposable
     private byte _lightbarRed;
     private byte _lightbarGreen;
     private byte _lightbarBlue;
+    private bool _outputPrimed;
     private string? _lastOutputWriteStatus;
 
     public event Action<Ds4InputState>? StateUpdated;
@@ -41,6 +44,7 @@ public sealed class Ds4ControllerSession : IDisposable
     public ControllerDevice Device => _device;
     public ConnectionType EffectiveConnectionType => _effectiveConnectionType;
     public int MaxOutputReportLength => _reader.MaxOutputReportLength;
+    public bool OutputPrimed => _outputPrimed;
     public string? LastOutputWriteStatus => _lastOutputWriteStatus ?? (_reader as HidSharpHidInputReader)?.LastOutputWriteStatus;
 
     public bool TryStart(out string? error)
@@ -51,6 +55,7 @@ public sealed class Ds4ControllerSession : IDisposable
         _lastValidatedReportTimestamp = null;
         _rumbleSmall = _rumbleLarge = 0;
         _lightbarRed = _lightbarGreen = _lightbarBlue = 0;
+        _outputPrimed = false;
         _lastOutputWriteStatus = null;
         lock (_intervalSync) _reportIntervalsMs.Clear();
 
@@ -63,6 +68,10 @@ public sealed class Ds4ControllerSession : IDisposable
 
     public bool TrySendRumble(byte smallMotor, byte largeMotor, out string? error)
     {
+        string? primeError = null;
+        if ((smallMotor != 0 || largeMotor != 0) && !_outputPrimed)
+            TryPrimeOutput(out primeError);
+
         byte[] report = Ds4OutputReportBuilder.BuildOutputReport(
             ResolveOutputConnectionType(),
             rumbleSmall: smallMotor,
@@ -70,16 +79,42 @@ public sealed class Ds4ControllerSession : IDisposable
             red: _lightbarRed,
             green: _lightbarGreen,
             blue: _lightbarBlue);
-        if (!TryWriteOutput(report, out error)) return false;
+
+        if (!TryWriteOutput(report, out error))
+        {
+            if (!string.IsNullOrWhiteSpace(primeError))
+                error = $"prime: {primeError} | requested rumble: {error}";
+            return false;
+        }
+
+        _outputPrimed = true;
         _rumbleSmall = smallMotor;
         _rumbleLarge = largeMotor;
         return true;
     }
 
-    public bool TryResetRumble(out string? error) => TrySendRumble(0, 0, out error);
+    public bool TryResetRumble(out string? error)
+    {
+        byte[] report = Ds4OutputReportBuilder.BuildOutputReport(
+            ResolveOutputConnectionType(),
+            rumbleSmall: 0,
+            rumbleLarge: 0,
+            red: _lightbarRed,
+            green: _lightbarGreen,
+            blue: _lightbarBlue);
+
+        if (!TryWriteOutput(report, out error)) return false;
+        _outputPrimed = true;
+        _rumbleSmall = _rumbleLarge = 0;
+        return true;
+    }
 
     public bool TrySendLightbar(byte red, byte green, byte blue, out string? error)
     {
+        string? primeError = null;
+        if ((red != 0 || green != 0 || blue != 0) && !_outputPrimed)
+            TryPrimeOutput(out primeError);
+
         byte[] report = Ds4OutputReportBuilder.BuildOutputReport(
             ResolveOutputConnectionType(),
             rumbleSmall: _rumbleSmall,
@@ -87,7 +122,15 @@ public sealed class Ds4ControllerSession : IDisposable
             red: red,
             green: green,
             blue: blue);
-        if (!TryWriteOutput(report, out error)) return false;
+
+        if (!TryWriteOutput(report, out error))
+        {
+            if (!string.IsNullOrWhiteSpace(primeError))
+                error = $"prime: {primeError} | requested lightbar: {error}";
+            return false;
+        }
+
+        _outputPrimed = true;
         _lightbarRed = red;
         _lightbarGreen = green;
         _lightbarBlue = blue;
@@ -98,6 +141,7 @@ public sealed class Ds4ControllerSession : IDisposable
     {
         byte[] report = Ds4OutputReportBuilder.BuildOutputReport(ResolveOutputConnectionType());
         if (!TryWriteOutput(report, out error)) return false;
+        _outputPrimed = true;
         _rumbleSmall = _rumbleLarge = 0;
         _lightbarRed = _lightbarGreen = _lightbarBlue = 0;
         return true;
@@ -113,6 +157,29 @@ public sealed class Ds4ControllerSession : IDisposable
                 samples.Add(_reportIntervalsMs.Dequeue());
         }
         return samples;
+    }
+
+    private bool TryPrimeOutput(out string? error)
+    {
+        if (_outputPrimed)
+        {
+            error = null;
+            return true;
+        }
+
+        byte[] neutral = Ds4OutputReportBuilder.BuildOutputReport(
+            ResolveOutputConnectionType(),
+            rumbleSmall: 0,
+            rumbleLarge: 0,
+            red: _lightbarRed,
+            green: _lightbarGreen,
+            blue: _lightbarBlue);
+
+        if (!TryWriteOutput(neutral, out error)) return false;
+
+        _outputPrimed = true;
+        Thread.Sleep(OutputPrimeDelayMilliseconds);
+        return true;
     }
 
     private bool TryWriteOutput(byte[] report, out string? error)
