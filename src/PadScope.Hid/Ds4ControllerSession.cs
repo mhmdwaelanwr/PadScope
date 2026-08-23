@@ -21,6 +21,7 @@ public sealed class Ds4ControllerSession : IDisposable
     private byte _lightbarRed;
     private byte _lightbarGreen;
     private byte _lightbarBlue;
+    private string? _lastOutputWriteStatus;
 
     public event Action<Ds4InputState>? StateUpdated;
     public event Action<ReportTimingSnapshot>? TimingUpdated;
@@ -50,7 +51,7 @@ public sealed class Ds4ControllerSession : IDisposable
     public int MaxOutputReportLength => _reader.MaxOutputReportLength;
 
     public string? LastOutputWriteStatus =>
-        (_reader as HidSharpHidInputReader)?.LastOutputWriteStatus;
+        _lastOutputWriteStatus ?? (_reader as HidSharpHidInputReader)?.LastOutputWriteStatus;
 
     public bool TryStart(out string? error)
     {
@@ -64,6 +65,7 @@ public sealed class Ds4ControllerSession : IDisposable
         _lightbarRed = 0;
         _lightbarGreen = 0;
         _lightbarBlue = 0;
+        _lastOutputWriteStatus = null;
         lock (_intervalSync)
         {
             _reportIntervalsMs.Clear();
@@ -95,7 +97,7 @@ public sealed class Ds4ControllerSession : IDisposable
             setRumble: true,
             setLightbar: true);
 
-        if (!_reader.TryWriteOutput(report, out error))
+        if (!TryWriteOutput(report, out error))
         {
             return false;
         }
@@ -119,7 +121,7 @@ public sealed class Ds4ControllerSession : IDisposable
             setRumble: true,
             setLightbar: true);
 
-        if (!_reader.TryWriteOutput(report, out error))
+        if (!TryWriteOutput(report, out error))
         {
             return false;
         }
@@ -140,7 +142,7 @@ public sealed class Ds4ControllerSession : IDisposable
             green: 0,
             blue: 0);
 
-        if (!_reader.TryWriteOutput(report, out error))
+        if (!TryWriteOutput(report, out error))
         {
             return false;
         }
@@ -153,11 +155,6 @@ public sealed class Ds4ControllerSession : IDisposable
         return true;
     }
 
-    /// <summary>
-    /// Drains validated native HID report intervals captured since the previous
-    /// call. These raw intervals are used by Diagnostics Lab instead of repeatedly
-    /// plotting the already-smoothed ReportTimingSnapshot value.
-    /// </summary>
     public IReadOnlyList<double> DrainReportIntervals(int maxSamples = 512)
     {
         maxSamples = Math.Clamp(maxSamples, 1, 4096);
@@ -169,13 +166,39 @@ public sealed class Ds4ControllerSession : IDisposable
                 samples.Add(_reportIntervalsMs.Dequeue());
             }
 
-            // Keep memory bounded if the UI is paused for a long time.
             while (_reportIntervalsMs.Count > 4096)
             {
                 _reportIntervalsMs.Dequeue();
             }
         }
         return samples;
+    }
+
+    private bool TryWriteOutput(byte[] report, out string? error)
+    {
+        // First try a short-lived write-only stream. This avoids a class of
+        // Windows HID drivers that stall writes on the handle currently blocked
+        // in a continuous input read loop.
+        if (HidSharpIndependentOutput.TryWrite(_device, report, out string? independentStatus, out string? independentError))
+        {
+            _lastOutputWriteStatus = independentStatus;
+            error = null;
+            return true;
+        }
+
+        // Fall back to the adaptive writer on the live reader: same-handle
+        // interrupt output, Windows HidD_SetOutputReport and writable siblings.
+        if (_reader.TryWriteOutput(report, out string? readerError))
+        {
+            _lastOutputWriteStatus = (_reader as HidSharpHidInputReader)?.LastOutputWriteStatus ??
+                                     $"Output OK · adaptive live HID path · report 0x{report[0]:X2}";
+            error = null;
+            return true;
+        }
+
+        error = $"independent stream: {independentError} | adaptive live path: {readerError}";
+        _lastOutputWriteStatus = error;
+        return false;
     }
 
     private ConnectionType ResolveOutputConnectionType()
