@@ -62,7 +62,6 @@ public partial class ModernLiveDashboard : UserControl
         StartButton.IsEnabled = !running && DevicePicker.Items.Count > 0;
         StopButton.IsEnabled = running;
         SessionStateText.Text = status ?? (running ? "Live HID stream active" : "Waiting for live input");
-        SetOutputEnabled(running);
     }
 
     public void SetOutputEnabled(bool enabled)
@@ -81,20 +80,8 @@ public partial class ModernLiveDashboard : UserControl
             ? $"Battery {state.BatteryLevel.Value * 10}%{(state.Charging ? " · charging" : string.Empty)}"
             : "Battery --";
 
-        UpdateStick(
-            LeftStickCanvas,
-            LeftStickDot,
-            LeftStickText,
-            LeftStickOffsetText,
-            state.LeftStickXNorm,
-            state.LeftStickYNorm);
-        UpdateStick(
-            RightStickCanvas,
-            RightStickDot,
-            RightStickText,
-            RightStickOffsetText,
-            state.RightStickXNorm,
-            state.RightStickYNorm);
+        UpdateStick(LeftStickCanvas, LeftStickDot, LeftStickText, LeftStickOffsetText, state.LeftStickXNorm, state.LeftStickYNorm);
+        UpdateStick(RightStickCanvas, RightStickDot, RightStickText, RightStickOffsetText, state.RightStickXNorm, state.RightStickYNorm);
 
         MoveControllerStick(ControllerLeftStickDot, state.LeftStickXNorm, state.LeftStickYNorm, 205, 238);
         MoveControllerStick(ControllerRightStickDot, state.RightStickXNorm, state.RightStickYNorm, 327, 238);
@@ -130,7 +117,8 @@ public partial class ModernLiveDashboard : UserControl
 
         RawPreviewText.Text = state.Raw.Length == 0
             ? "RAW  --"
-            : "RAW  " + string.Join(' ', state.Raw.Take(18).Select(value => value.ToString("X2"))) + (state.Raw.Length > 18 ? " …" : string.Empty);
+            : "RAW  " + string.Join(" ", state.Raw.Take(18).Select(value => value.ToString("X2"))) +
+              (state.Raw.Length > 18 ? " …" : string.Empty);
 
         if (timing is not null && timing.ReportCount >= 2)
         {
@@ -148,11 +136,7 @@ public partial class ModernLiveDashboard : UserControl
         }
     }
 
-    private void DevicePicker_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        UpdateIdentity();
-    }
-
+    private void DevicePicker_SelectionChanged(object sender, SelectionChangedEventArgs e) => UpdateIdentity();
     private void StartButton_Click(object sender, RoutedEventArgs e) => StartRequested?.Invoke(this, EventArgs.Empty);
     private void StopButton_Click(object sender, RoutedEventArgs e) => StopRequested?.Invoke(this, EventArgs.Empty);
 
@@ -179,7 +163,7 @@ public partial class ModernLiveDashboard : UserControl
         DeviceIdentityText.Text = $"{device.ConnectionType}  ·  {ids}";
     }
 
-    private void UpdateStick(
+    private static void UpdateStick(
         Canvas canvas,
         FrameworkElement dot,
         TextBlock valueText,
@@ -209,10 +193,7 @@ public partial class ModernLiveDashboard : UserControl
         shape.Opacity = pressed ? 1 : 0.92;
     }
 
-    private Brush ResolveBrush(string key)
-    {
-        return TryFindResource(key) as Brush ?? Brushes.Gray;
-    }
+    private Brush ResolveBrush(string key) => TryFindResource(key) as Brush ?? Brushes.Gray;
 
     private static bool SameDevice(ControllerDevice a, ControllerDevice b)
     {
