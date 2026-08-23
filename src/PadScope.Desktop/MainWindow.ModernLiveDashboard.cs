@@ -112,7 +112,7 @@ public partial class MainWindow
         dashboard.SetSessionState(running, running ? LiveStatusText.Text : "Waiting for live input");
         dashboard.SetOutputEnabled(running && PulseRumbleButton.IsEnabled);
 
-        Ds4InputState? state = _latestState;
+        var state = _latestState;
         if (state is not null)
         {
             dashboard.UpdateTelemetry(state, _latestTiming);
