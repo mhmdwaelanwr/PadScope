@@ -24,8 +24,8 @@ public partial class MainWindow
                 {
                     window.ApplyRuntimeUiFixes();
                     window.ApplySystemBrushPatch();
+                    window.InitializeReportSelectionPersistence();
                     window.InstallModernLiveDashboard();
-                    window.InstallPostLoadPolish();
                 }),
                 DispatcherPriority.Background);
         }
