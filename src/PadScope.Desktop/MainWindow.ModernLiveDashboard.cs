@@ -173,7 +173,7 @@ public partial class MainWindow
         _diagnosticsWorkspaceButton = CreateWorkspaceNavigationButton(
             "Diagnostics Lab",
             minWidth: 138,
-            "Stick drift, range, polling rate, touchpad and vibration diagnostics");
+            "Stick drift, range, polling rate, touchpad, raw HID and vibration diagnostics");
         _advancedWorkspaceButton = CreateWorkspaceNavigationButton(
             "Advanced HID tools",
             minWidth: 168,
@@ -333,7 +333,7 @@ public partial class MainWindow
         dashboard.SetSessionState(running, running ? LiveStatusText.Text : "Waiting for live input");
         dashboard.SetOutputEnabled(running && PulseRumbleButton.IsEnabled);
         diagnostics?.SetSessionState(running);
-        diagnostics?.SetDevice(dashboard.SelectedDevice);
+        diagnostics?.SetDevice(running && _liveSession is not null ? _liveSession.Device : dashboard.SelectedDevice);
 
         var state = _latestState;
         if (state is not null)
@@ -387,12 +387,20 @@ public partial class MainWindow
 
     private void ModernDashboard_ResetRumbleRequested(object? sender, EventArgs e)
     {
-        if (_liveSession is null)
+        if (_liveSession is not { IsRunning: true } session)
         {
             return;
         }
 
-        ResetOutputButton_Click(this, new RoutedEventArgs());
+        if (!session.TryResetRumble(out string? error))
+        {
+            _controllerDiagnosticsLab?.SetOutputStatus(error, success: false);
+            LiveStatusText.Text = error ?? "Rumble reset failed.";
+            return;
+        }
+
+        _controllerDiagnosticsLab?.SetOutputStatus(session.LastOutputWriteStatus, success: true);
+        LiveStatusText.Text = "Rumble reset to neutral; lightbar state preserved.";
     }
 
     private async void DiagnosticsLab_VibrationRequested(object? sender, VibrationRequestEventArgs e)
@@ -409,8 +417,8 @@ public partial class MainWindow
         }
 
         if (!ConfirmControlledAction(
-                $"Run the {e.Pattern} vibration diagnostic for up to {e.DurationMs} ms. PadScope will reset output automatically.",
-                DeviceComboBox.SelectedItem as ControllerDevice))
+                $"Run the {e.Pattern} vibration diagnostic for up to {e.DurationMs} ms. PadScope will reset rumble automatically without changing the lightbar.",
+                session.Device))
         {
             return;
         }
@@ -419,23 +427,56 @@ public partial class MainWindow
         _diagnosticsVibrationCts?.Dispose();
         CancellationTokenSource cts = new();
         _diagnosticsVibrationCts = cts;
+        bool completed = false;
+        bool cancelled = false;
+        string? failure = null;
 
         try
         {
             await RunDiagnosticsVibrationPatternAsync(session, e, cts.Token);
-            LiveStatusText.Text = $"Vibration diagnostic completed ({e.Pattern}). Output reset to neutral.";
+            completed = true;
+            LiveStatusText.Text = $"Vibration diagnostic completed ({e.Pattern}).";
         }
         catch (OperationCanceledException)
         {
-            LiveStatusText.Text = "Vibration diagnostic stopped. Output reset to neutral.";
+            cancelled = true;
+            LiveStatusText.Text = "Vibration diagnostic stopped.";
         }
         catch (Exception ex)
         {
-            MessageBox.Show(this, ex.Message, "PadScope Vibration Lab", MessageBoxButton.OK, MessageBoxImage.Error);
+            failure = session.LastOutputWriteStatus ?? ex.Message;
+            _controllerDiagnosticsLab?.SetOutputStatus(failure, success: false);
+            LiveStatusText.Text = failure;
+            MessageBox.Show(
+                this,
+                failure,
+                "PadScope Vibration Lab",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
         finally
         {
-            session.TryResetOutput(out _);
+            bool resetOk = session.TryResetRumble(out string? resetError);
+            if (failure is null)
+            {
+                if (resetOk)
+                {
+                    string prefix = completed
+                        ? "Vibration completed"
+                        : cancelled
+                            ? "Vibration stopped"
+                            : "Vibration ended";
+                    string detail = session.LastOutputWriteStatus ?? "rumble reset succeeded";
+                    _controllerDiagnosticsLab?.SetOutputStatus($"{prefix} · {detail}", success: true);
+                    LiveStatusText.Text += " Rumble reset; lightbar preserved.";
+                }
+                else
+                {
+                    _controllerDiagnosticsLab?.SetOutputStatus(resetError, success: false);
+                    LiveStatusText.Text += $" Rumble reset failed: {resetError}";
+                }
+            }
+
             if (ReferenceEquals(_diagnosticsVibrationCts, cts))
             {
                 _diagnosticsVibrationCts = null;
@@ -447,7 +488,19 @@ public partial class MainWindow
     private void DiagnosticsLab_StopVibrationRequested(object? sender, EventArgs e)
     {
         _diagnosticsVibrationCts?.Cancel();
-        _liveSession?.TryResetOutput(out _);
+        if (_liveSession is not { IsRunning: true } session)
+        {
+            return;
+        }
+
+        if (session.TryResetRumble(out string? error))
+        {
+            _controllerDiagnosticsLab?.SetOutputStatus(session.LastOutputWriteStatus, success: true);
+        }
+        else
+        {
+            _controllerDiagnosticsLab?.SetOutputStatus(error, success: false);
+        }
     }
 
     private static async Task RunDiagnosticsVibrationPatternAsync(
@@ -470,7 +523,10 @@ public partial class MainWindow
 
         async Task Pause(int durationMs)
         {
-            session.TrySendRumble(0, 0, out _);
+            if (!session.TryResetRumble(out string? error))
+            {
+                throw new InvalidOperationException(error ?? "Rumble pause/reset failed.");
+            }
             await Task.Delay(Math.Max(20, durationMs), cancellationToken);
         }
 
