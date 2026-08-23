@@ -1,4 +1,5 @@
 using System.Threading;
+using System.Windows;
 using System.Windows.Threading;
 using PadScope.Core.Models;
 using PadScope.Hid;
