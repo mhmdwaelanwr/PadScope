@@ -213,6 +213,7 @@ The **Package Windows** GitHub Actions workflow also produces a `PadScope-win-x6
 - [Architecture](docs/architecture.md)
 - [A-to-Z feature map](docs/a-to-z-feature-map.md)
 - [Staged test plan](docs/staged-test-plan.md)
+- [Hardware validation and release gate](docs/hardware-validation.md)
 - [Safety policy](docs/safety-policy.md)
 - [Compatibility profiles](docs/compatibility-profiles.md)
 - [DS4 audio protocol notes](docs/ds4-audio-protocol.md)
