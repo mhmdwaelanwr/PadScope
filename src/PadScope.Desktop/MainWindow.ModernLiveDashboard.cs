@@ -358,21 +358,54 @@ public partial class MainWindow
         RefreshModernDashboard(forceDeviceRefresh: false);
     }
 
-    private void ModernDashboard_RumblePresetRequested(object? sender, RumblePresetRequestedEventArgs e)
+    private async void ModernDashboard_RumblePresetRequested(object? sender, RumblePresetRequestedEventArgs e)
     {
         if (_liveSession is null || !PulseRumbleButton.IsEnabled)
         {
             MessageBox.Show(this, "Start a live hardware session before running a vibration test.", "PadScope Vibration", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
+
+        ControllerDevice? device = DeviceComboBox.SelectedItem as ControllerDevice;
+        if (!ConfirmControlledAction(
+                $"Send vibration output (small/high-frequency {e.SmallMotor}, large/low-frequency {e.LargeMotor}).",
+                device))
+            return;
+
         RumbleSmallSlider.Value = e.SmallMotor;
         RumbleLargeSlider.Value = e.LargeMotor;
-        PulseRumbleButton_Click(this, new RoutedEventArgs());
+        (bool success, string? error) = await SendRumbleResponsiveAsync(e.SmallMotor, e.LargeMotor);
+        if (success)
+        {
+            LiveStatusText.ToolTip = null;
+            LiveStatusText.Text = $"Vibration active · small/high {e.SmallMotor} · large/low {e.LargeMotor} · {_liveSession.LastOutputWriteStatus}";
+        }
+        else
+        {
+            LiveStatusText.Text = "Vibration unavailable on this HID path; live input remains active.";
+            LiveStatusText.ToolTip = error;
+        }
+        RefreshModernDashboard(forceDeviceRefresh: false);
     }
 
-    private void ModernDashboard_ResetRumbleRequested(object? sender, EventArgs e)
+    private async void ModernDashboard_ResetRumbleRequested(object? sender, EventArgs e)
     {
         if (_liveSession is null) return;
-        ResetOutputButton_Click(this, new RoutedEventArgs());
+
+        _outputPulseCancellation?.Cancel();
+        (bool success, string? error) = await ResetRumbleResponsiveAsync(allowAfterRejection: true);
+        if (success)
+        {
+            RumbleSmallSlider.Value = 0;
+            RumbleLargeSlider.Value = 0;
+            LiveStatusText.ToolTip = null;
+            LiveStatusText.Text = "Vibration motors stopped; lightbar state preserved.";
+        }
+        else
+        {
+            LiveStatusText.Text = "Could not stop vibration cleanly; live input remains active.";
+            LiveStatusText.ToolTip = error;
+        }
+        RefreshModernDashboard(forceDeviceRefresh: false);
     }
 }
