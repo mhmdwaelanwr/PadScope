@@ -6,6 +6,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using Microsoft.Win32;
+using IOFile = System.IO.File;
+using IOPath = System.IO.Path;
 
 namespace PadScope.Desktop;
 
@@ -276,7 +278,7 @@ public partial class MainWindow
                 return;
             }
 
-            if (dialog.FilterIndex == 2 || string.Equals(Path.GetExtension(dialog.FileName), ".json", StringComparison.OrdinalIgnoreCase))
+            if (dialog.FilterIndex == 2 || string.Equals(IOPath.GetExtension(dialog.FileName), ".json", StringComparison.OrdinalIgnoreCase))
             {
                 ExportRowsAsJson(dialog.FileName, rows, columns);
             }
@@ -285,7 +287,7 @@ public partial class MainWindow
                 ExportRowsAsCsv(dialog.FileName, rows, columns);
             }
 
-            StatusText.Text = $"Exported {rows.Count:N0} row(s) · {Path.GetFileName(dialog.FileName)}";
+            StatusText.Text = $"Exported {rows.Count:N0} row(s) · {IOPath.GetFileName(dialog.FileName)}";
         }
         catch (Exception ex)
         {
@@ -309,7 +311,7 @@ public partial class MainWindow
                 Convert.ToString(ReadPropertyPath(row, column.Path), CultureInfo.InvariantCulture) ?? string.Empty))));
         }
 
-        File.WriteAllText(fileName, builder.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
+        IOFile.WriteAllText(fileName, builder.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: true));
     }
 
     private static void ExportRowsAsJson(string fileName, IReadOnlyList<object> rows, IReadOnlyList<ExportColumn> columns)
@@ -321,7 +323,7 @@ public partial class MainWindow
                 StringComparer.OrdinalIgnoreCase))
             .ToList();
 
-        File.WriteAllText(
+        IOFile.WriteAllText(
             fileName,
             JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }),
             new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
