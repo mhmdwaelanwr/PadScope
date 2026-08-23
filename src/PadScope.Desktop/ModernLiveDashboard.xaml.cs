@@ -171,13 +171,16 @@ public partial class ModernLiveDashboard : UserControl
         float x,
         float y)
     {
-        const double center = 45;
-        const double radius = 36;
+        double centerX = canvas.Width / 2.0;
+        double centerY = canvas.Height / 2.0;
+        double radius = Math.Max(1, Math.Min(centerX, centerY) - 9);
+        double maxLeft = Math.Max(4, canvas.Width - dot.Width - 4);
+        double maxTop = Math.Max(4, canvas.Height - dot.Height - 4);
 
         // DS4 Y is -1 at the physical top and +1 at the physical bottom.
-        // Screen coordinates also increase downward, so add normalized Y here.
-        Canvas.SetLeft(dot, Math.Clamp(center + x * radius - 4.5, 4, 77));
-        Canvas.SetTop(dot, Math.Clamp(center + y * radius - 4.5, 4, 77));
+        // Screen coordinates increase downward too, so add normalized Y.
+        Canvas.SetLeft(dot, Math.Clamp(centerX + x * radius - dot.Width / 2.0, 4, maxLeft));
+        Canvas.SetTop(dot, Math.Clamp(centerY + y * radius - dot.Height / 2.0, 4, maxTop));
 
         double offset = Math.Min(1.5, Math.Sqrt(x * x + y * y));
         valueText.Text = $"{x:+0.00;-0.00;+0.00}, {y:+0.00;-0.00;+0.00}";
