@@ -24,6 +24,7 @@ public partial class MainWindow
                 {
                     window.ApplyRuntimeUiFixes();
                     window.ApplySystemBrushPatch();
+                    window.InstallModernLiveDashboard();
                 }),
                 DispatcherPriority.Background);
         }
@@ -31,8 +32,9 @@ public partial class MainWindow
 
     private void ApplySystemBrushPatch()
     {
-        Brush selectedBackground = (Brush)FindResource("B_PrimaryDim");
-        Brush selectedText = Brushes.White;
+        Brush selectedBackground = (Brush)FindResource("B_PrimarySoft");
+        Brush selectedStrong = (Brush)FindResource("B_PrimaryDim");
+        Brush selectedText = (Brush)FindResource("B_Text");
 
         foreach (DependencyObject item in PatchWalk(this))
         {
@@ -41,8 +43,20 @@ public partial class MainWindow
                 tab.Resources[SystemColors.ControlLightLightBrushKey] = selectedBackground;
                 tab.Resources[SystemColors.ControlBrushKey] = selectedBackground;
                 tab.Resources[SystemColors.ControlTextBrushKey] = selectedText;
-                tab.Resources[SystemColors.HighlightBrushKey] = selectedBackground;
+                tab.Resources[SystemColors.HighlightBrushKey] = selectedStrong;
                 tab.Resources[SystemColors.HighlightTextBrushKey] = selectedText;
+            }
+            else if (item is DataGrid dataGrid)
+            {
+                // WPF otherwise falls back to system white/gray when a selected
+                // DataGrid loses keyboard focus. Keep both active and inactive
+                // selection states inside the PadScope palette.
+                dataGrid.Resources[SystemColors.HighlightBrushKey] = selectedBackground;
+                dataGrid.Resources[SystemColors.HighlightTextBrushKey] = selectedText;
+                dataGrid.Resources[SystemColors.InactiveSelectionHighlightBrushKey] = selectedBackground;
+                dataGrid.Resources[SystemColors.InactiveSelectionHighlightTextBrushKey] = selectedText;
+                dataGrid.Resources[SystemColors.ControlBrushKey] = (Brush)FindResource("B_CardAlt");
+                dataGrid.Resources[SystemColors.ControlTextBrushKey] = selectedText;
             }
         }
     }
