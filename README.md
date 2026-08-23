@@ -187,7 +187,7 @@ docs/                   Architecture, research, safety, and test documentation
 
 ## Packaging
 
-Create a framework-dependent Windows x64 build:
+Create a self-contained Windows x64 build:
 
 ```powershell
 dotnet publish src\PadScope.Desktop\PadScope.Desktop.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o artifacts\PadScope-win-x64
