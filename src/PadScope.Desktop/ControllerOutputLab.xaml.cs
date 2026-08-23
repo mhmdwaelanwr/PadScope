@@ -75,8 +75,9 @@ public partial class ControllerOutputLab : UserControl
     private void ApplyAvailability()
     {
         bool enabled = _sessionRunning && _outputAvailable && !_busy;
+        bool canStop = _sessionRunning && _outputAvailable;
         StartVibrationButton.IsEnabled = enabled;
-        StopVibrationButton.IsEnabled = enabled;
+        StopVibrationButton.IsEnabled = canStop;
         SetLightbarButton.IsEnabled = enabled;
         ResetOutputButton.IsEnabled = enabled;
         LowMotorSlider.IsEnabled = enabled;
@@ -110,7 +111,7 @@ public partial class ControllerOutputLab : UserControl
 
     private void StopVibration_Click(object sender, RoutedEventArgs e)
     {
-        if (!_sessionRunning || !_outputAvailable || _busy) return;
+        if (!_sessionRunning || !_outputAvailable) return;
         StopRumbleRequested?.Invoke(this, EventArgs.Empty);
     }
 
