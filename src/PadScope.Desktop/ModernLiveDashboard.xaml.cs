@@ -173,8 +173,11 @@ public partial class ModernLiveDashboard : UserControl
     {
         const double center = 45;
         const double radius = 36;
+
+        // DS4 Y is -1 at the physical top and +1 at the physical bottom.
+        // Screen coordinates also increase downward, so add normalized Y here.
         Canvas.SetLeft(dot, Math.Clamp(center + x * radius - 4.5, 4, 77));
-        Canvas.SetTop(dot, Math.Clamp(center - y * radius - 4.5, 4, 77));
+        Canvas.SetTop(dot, Math.Clamp(center + y * radius - 4.5, 4, 77));
 
         double offset = Math.Min(1.5, Math.Sqrt(x * x + y * y));
         valueText.Text = $"{x:+0.00;-0.00;+0.00}, {y:+0.00;-0.00;+0.00}";
@@ -184,7 +187,7 @@ public partial class ModernLiveDashboard : UserControl
     private static void MoveControllerStick(FrameworkElement dot, float x, float y, double baseLeft, double baseTop)
     {
         Canvas.SetLeft(dot, baseLeft + (x * 13));
-        Canvas.SetTop(dot, baseTop - (y * 13));
+        Canvas.SetTop(dot, baseTop + (y * 13));
     }
 
     private void SetShapeState(Shape shape, bool pressed, Brush accent)
