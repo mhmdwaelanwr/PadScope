@@ -18,6 +18,7 @@ public sealed class HidSharpHidInputReader : IHidInputReader
     private volatile bool _keepReading;
     private bool _disposed;
     private string? _preferredControlPath;
+    private int _preferredControlOutputLength;
 
     public event Action<HidInputReport>? ReportReceived;
     public event Action<string>? ErrorOccurred;
@@ -46,6 +47,7 @@ public sealed class HidSharpHidInputReader : IHidInputReader
         _stream?.Dispose();
         _stream = null;
         _preferredControlPath = null;
+        _preferredControlOutputLength = 0;
         LastOutputWriteStatus = null;
 
         try
@@ -152,16 +154,26 @@ public sealed class HidSharpHidInputReader : IHidInputReader
             // interrupt path should not pay a timeout on every segment.
             if (!string.IsNullOrWhiteSpace(_preferredControlPath))
             {
-                if (TryControlWritePath(_preferredControlPath, report, SafeGetReportLength(primary, input: false), out string? preferredError))
+                if (TryControlWritePath(
+                        _preferredControlPath,
+                        report,
+                        _preferredControlOutputLength,
+                        out string? preferredError))
                 {
-                    LastOutputWriteStatus = BuildSuccessStatus("control (cached)", report, MaxOutputReportLength);
+                    LastOutputWriteStatus = BuildSuccessStatus(
+                        "control (cached)",
+                        report,
+                        _preferredControlOutputLength);
                     error = null;
                     return true;
                 }
 
                 attempts.Add($"cached control: {preferredError}");
                 _preferredControlPath = null;
+                _preferredControlOutputLength = 0;
             }
+
+            int primaryOutputLength = SafeGetReportLength(primary, input: false);
 
             // On Windows, DS4 Bluetooth output is commonly delivered through a
             // HID control transfer, while USB normally uses the interrupt output
@@ -170,8 +182,8 @@ public sealed class HidSharpHidInputReader : IHidInputReader
             {
                 if (TryControlWriteDevice(primary, report, out string? controlError))
                 {
-                    _preferredControlPath = primary.DevicePath;
-                    LastOutputWriteStatus = BuildSuccessStatus("control", report, MaxOutputReportLength);
+                    CacheControlPath(primary.DevicePath, primaryOutputLength);
+                    LastOutputWriteStatus = BuildSuccessStatus("control", report, primaryOutputLength);
                     error = null;
                     return true;
                 }
@@ -179,7 +191,7 @@ public sealed class HidSharpHidInputReader : IHidInputReader
 
                 if (TryInterruptWrite(stream, primary, report, out string? interruptError))
                 {
-                    LastOutputWriteStatus = BuildSuccessStatus("interrupt", report, MaxOutputReportLength);
+                    LastOutputWriteStatus = BuildSuccessStatus("interrupt", report, primaryOutputLength);
                     error = null;
                     return true;
                 }
@@ -189,7 +201,7 @@ public sealed class HidSharpHidInputReader : IHidInputReader
             {
                 if (TryInterruptWrite(stream, primary, report, out string? interruptError))
                 {
-                    LastOutputWriteStatus = BuildSuccessStatus("interrupt", report, MaxOutputReportLength);
+                    LastOutputWriteStatus = BuildSuccessStatus("interrupt", report, primaryOutputLength);
                     error = null;
                     return true;
                 }
@@ -197,8 +209,8 @@ public sealed class HidSharpHidInputReader : IHidInputReader
 
                 if (TryControlWriteDevice(primary, report, out string? controlError))
                 {
-                    _preferredControlPath = primary.DevicePath;
-                    LastOutputWriteStatus = BuildSuccessStatus("control", report, MaxOutputReportLength);
+                    CacheControlPath(primary.DevicePath, primaryOutputLength);
+                    LastOutputWriteStatus = BuildSuccessStatus("control", report, primaryOutputLength);
                     error = null;
                     return true;
                 }
@@ -207,10 +219,18 @@ public sealed class HidSharpHidInputReader : IHidInputReader
 
             // Composite/clone controllers can expose input on one HID interface
             // and writable output on another interface with the same VID/PID.
-            if (TrySiblingControlWrite(primary, report, out string? siblingPath, out string? siblingError))
+            if (TrySiblingControlWrite(
+                    primary,
+                    report,
+                    out string? siblingPath,
+                    out int siblingOutputLength,
+                    out string? siblingError))
             {
-                _preferredControlPath = siblingPath;
-                LastOutputWriteStatus = BuildSuccessStatus("sibling control", report, MaxOutputReportLength);
+                CacheControlPath(siblingPath, siblingOutputLength);
+                LastOutputWriteStatus = BuildSuccessStatus(
+                    "sibling control",
+                    report,
+                    siblingOutputLength);
                 error = null;
                 return true;
             }
@@ -224,6 +244,12 @@ public sealed class HidSharpHidInputReader : IHidInputReader
             LastOutputWriteStatus = error;
             return false;
         }
+    }
+
+    private void CacheControlPath(string? path, int outputLength)
+    {
+        _preferredControlPath = path;
+        _preferredControlOutputLength = outputLength;
     }
 
     private static bool TryInterruptWrite(HidStream stream, HidDevice device, byte[] report, out string? error)
@@ -272,9 +298,11 @@ public sealed class HidSharpHidInputReader : IHidInputReader
         HidDevice primary,
         byte[] report,
         out string? successfulPath,
+        out int successfulOutputLength,
         out string? error)
     {
         successfulPath = null;
+        successfulOutputLength = 0;
         List<string> failures = new();
 
         try
@@ -296,6 +324,7 @@ public sealed class HidSharpHidInputReader : IHidInputReader
                 if (TryControlWriteDevice(candidate, report, out string? candidateError))
                 {
                     successfulPath = candidate.DevicePath;
+                    successfulOutputLength = outputLength;
                     error = null;
                     return true;
                 }
@@ -312,7 +341,9 @@ public sealed class HidSharpHidInputReader : IHidInputReader
             failures.Add($"enumeration failed: {ex.Message}");
         }
 
-        error = failures.Count == 0 ? "no compatible writable sibling HID interface was found" : string.Join("; ", failures);
+        error = failures.Count == 0
+            ? "no compatible writable sibling HID interface was found"
+            : string.Join("; ", failures);
         return false;
     }
 
