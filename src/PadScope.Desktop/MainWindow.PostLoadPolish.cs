@@ -60,6 +60,7 @@ public partial class MainWindow
         if (liveTab is not null)
         {
             PolishMainNavigation(liveTab);
+            ApplyTopNavigationPolish();
         }
 
         TabControl? workspaceTabs = WalkLogicalTree(this)
