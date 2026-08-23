@@ -39,28 +39,36 @@ public partial class MainWindow
 
         Style style = CreateTopNavigationTabStyle(text, textDim, accent, accentDim);
 
+        // Keep the page content stretched, but let the header panel measure every tab
+        // by its own desired width. The previous MinWidth=0 override allowed WPF to
+        // squeeze long labels until only fragments such as "Live In" were visible.
         mainTabs.Background = Brushes.Transparent;
+        mainTabs.BorderBrush = Brushes.Transparent;
         mainTabs.BorderThickness = new Thickness(0);
         mainTabs.Margin = new Thickness(8, 0, 8, 0);
         mainTabs.Padding = new Thickness(0, 0, 0, 10);
+        mainTabs.HorizontalAlignment = HorizontalAlignment.Stretch;
         mainTabs.HorizontalContentAlignment = HorizontalAlignment.Stretch;
         mainTabs.VerticalContentAlignment = VerticalAlignment.Stretch;
+        mainTabs.ClipToBounds = false;
 
         foreach (TabItem tab in mainTabs.Items.OfType<TabItem>())
         {
-            if (tab.Header is string header)
-            {
-                tab.Header = header.Trim();
-            }
-
+            string header = tab.Header?.ToString()?.Trim() ?? string.Empty;
+            tab.Header = header;
             tab.Style = style;
             tab.Background = Brushes.Transparent;
             tab.BorderBrush = Brushes.Transparent;
             tab.BorderThickness = new Thickness(0);
             tab.Height = 44;
-            tab.MinWidth = 0;
-            tab.Margin = new Thickness(0, 0, 22, 0);
-            tab.Padding = new Thickness(12, 8, 12, 8);
+            tab.Width = double.NaN;
+            tab.MinWidth = GetTopNavigationMinWidth(header);
+            tab.MaxWidth = double.PositiveInfinity;
+            tab.Margin = new Thickness(0, 0, 18, 0);
+            tab.Padding = new Thickness(14, 8, 14, 8);
+            tab.HorizontalContentAlignment = HorizontalAlignment.Center;
+            tab.VerticalContentAlignment = VerticalAlignment.Center;
+            tab.ClipToBounds = false;
         }
 
         if (!_topNavigationThemeHooked)
@@ -71,6 +79,16 @@ public partial class MainWindow
                 new Action(ApplyTopNavigationPolish));
         }
     }
+
+    private static double GetTopNavigationMinWidth(string header) => header switch
+    {
+        "Scan" => 64,
+        "Live Input" => 100,
+        "Virtual Controller" => 150,
+        "Mouse Lab" => 96,
+        "Audio" => 68,
+        _ => 80
+    };
 
     private static Style CreateTopNavigationTabStyle(
         Brush text,
@@ -83,16 +101,18 @@ public partial class MainWindow
         style.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
         style.Setters.Add(new Setter(Control.BorderBrushProperty, Brushes.Transparent));
         style.Setters.Add(new Setter(Control.BorderThicknessProperty, new Thickness(0)));
-        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(12, 8, 12, 8)));
+        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(14, 8, 14, 8)));
+        style.Setters.Add(new Setter(Control.HorizontalContentAlignmentProperty, HorizontalAlignment.Center));
+        style.Setters.Add(new Setter(Control.VerticalContentAlignmentProperty, VerticalAlignment.Center));
         style.Setters.Add(new Setter(Control.FontWeightProperty, FontWeights.SemiBold));
         style.Setters.Add(new Setter(Control.FontSizeProperty, 13d));
-        style.Setters.Add(new Setter(FrameworkElement.MinWidthProperty, 0d));
         style.Setters.Add(new Setter(FrameworkElement.HeightProperty, 44d));
         style.Setters.Add(new Setter(Control.FocusVisualStyleProperty, null));
 
         FrameworkElementFactory root = new(typeof(Grid));
         root.SetValue(FrameworkElement.SnapsToDevicePixelsProperty, true);
         root.SetValue(Panel.BackgroundProperty, Brushes.Transparent);
+        root.SetValue(UIElement.ClipToBoundsProperty, false);
 
         FrameworkElementFactory presenter = new(typeof(ContentPresenter));
         presenter.SetValue(ContentPresenter.ContentSourceProperty, "Header");
