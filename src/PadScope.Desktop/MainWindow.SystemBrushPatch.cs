@@ -26,6 +26,7 @@ public partial class MainWindow
                     window.ApplySystemBrushPatch();
                     window.InitializeReportSelectionPersistence();
                     window.InstallModernLiveDashboard();
+                    window.PolishLegacyInputButtonsSafe();
                     window.InstallScanListPanelControls();
                     window.ApplyTopNavigationPolish();
                 }),
