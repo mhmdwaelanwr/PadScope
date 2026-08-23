@@ -18,6 +18,9 @@ public partial class MainWindow
 
         _nativeOutputRejected = false;
         _nativeOutputFailure = null;
+        _liveTimer?.Stop();
+        _latestState = null;
+        _latestTiming = null;
 
         Ds4ControllerSession? previous = _liveSession;
         _liveSession = null;
@@ -60,7 +63,6 @@ public partial class MainWindow
 
         _liveSession = session;
         _prevButtons = default;
-        _latestTiming = null;
         StartInputButton.IsEnabled = false;
         StopInputButton.IsEnabled = true;
         LiveStatusText.Text = $"Live: {session.DeviceDescription}";
@@ -69,11 +71,42 @@ public partial class MainWindow
         StartCaptureButton.IsEnabled = _captureRecorder is null;
         SaveCaptureButton.IsEnabled = _captureRecorder?.Count > 0;
 
-        _liveTimer?.Stop();
         _liveTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
         _liveTimer.Tick += (_, _) => RenderLatestState();
         _liveTimer.Start();
         return true;
+    }
+
+    private async Task StopLiveSessionResponsiveAsync()
+    {
+        _liveTimer?.Stop();
+        _liveTimer = null;
+
+        Ds4ControllerSession? session = _liveSession;
+        _liveSession = null;
+        if (session is not null)
+        {
+            await Task.Run(session.Dispose);
+        }
+
+        _isCapturing = false;
+        _latestTiming = null;
+        _latestState = null;
+        _prevButtons = default;
+        _nativeOutputRejected = false;
+        _nativeOutputFailure = null;
+
+        StartInputButton.IsEnabled = DeviceComboBox.Items.Count > 0;
+        StopInputButton.IsEnabled = false;
+        EnableOutputControls(false);
+        StartCaptureButton.IsEnabled = false;
+        SaveCaptureButton.IsEnabled = _captureRecorder?.Count > 0;
+        if (_captureRecorder?.Count > 0)
+        {
+            CaptureStatusText.Text = $"Capture paused with {_captureRecorder.Count:N0} reports. Save it before starting another capture.";
+        }
+        LiveStatusText.Text = "Live input stopped.";
+        TimingText.Text = "Timing: not running";
     }
 
     private Task<(bool Success, string? Error)> SendRumbleResponsiveAsync(byte small, byte large) =>
@@ -89,11 +122,10 @@ public partial class MainWindow
     private Task<(bool Success, string? Error)> ResetOutputResponsiveAsync() =>
         RunOutputOperationAsync(session => session.TryResetOutput(out string? error)
             ? (true, (string?)null)
-            : (false, error), allowWhenRejected: true);
+            : (false, error));
 
     private async Task<(bool Success, string? Error)> RunOutputOperationAsync(
-        Func<Ds4ControllerSession, (bool Success, string? Error)> operation,
-        bool allowWhenRejected = false)
+        Func<Ds4ControllerSession, (bool Success, string? Error)> operation)
     {
         Ds4ControllerSession? session = _liveSession;
         if (session is null)
@@ -101,7 +133,7 @@ public partial class MainWindow
             return (false, "No live controller session.");
         }
 
-        if (_nativeOutputRejected && !allowWhenRejected)
+        if (_nativeOutputRejected)
         {
             return (false, _nativeOutputFailure ?? "Native DS4 output is unavailable for this live session.");
         }
@@ -115,12 +147,13 @@ public partial class MainWindow
             }
 
             (bool success, string? error) = await Task.Run(() => operation(session));
-            if (!success && !allowWhenRejected)
+            if (!success)
             {
                 _nativeOutputRejected = true;
                 _nativeOutputFailure = error ?? "The controller rejected native DS4 output.";
                 EnableOutputControls(false);
                 LiveStatusText.Text = "Input remains active · native DS4 vibration/lightbar unavailable on this HID path.";
+                LiveStatusText.ToolTip = _nativeOutputFailure;
             }
             return (success, error);
         }
