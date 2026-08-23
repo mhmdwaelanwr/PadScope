@@ -4,11 +4,22 @@ namespace PadScope.Desktop;
 
 public partial class ModernLiveDashboard
 {
-    internal void EnsureControllerPolish() => InstallControllerPolish();
+    private bool _controllerPolishReady;
+
+    internal void EnsureControllerPolish()
+    {
+        if (_controllerPolishReady)
+        {
+            return;
+        }
+
+        InstallControllerPolish();
+        _controllerPolishReady = true;
+    }
 
     internal void ApplyExtendedButtonTelemetry(Ds4InputState state)
     {
-        InstallControllerPolish();
+        EnsureControllerPolish();
         UpdateExtendedButtonTelemetry(state);
 
         Ds4Buttons[] pressed = Enum.GetValues<Ds4Buttons>()
