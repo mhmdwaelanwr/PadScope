@@ -20,6 +20,8 @@ public partial class MainWindow
     private UIElement? _overviewWorkspacePage;
     private UIElement? _diagnosticsWorkspacePage;
     private UIElement? _advancedWorkspacePage;
+    private Button? _lightbarPickerButton;
+    private Border? _lightbarPreview;
 
     private enum LiveWorkspacePage
     {
@@ -109,10 +111,7 @@ public partial class MainWindow
         SwitchLiveWorkspace(LiveWorkspacePage.Overview);
         RefreshModernDashboard(forceDeviceRefresh: true);
 
-        _modernDashboardTimer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromMilliseconds(50)
-        };
+        _modernDashboardTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
         _modernDashboardTimer.Tick += (_, _) => RefreshModernDashboard(forceDeviceRefresh: false);
         _modernDashboardTimer.Start();
         Closed += (_, _) => _modernDashboardTimer?.Stop();
@@ -148,12 +147,9 @@ public partial class MainWindow
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        _overviewWorkspaceButton = CreateWorkspaceNavigationButton(
-            "Overview", 112, "Live controller overview and telemetry");
-        _diagnosticsWorkspaceButton = CreateWorkspaceNavigationButton(
-            "Diagnostics Lab", 138, "Stick drift, range, polling and touchpad diagnostics");
-        _advancedWorkspaceButton = CreateWorkspaceNavigationButton(
-            "Advanced HID tools", 168, "Capture/replay, raw HID, motion and controlled output tools");
+        _overviewWorkspaceButton = CreateWorkspaceNavigationButton("Overview", 112, "Live controller overview and telemetry");
+        _diagnosticsWorkspaceButton = CreateWorkspaceNavigationButton("Diagnostics Lab", 138, "Stick drift, range, polling and touchpad diagnostics");
+        _advancedWorkspaceButton = CreateWorkspaceNavigationButton("Advanced HID tools", 168, "Capture/replay, raw HID, motion and controlled output tools");
 
         _overviewWorkspaceButton.Margin = new Thickness(0, 0, 6, 0);
         _diagnosticsWorkspaceButton.Margin = new Thickness(0, 0, 6, 0);
@@ -180,35 +176,25 @@ public partial class MainWindow
         return host;
     }
 
-    private Button CreateWorkspaceNavigationButton(string label, double minWidth, string toolTip)
+    private Button CreateWorkspaceNavigationButton(string label, double minWidth, string toolTip) => new()
     {
-        return new Button
-        {
-            Content = label,
-            Style = (Style)FindResource("Sec"),
-            Height = 38,
-            MinWidth = minWidth,
-            Padding = new Thickness(16, 0, 16, 0),
-            FontSize = 12.5,
-            FontWeight = FontWeights.SemiBold,
-            ToolTip = toolTip,
-            HorizontalAlignment = HorizontalAlignment.Left,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-    }
+        Content = label,
+        Style = (Style)FindResource("Sec"),
+        Height = 38,
+        MinWidth = minWidth,
+        Padding = new Thickness(16, 0, 16, 0),
+        FontSize = 12.5,
+        FontWeight = FontWeights.SemiBold,
+        ToolTip = toolTip,
+        HorizontalAlignment = HorizontalAlignment.Left,
+        VerticalAlignment = VerticalAlignment.Center
+    };
 
     private void SwitchLiveWorkspace(LiveWorkspacePage page)
     {
-        if (_liveWorkspaceContent is null ||
-            _overviewWorkspaceButton is null ||
-            _diagnosticsWorkspaceButton is null ||
-            _advancedWorkspaceButton is null ||
-            _overviewWorkspacePage is null ||
-            _diagnosticsWorkspacePage is null ||
-            _advancedWorkspacePage is null)
-        {
+        if (_liveWorkspaceContent is null || _overviewWorkspaceButton is null || _diagnosticsWorkspaceButton is null ||
+            _advancedWorkspaceButton is null || _overviewWorkspacePage is null || _diagnosticsWorkspacePage is null || _advancedWorkspacePage is null)
             return;
-        }
 
         _liveWorkspaceContent.Content = page switch
         {
@@ -250,13 +236,73 @@ public partial class MainWindow
             ShareButton, OptionsButton, L3Button, R3Button, PsButton, TouchpadButton
         };
 
-        foreach (Button button in stateButtons)
-        {
-            button.Style = neutralButtonStyle;
-        }
-
+        foreach (Button button in stateButtons) button.Style = neutralButtonStyle;
         FlipLegacyStickCanvas(LeftStickCanvas);
         FlipLegacyStickCanvas(RightStickCanvas);
+        InstallLightbarPicker();
+    }
+
+    private void InstallLightbarPicker()
+    {
+        if (_lightbarPickerButton is not null || SetLightbarButton.Parent is not Panel actionsPanel) return;
+
+        _lightbarPreview = new Border
+        {
+            Width = 34,
+            Height = 34,
+            CornerRadius = new CornerRadius(9),
+            BorderThickness = new Thickness(1),
+            Margin = new Thickness(0, 0, 8, 0),
+            ToolTip = "Selected lightbar preview"
+        };
+        _lightbarPreview.SetResourceReference(Border.BorderBrushProperty, "B_Border");
+
+        _lightbarPickerButton = new Button
+        {
+            Content = "Pick color",
+            Style = (Style)FindResource("Sec"),
+            Height = 36,
+            MinWidth = 92,
+            Margin = new Thickness(0, 0, 8, 0),
+            ToolTip = "Choose RGB/HEX lightbar color without sending output"
+        };
+        _lightbarPickerButton.Click += (_, _) => PickLightbarColor();
+
+        int index = actionsPanel.Children.IndexOf(SetLightbarButton);
+        if (index < 0) index = 0;
+        actionsPanel.Children.Insert(index, _lightbarPreview);
+        actionsPanel.Children.Insert(index + 1, _lightbarPickerButton);
+
+        LightbarRedSlider.ValueChanged += (_, _) => RefreshLightbarPreview();
+        LightbarGreenSlider.ValueChanged += (_, _) => RefreshLightbarPreview();
+        LightbarBlueSlider.ValueChanged += (_, _) => RefreshLightbarPreview();
+        RefreshLightbarPreview();
+    }
+
+    private void PickLightbarColor()
+    {
+        Color initial = Color.FromRgb(
+            (byte)Math.Round(LightbarRedSlider.Value),
+            (byte)Math.Round(LightbarGreenSlider.Value),
+            (byte)Math.Round(LightbarBlueSlider.Value));
+        LightbarColorPickerWindow picker = new(initial) { Owner = this };
+        if (picker.ShowDialog() != true) return;
+
+        LightbarRedSlider.Value = picker.SelectedColor.R;
+        LightbarGreenSlider.Value = picker.SelectedColor.G;
+        LightbarBlueSlider.Value = picker.SelectedColor.B;
+        RefreshLightbarPreview();
+    }
+
+    private void RefreshLightbarPreview()
+    {
+        if (_lightbarPreview is null) return;
+        Color color = Color.FromRgb(
+            (byte)Math.Round(LightbarRedSlider.Value),
+            (byte)Math.Round(LightbarGreenSlider.Value),
+            (byte)Math.Round(LightbarBlueSlider.Value));
+        _lightbarPreview.Background = new SolidColorBrush(color);
+        _lightbarPreview.ToolTip = $"RGB({color.R}, {color.G}, {color.B}) · #{color.R:X2}{color.G:X2}{color.B:X2}";
     }
 
     private static void FlipLegacyStickCanvas(Canvas canvas)
@@ -269,19 +315,10 @@ public partial class MainWindow
     {
         ModernLiveDashboard? dashboard = _modernLiveDashboard;
         ControllerDiagnosticsLab? diagnostics = _controllerDiagnosticsLab;
-        if (dashboard is null)
-        {
-            return;
-        }
+        if (dashboard is null) return;
 
-        List<ControllerDevice> devices = _reports
-            .Select(report => report.Device)
-            .Distinct()
-            .ToList();
-
-        string fingerprint = string.Join(
-            "|",
-            devices.Select(device => $"{device.DevicePath}\u001f{device.DisplayName}\u001f{device.VendorId}:{device.ProductId}"));
+        List<ControllerDevice> devices = _reports.Select(report => report.Device).Distinct().ToList();
+        string fingerprint = string.Join("|", devices.Select(device => $"{device.DevicePath}\u001f{device.DisplayName}\u001f{device.VendorId}:{device.ProductId}"));
 
         if (forceDeviceRefresh || !string.Equals(fingerprint, _modernDeviceFingerprint, StringComparison.Ordinal))
         {
@@ -307,11 +344,9 @@ public partial class MainWindow
     {
         if (_modernLiveDashboard?.SelectedDevice is not ControllerDevice device)
         {
-            MessageBox.Show(this, "Scan first, then select a controller.", "PadScope Live Input",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, "Scan first, then select a controller.", "PadScope Live Input", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-
         DeviceComboBox.SelectedItem = device;
         StartInputButton_Click(this, new RoutedEventArgs());
         RefreshModernDashboard(forceDeviceRefresh: false);
@@ -327,11 +362,9 @@ public partial class MainWindow
     {
         if (_liveSession is null || !PulseRumbleButton.IsEnabled)
         {
-            MessageBox.Show(this, "Start a live hardware session before running a vibration test.",
-                "PadScope Vibration", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, "Start a live hardware session before running a vibration test.", "PadScope Vibration", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-
         RumbleSmallSlider.Value = e.SmallMotor;
         RumbleLargeSlider.Value = e.LargeMotor;
         PulseRumbleButton_Click(this, new RoutedEventArgs());
