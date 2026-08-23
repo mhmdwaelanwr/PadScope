@@ -29,49 +29,70 @@ public partial class MainWindow
         }
 
         liveTab.Content = null;
+        PrepareLegacyLiveTools();
 
         _modernLiveDashboard = new ModernLiveDashboard
         {
-            Height = 555,
-            Margin = new Thickness(4, 8, 4, 0)
+            Margin = new Thickness(4, 8, 4, 14),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Top,
+            MinWidth = 0
         };
         _modernLiveDashboard.StartRequested += ModernDashboard_StartRequested;
         _modernLiveDashboard.StopRequested += ModernDashboard_StopRequested;
         _modernLiveDashboard.RumblePresetRequested += ModernDashboard_RumblePresetRequested;
         _modernLiveDashboard.ResetRumbleRequested += ModernDashboard_ResetRumbleRequested;
 
-        Expander advanced = new()
+        ScrollViewer overviewScroll = new()
         {
-            Header = "Advanced HID tools",
-            IsExpanded = false,
-            Margin = new Thickness(4, 12, 4, 10),
-            Content = legacyContent,
-            Foreground = (Brush)FindResource("B_Text"),
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            CanContentScroll = false,
+            Content = _modernLiveDashboard
+        };
+
+        Border advancedSurface = new()
+        {
             Background = Brushes.Transparent,
             BorderBrush = (Brush)FindResource("B_Border"),
             BorderThickness = new Thickness(1),
-            Padding = new Thickness(10)
+            CornerRadius = new CornerRadius(14),
+            Padding = new Thickness(10),
+            Margin = new Thickness(4, 8, 4, 12),
+            Child = legacyContent
         };
 
-        TextBlock advancedHint = new()
-        {
-            Text = "Capture/replay, raw HID, lightbar, detailed motion data and manual output controls",
-            Foreground = (Brush)FindResource("B_TextDim"),
-            FontSize = 11,
-            Margin = new Thickness(4, 2, 4, 0)
-        };
-
-        StackPanel stack = new();
-        stack.Children.Add(_modernLiveDashboard);
-        stack.Children.Add(advancedHint);
-        stack.Children.Add(advanced);
-
-        liveTab.Content = new ScrollViewer
+        ScrollViewer advancedScroll = new()
         {
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
             HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-            Content = stack
+            CanContentScroll = false,
+            Content = advancedSurface
         };
+
+        TabItem overviewTab = new()
+        {
+            Header = "Overview",
+            Content = overviewScroll
+        };
+        TabItem advancedTab = new()
+        {
+            Header = "Advanced HID tools",
+            ToolTip = "Capture/replay, raw HID, lightbar, detailed motion data and manual output controls",
+            Content = advancedScroll
+        };
+
+        TabControl workspaceTabs = new()
+        {
+            Margin = new Thickness(0, 2, 0, 0),
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            VerticalContentAlignment = VerticalAlignment.Stretch
+        };
+        workspaceTabs.Items.Add(overviewTab);
+        workspaceTabs.Items.Add(advancedTab);
+        workspaceTabs.SelectedIndex = 0;
+
+        liveTab.Content = workspaceTabs;
 
         RefreshModernDashboard(forceDeviceRefresh: true);
 
@@ -83,6 +104,39 @@ public partial class MainWindow
         _modernDashboardTimer.Start();
 
         Closed += (_, _) => _modernDashboardTimer?.Stop();
+    }
+
+    private void PrepareLegacyLiveTools()
+    {
+        // The global primary Button style makes input-state buttons look pressed
+        // even when idle. Pin those visualizer buttons to the neutral secondary
+        // style so SetButtonState can temporarily override them only while pressed.
+        Style neutralButtonStyle = (Style)FindResource("Sec");
+        Button[] stateButtons =
+        {
+            DpadUpButton, DpadDownButton, DpadLeftButton, DpadRightButton,
+            SquareButton, CrossButton, CircleButton, TriangleButton,
+            L1Button, R1Button, L2Button, R2Button,
+            ShareButton, OptionsButton, L3Button, R3Button, PsButton, TouchpadButton
+        };
+
+        foreach (Button button in stateButtons)
+        {
+            button.Style = neutralButtonStyle;
+        }
+
+        // DS4 raw Y is 0 at the top and 255 at the bottom. The legacy renderer
+        // historically subtracts normalized Y from screen Y, so flip the two
+        // symmetric stick canvases at presentation time. The modern dashboard
+        // maps the coordinate correctly in code and does not need this transform.
+        FlipLegacyStickCanvas(LeftStickCanvas);
+        FlipLegacyStickCanvas(RightStickCanvas);
+    }
+
+    private static void FlipLegacyStickCanvas(Canvas canvas)
+    {
+        canvas.RenderTransformOrigin = new Point(0.5, 0.5);
+        canvas.RenderTransform = new ScaleTransform(1, -1);
     }
 
     private void RefreshModernDashboard(bool forceDeviceRefresh)
