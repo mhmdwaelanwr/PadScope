@@ -8,13 +8,16 @@ namespace PadScope.Hid;
 public sealed class HidSharpHidInputReader : IHidInputReader
 {
     private const int HidReadTimeoutMilliseconds = 250;
+    private const int HidWriteTimeoutMilliseconds = 450;
     private const int StopJoinTimeoutMilliseconds = 1000;
 
+    private readonly object _outputSync = new();
     private HidStream? _stream;
     private HidDevice? _device;
     private Thread? _readThread;
     private volatile bool _keepReading;
     private bool _disposed;
+    private string? _preferredControlPath;
 
     public event Action<HidInputReport>? ReportReceived;
     public event Action<string>? ErrorOccurred;
@@ -24,6 +27,12 @@ public sealed class HidSharpHidInputReader : IHidInputReader
     public string? DeviceDescription { get; private set; }
 
     public int MaxOutputReportLength => SafeGetReportLength(_device, input: false);
+
+    /// <summary>
+    /// Human-readable description of the most recent output transport decision.
+    /// Useful for diagnosing clone controllers and Windows Bluetooth stacks.
+    /// </summary>
+    public string? LastOutputWriteStatus { get; private set; }
 
     public bool TryOpen(ControllerDevice device, out string? error)
     {
@@ -36,6 +45,8 @@ public sealed class HidSharpHidInputReader : IHidInputReader
         Stop();
         _stream?.Dispose();
         _stream = null;
+        _preferredControlPath = null;
+        LastOutputWriteStatus = null;
 
         try
         {
@@ -57,7 +68,7 @@ public sealed class HidSharpHidInputReader : IHidInputReader
         {
             _stream = _device.Open();
             _stream.ReadTimeout = HidReadTimeoutMilliseconds;
-            _stream.WriteTimeout = 1000;
+            _stream.WriteTimeout = HidWriteTimeoutMilliseconds;
         }
         catch (Exception ex)
         {
@@ -65,7 +76,9 @@ public sealed class HidSharpHidInputReader : IHidInputReader
             return false;
         }
 
-        DeviceDescription = $"{SafeGetProductName(_device)} (VID {_device.VendorID:X4}/PID {_device.ProductID:X4})";
+        int inputLength = SafeGetReportLength(_device, input: true);
+        int outputLength = SafeGetReportLength(_device, input: false);
+        DeviceDescription = $"{SafeGetProductName(_device)} (VID {_device.VendorID:X4}/PID {_device.ProductID:X4}, in {inputLength} B, out {outputLength} B)";
         error = null;
         return true;
     }
@@ -113,24 +126,219 @@ public sealed class HidSharpHidInputReader : IHidInputReader
 
     public bool TryWriteOutput(byte[] report, out string? error)
     {
-        HidStream? stream = _stream;
-        if (stream is null)
+        if (report is null || report.Length == 0)
         {
-            error = "No HID device is open.";
+            error = "HID output report is empty.";
+            LastOutputWriteStatus = error;
+            return false;
+        }
+
+        lock (_outputSync)
+        {
+            HidStream? stream = _stream;
+            HidDevice? primary = _device;
+            if (stream is null || primary is null)
+            {
+                error = "No HID device is open.";
+                LastOutputWriteStatus = error;
+                return false;
+            }
+
+            List<string> attempts = new();
+            bool bluetoothReport = report[0] == Ds4OutputReportBuilder.BluetoothOutputReportId;
+
+            // Once a control path succeeds, reuse it first. This matters for
+            // multi-segment vibration patterns: a controller that rejects the
+            // interrupt path should not pay a timeout on every segment.
+            if (!string.IsNullOrWhiteSpace(_preferredControlPath))
+            {
+                if (TryControlWritePath(_preferredControlPath, report, SafeGetReportLength(primary, input: false), out string? preferredError))
+                {
+                    LastOutputWriteStatus = BuildSuccessStatus("control (cached)", report, MaxOutputReportLength);
+                    error = null;
+                    return true;
+                }
+
+                attempts.Add($"cached control: {preferredError}");
+                _preferredControlPath = null;
+            }
+
+            // On Windows, DS4 Bluetooth output is commonly delivered through a
+            // HID control transfer, while USB normally uses the interrupt output
+            // endpoint. Try the transport-appropriate path first, then fall back.
+            if (bluetoothReport)
+            {
+                if (TryControlWriteDevice(primary, report, out string? controlError))
+                {
+                    _preferredControlPath = primary.DevicePath;
+                    LastOutputWriteStatus = BuildSuccessStatus("control", report, MaxOutputReportLength);
+                    error = null;
+                    return true;
+                }
+                attempts.Add($"primary control: {controlError}");
+
+                if (TryInterruptWrite(stream, primary, report, out string? interruptError))
+                {
+                    LastOutputWriteStatus = BuildSuccessStatus("interrupt", report, MaxOutputReportLength);
+                    error = null;
+                    return true;
+                }
+                attempts.Add($"interrupt: {interruptError}");
+            }
+            else
+            {
+                if (TryInterruptWrite(stream, primary, report, out string? interruptError))
+                {
+                    LastOutputWriteStatus = BuildSuccessStatus("interrupt", report, MaxOutputReportLength);
+                    error = null;
+                    return true;
+                }
+                attempts.Add($"interrupt: {interruptError}");
+
+                if (TryControlWriteDevice(primary, report, out string? controlError))
+                {
+                    _preferredControlPath = primary.DevicePath;
+                    LastOutputWriteStatus = BuildSuccessStatus("control", report, MaxOutputReportLength);
+                    error = null;
+                    return true;
+                }
+                attempts.Add($"primary control: {controlError}");
+            }
+
+            // Composite/clone controllers can expose input on one HID interface
+            // and writable output on another interface with the same VID/PID.
+            if (TrySiblingControlWrite(primary, report, out string? siblingPath, out string? siblingError))
+            {
+                _preferredControlPath = siblingPath;
+                LastOutputWriteStatus = BuildSuccessStatus("sibling control", report, MaxOutputReportLength);
+                error = null;
+                return true;
+            }
+
+            if (!string.IsNullOrWhiteSpace(siblingError))
+            {
+                attempts.Add($"sibling control: {siblingError}");
+            }
+
+            error = $"HID output report 0x{report[0]:X2} ({report.Length} B) failed. " + string.Join(" | ", attempts);
+            LastOutputWriteStatus = error;
+            return false;
+        }
+    }
+
+    private static bool TryInterruptWrite(HidStream stream, HidDevice device, byte[] report, out string? error)
+    {
+        int outputLength = SafeGetReportLength(device, input: false);
+        byte[]? prepared = PrepareReportForLength(report, outputLength, out error);
+        if (prepared is null)
+        {
             return false;
         }
 
         try
         {
-            stream.Write(report);
+            stream.Write(prepared);
             error = null;
             return true;
         }
         catch (Exception ex)
         {
-            error = $"HID output write failed: {ex.Message}";
+            error = ex is TimeoutException ? "operation timed out" : ex.Message;
             return false;
         }
+    }
+
+    private static bool TryControlWriteDevice(HidDevice device, byte[] report, out string? error)
+    {
+        return TryControlWritePath(
+            device.DevicePath,
+            report,
+            SafeGetReportLength(device, input: false),
+            out error);
+    }
+
+    private static bool TryControlWritePath(string? path, byte[] report, int outputLength, out string? error)
+    {
+        byte[]? prepared = PrepareReportForLength(report, outputLength, out error);
+        if (prepared is null)
+        {
+            return false;
+        }
+
+        return WindowsHidControlOutput.TryWrite(path, prepared, out error);
+    }
+
+    private static bool TrySiblingControlWrite(
+        HidDevice primary,
+        byte[] report,
+        out string? successfulPath,
+        out string? error)
+    {
+        successfulPath = null;
+        List<string> failures = new();
+
+        try
+        {
+            IEnumerable<HidDevice> candidates = DeviceList.Local
+                .GetHidDevices(primary.VendorID, primary.ProductID)
+                .Where(candidate => !string.Equals(candidate.DevicePath, primary.DevicePath, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(candidate => OutputCompatibilityScore(candidate, report.Length))
+                .ThenByDescending(candidate => SafeGetReportLength(candidate, input: true));
+
+            foreach (HidDevice candidate in candidates)
+            {
+                int outputLength = SafeGetReportLength(candidate, input: false);
+                if (outputLength <= 0)
+                {
+                    continue;
+                }
+
+                if (TryControlWriteDevice(candidate, report, out string? candidateError))
+                {
+                    successfulPath = candidate.DevicePath;
+                    error = null;
+                    return true;
+                }
+
+                failures.Add($"{SafeGetProductName(candidate)} out {outputLength} B: {candidateError}");
+                if (failures.Count >= 3)
+                {
+                    break;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            failures.Add($"enumeration failed: {ex.Message}");
+        }
+
+        error = failures.Count == 0 ? "no compatible writable sibling HID interface was found" : string.Join("; ", failures);
+        return false;
+    }
+
+    private static byte[]? PrepareReportForLength(byte[] report, int outputLength, out string? error)
+    {
+        if (outputLength <= 0 || outputLength == report.Length)
+        {
+            error = null;
+            return report;
+        }
+
+        if (outputLength < report.Length)
+        {
+            error = $"interface output length is {outputLength} B but report needs {report.Length} B";
+            return null;
+        }
+
+        byte[] padded = new byte[outputLength];
+        Buffer.BlockCopy(report, 0, padded, 0, report.Length);
+        error = null;
+        return padded;
+    }
+
+    private static string BuildSuccessStatus(string path, byte[] report, int maxOutputLength)
+    {
+        return $"Output OK · {path} · report 0x{report[0]:X2} · {report.Length} B · HID max {maxOutputLength} B";
     }
 
     private void ReadLoop()
@@ -223,6 +431,8 @@ public sealed class HidSharpHidInputReader : IHidInputReader
         int score = 0;
         string name = SafeGetProductName(candidate);
         string lowered = name.ToLowerInvariant();
+        int inputLength = SafeGetReportLength(candidate, input: true);
+        int outputLength = SafeGetReportLength(candidate, input: false);
 
         if (!string.IsNullOrWhiteSpace(selected.DevicePath) &&
             PathsReferToSameInstance(candidate.DevicePath, selected.DevicePath))
@@ -235,14 +445,30 @@ public sealed class HidSharpHidInputReader : IHidInputReader
             score += 4;
         }
 
-        if (SafeGetReportLength(candidate, input: true) is >= 64)
+        if (inputLength >= 64)
         {
             score += 4;
         }
 
-        if (SafeGetReportLength(candidate, input: false) is >= Ds4OutputReportBuilder.UsbOutputReportLength)
+        int expectedOutput = selected.ConnectionType == ConnectionType.Bluetooth
+            ? Ds4OutputReportBuilder.BluetoothOutputReportLength
+            : Ds4OutputReportBuilder.UsbOutputReportLength;
+
+        if (outputLength == expectedOutput)
         {
-            score += 2;
+            score += 10;
+        }
+        else if (outputLength >= expectedOutput)
+        {
+            score += 6;
+        }
+        else if (outputLength == 0)
+        {
+            score -= 8;
+        }
+        else
+        {
+            score -= 3;
         }
 
         if (lowered.Contains("audio") || lowered.Contains("headset") || lowered.Contains("speaker") || lowered.Contains("microphone"))
@@ -251,6 +477,20 @@ public sealed class HidSharpHidInputReader : IHidInputReader
         }
 
         return score;
+    }
+
+    private static int OutputCompatibilityScore(HidDevice candidate, int reportLength)
+    {
+        int outputLength = SafeGetReportLength(candidate, input: false);
+        if (outputLength == reportLength)
+        {
+            return 100;
+        }
+        if (outputLength > reportLength)
+        {
+            return 70 - Math.Min(50, outputLength - reportLength);
+        }
+        return outputLength <= 0 ? -100 : -50;
     }
 
     private static int SafeGetReportLength(HidDevice? device, bool input)
