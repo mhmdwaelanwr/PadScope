@@ -41,6 +41,22 @@ public sealed class Ds4ControllerSessionTests
     }
 
     [Fact]
+    public void ValidatedInput_CollectsRawPacketIntervals()
+    {
+        FakeHidInputReader reader = new();
+        using Ds4ControllerSession session = new(reader, Device(ConnectionType.Usb));
+        session.TryStart(out _);
+
+        byte[] report = UsbReport();
+        reader.Inject(report, DateTimeOffset.UnixEpoch);
+        reader.Inject(report, DateTimeOffset.UnixEpoch.AddMilliseconds(10));
+        reader.Inject(report, DateTimeOffset.UnixEpoch.AddMilliseconds(21));
+
+        Assert.Equal(new[] { 10d, 11d }, session.DrainReportIntervals());
+        Assert.Empty(session.DrainReportIntervals());
+    }
+
+    [Fact]
     public void BluetoothInput_RejectsBadCrcAndAcceptsValidCrc()
     {
         FakeHidInputReader reader = new();
@@ -78,6 +94,44 @@ public sealed class Ds4ControllerSessionTests
         int common = connection == ConnectionType.Bluetooth ? 3 : 1;
         Assert.Equal(7, packet[common + 3]);
         Assert.Equal(11, packet[common + 4]);
+    }
+
+    [Fact]
+    public void Rumble_PreservesCurrentLightbarState()
+    {
+        FakeHidInputReader reader = new();
+        using Ds4ControllerSession session = new(reader, Device(ConnectionType.Usb));
+        session.TryStart(out _);
+
+        Assert.True(session.TrySendLightbar(0x22, 0x44, 0x66, out _));
+        Assert.True(session.TrySendRumble(0x11, 0x77, out _));
+
+        Assert.Equal(2, reader.Writes.Count);
+        byte[] rumblePacket = reader.Writes[1];
+        Assert.Equal(0x11, rumblePacket[4]);
+        Assert.Equal(0x77, rumblePacket[5]);
+        Assert.Equal(0x22, rumblePacket[6]);
+        Assert.Equal(0x44, rumblePacket[7]);
+        Assert.Equal(0x66, rumblePacket[8]);
+    }
+
+    [Fact]
+    public void ResetRumble_StopsMotorsWithoutClearingLightbar()
+    {
+        FakeHidInputReader reader = new();
+        using Ds4ControllerSession session = new(reader, Device(ConnectionType.Usb));
+        session.TryStart(out _);
+
+        Assert.True(session.TrySendLightbar(10, 20, 30, out _));
+        Assert.True(session.TrySendRumble(90, 180, out _));
+        Assert.True(session.TryResetRumble(out _));
+
+        byte[] resetPacket = reader.Writes[^1];
+        Assert.Equal(0, resetPacket[4]);
+        Assert.Equal(0, resetPacket[5]);
+        Assert.Equal(10, resetPacket[6]);
+        Assert.Equal(20, resetPacket[7]);
+        Assert.Equal(30, resetPacket[8]);
     }
 
     [Fact]

@@ -16,7 +16,6 @@ public partial class MainWindow
     {
         StopVirtualPassthrough();
         StopMouseEmulation();
-
         _nativeOutputRejected = false;
         _nativeOutputFailure = null;
         _liveTimer?.Stop();
@@ -25,10 +24,7 @@ public partial class MainWindow
 
         Ds4ControllerSession? previous = _liveSession;
         _liveSession = null;
-        if (previous is not null)
-        {
-            await Task.Run(previous.Dispose);
-        }
+        if (previous is not null) await Task.Run(previous.Dispose);
 
         HidSharpHidInputReader reader = new();
         Ds4ControllerSession session = new(reader, device);
@@ -52,13 +48,7 @@ public partial class MainWindow
         {
             await Task.Run(session.Dispose);
             StartInputButton.IsEnabled = DeviceComboBox.Items.Count > 0;
-            StopInputButton.IsEnabled = false;
-            MessageBox.Show(
-                this,
-                error ?? "Could not start live input.",
-                "PadScope Live Input",
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
+            MessageBox.Show(this, error ?? "Could not start live input.", "PadScope Live Input", MessageBoxButton.OK, MessageBoxImage.Error);
             return false;
         }
 
@@ -82,13 +72,9 @@ public partial class MainWindow
     {
         _liveTimer?.Stop();
         _liveTimer = null;
-
         Ds4ControllerSession? session = _liveSession;
         _liveSession = null;
-        if (session is not null)
-        {
-            await Task.Run(session.Dispose);
-        }
+        if (session is not null) await Task.Run(session.Dispose);
 
         _isCapturing = false;
         _latestTiming = null;
@@ -96,59 +82,46 @@ public partial class MainWindow
         _prevButtons = default;
         _nativeOutputRejected = false;
         _nativeOutputFailure = null;
-
         StartInputButton.IsEnabled = DeviceComboBox.Items.Count > 0;
         StopInputButton.IsEnabled = false;
         EnableOutputControls(false);
         StartCaptureButton.IsEnabled = false;
         SaveCaptureButton.IsEnabled = _captureRecorder?.Count > 0;
         if (_captureRecorder?.Count > 0)
-        {
             CaptureStatusText.Text = $"Capture paused with {_captureRecorder.Count:N0} reports. Save it before starting another capture.";
-        }
         LiveStatusText.Text = "Live input stopped.";
         TimingText.Text = "Timing: not running";
     }
 
     private Task<(bool Success, string? Error)> SendRumbleResponsiveAsync(byte small, byte large) =>
-        RunOutputOperationAsync(session => session.TrySendRumble(small, large, out string? error)
-            ? (true, (string?)null)
-            : (false, error));
+        RunOutputOperationAsync(session => session.TrySendRumble(small, large, out string? error) ? (true, (string?)null) : (false, error));
+
+    private Task<(bool Success, string? Error)> ResetRumbleResponsiveAsync(bool allowAfterRejection = false) =>
+        RunOutputOperationAsync(session => session.TryResetRumble(out string? error) ? (true, (string?)null) : (false, error), allowAfterRejection);
 
     private Task<(bool Success, string? Error)> SendLightbarResponsiveAsync(byte red, byte green, byte blue) =>
-        RunOutputOperationAsync(session => session.TrySendLightbar(red, green, blue, out string? error)
-            ? (true, (string?)null)
-            : (false, error));
+        RunOutputOperationAsync(session => session.TrySendLightbar(red, green, blue, out string? error) ? (true, (string?)null) : (false, error));
 
-    private Task<(bool Success, string? Error)> ResetOutputResponsiveAsync() =>
-        RunOutputOperationAsync(session => session.TryResetOutput(out string? error)
-            ? (true, (string?)null)
-            : (false, error));
+    private Task<(bool Success, string? Error)> ResetOutputResponsiveAsync(bool allowAfterRejection = false) =>
+        RunOutputOperationAsync(session => session.TryResetOutput(out string? error) ? (true, (string?)null) : (false, error), allowAfterRejection);
 
     private async Task<(bool Success, string? Error)> RunOutputOperationAsync(
-        Func<Ds4ControllerSession, (bool Success, string? Error)> operation)
+        Func<Ds4ControllerSession, (bool Success, string? Error)> operation,
+        bool allowAfterRejection = false)
     {
         Ds4ControllerSession? session = _liveSession;
-        if (session is null)
-        {
-            return (false, "No live controller session.");
-        }
-
-        if (_nativeOutputRejected)
-        {
+        if (session is null) return (false, "No live controller session.");
+        if (_nativeOutputRejected && !allowAfterRejection)
             return (false, _nativeOutputFailure ?? "Native DS4 output is unavailable for this live session.");
-        }
 
         await _outputOperationGate.WaitAsync();
         try
         {
             if (!ReferenceEquals(session, _liveSession) || !session.IsRunning)
-            {
                 return (false, "The live controller session changed before output could be sent.");
-            }
 
             (bool success, string? error) = await Task.Run(() => operation(session));
-            if (!success)
+            if (!success && !allowAfterRejection)
             {
                 _nativeOutputRejected = true;
                 _nativeOutputFailure = error ?? "The controller rejected native DS4 output.";

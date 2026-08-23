@@ -16,9 +16,7 @@ public partial class MainWindow
         if (_controllerOutputLab is not null ||
             _liveWorkspaceContent is null ||
             _advancedWorkspaceButton?.Parent is not StackPanel navigationButtons)
-        {
             return;
-        }
 
         _controllerOutputLab = new ControllerOutputLab
         {
@@ -40,28 +38,25 @@ public partial class MainWindow
         };
 
         _outputWorkspaceButton = CreateWorkspaceNavigationButton(
-            "Output Lab",
-            116,
-            "Vibration, lightbar and controlled hardware output tests");
+            "Output Lab", 116, "Vibration, lightbar and controlled hardware output tests");
         _outputWorkspaceButton.Margin = new Thickness(0, 0, 6, 0);
         _outputWorkspaceButton.Click += (_, _) => ShowOutputWorkspace();
 
         int advancedIndex = navigationButtons.Children.IndexOf(_advancedWorkspaceButton);
-        if (advancedIndex < 0)
-        {
-            advancedIndex = navigationButtons.Children.Count;
-        }
+        if (advancedIndex < 0) advancedIndex = navigationButtons.Children.Count;
         navigationButtons.Children.Insert(advancedIndex, _outputWorkspaceButton);
 
-        // Existing navigation owns the page switch. These small state hooks only
-        // make sure the new Output Lab button is cleared when another page wins.
         _overviewWorkspaceButton?.AddHandler(Button.ClickEvent, new RoutedEventHandler((_, _) => SetOutputNavSelected(false)));
         _diagnosticsWorkspaceButton?.AddHandler(Button.ClickEvent, new RoutedEventHandler((_, _) => SetOutputNavSelected(false)));
         _advancedWorkspaceButton?.AddHandler(Button.ClickEvent, new RoutedEventHandler((_, _) => SetOutputNavSelected(false)));
 
         if (_modernDashboardTimer is not null)
         {
-            _modernDashboardTimer.Tick += (_, _) => RefreshOutputLabAvailability();
+            _modernDashboardTimer.Tick += (_, _) =>
+            {
+                RefreshOutputLabAvailability();
+                DrainRawPollingIntervals();
+            };
         }
 
         Closed += (_, _) =>
@@ -74,13 +69,16 @@ public partial class MainWindow
         RefreshOutputLabAvailability();
     }
 
+    private void DrainRawPollingIntervals()
+    {
+        if (_liveSession is null || _controllerDiagnosticsLab is null) return;
+        IReadOnlyList<double> intervals = _liveSession.DrainReportIntervals(512);
+        _controllerDiagnosticsLab.AcceptRawPollingIntervals(intervals);
+    }
+
     private void ShowOutputWorkspace()
     {
-        if (_liveWorkspaceContent is null || _outputWorkspacePage is null || _outputWorkspaceButton is null)
-        {
-            return;
-        }
-
+        if (_liveWorkspaceContent is null || _outputWorkspacePage is null || _outputWorkspaceButton is null) return;
         _liveWorkspaceContent.Content = _outputWorkspacePage;
         if (_overviewWorkspaceButton is not null) SetWorkspaceNavigationState(_overviewWorkspaceButton, false);
         if (_diagnosticsWorkspaceButton is not null) SetWorkspaceNavigationState(_diagnosticsWorkspaceButton, false);
@@ -91,19 +89,12 @@ public partial class MainWindow
 
     private void SetOutputNavSelected(bool selected)
     {
-        if (_outputWorkspaceButton is not null)
-        {
-            SetWorkspaceNavigationState(_outputWorkspaceButton, selected);
-        }
+        if (_outputWorkspaceButton is not null) SetWorkspaceNavigationState(_outputWorkspaceButton, selected);
     }
 
     private void RefreshOutputLabAvailability()
     {
-        if (_controllerOutputLab is null)
-        {
-            return;
-        }
-
+        if (_controllerOutputLab is null) return;
         bool running = _liveSession is { IsRunning: true };
         bool outputAvailable = running && !_nativeOutputRejected;
         _controllerOutputLab.SetAvailability(running, outputAvailable, _nativeOutputFailure);
@@ -111,18 +102,13 @@ public partial class MainWindow
 
     private async void OutputLab_RumbleRequested(object? sender, OutputRumbleRequestedEventArgs e)
     {
-        if (_controllerOutputLab is null || _liveSession is null)
-        {
-            return;
-        }
+        if (_controllerOutputLab is null || _liveSession is null) return;
 
         ControllerDevice? device = DeviceComboBox.SelectedItem as ControllerDevice;
         if (!ConfirmControlledAction(
-                $"Run vibration for {e.DurationMs} ms (low {e.LowMotor}, high {e.HighMotor}).",
+                $"Run vibration for {e.DurationMs} ms (low-frequency {e.LowMotor}, high-frequency {e.HighMotor}).",
                 device))
-        {
             return;
-        }
 
         _outputPulseCancellation?.Cancel();
         _outputPulseCancellation?.Dispose();
@@ -130,30 +116,23 @@ public partial class MainWindow
         _outputPulseCancellation = pulse;
 
         _controllerOutputLab.SetBusy(true, "Sending vibration…");
-        (bool success, string? error) = await SendRumbleResponsiveAsync(e.LowMotor, e.HighMotor);
+        // DS4 protocol: small motor = high-frequency, large motor = low-frequency.
+        (bool success, string? error) = await SendRumbleResponsiveAsync(e.HighMotor, e.LowMotor);
         if (!success)
         {
             _controllerOutputLab.SetBusy(false);
-            _controllerOutputLab.SetStatus(
-                "Vibration unavailable on this HID path; live input remains active.",
-                error);
+            _controllerOutputLab.SetStatus("Vibration unavailable on this HID path; live input remains active.", error);
             RefreshOutputLabAvailability();
             return;
         }
 
-        _controllerOutputLab.SetStatus($"Vibration active · {e.DurationMs} ms");
-        try
-        {
-            await Task.Delay(e.DurationMs, pulse.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            // Stop button or a newer preset owns the motor state now.
-        }
+        _controllerOutputLab.SetStatus($"Vibration active · {e.DurationMs} ms · {_liveSession.LastOutputWriteStatus}");
+        try { await Task.Delay(e.DurationMs, pulse.Token); }
+        catch (OperationCanceledException) { }
 
         if (!pulse.IsCancellationRequested)
         {
-            (bool stopped, string? stopError) = await SendRumbleResponsiveAsync(0, 0);
+            (bool stopped, string? stopError) = await ResetRumbleResponsiveAsync(allowAfterRejection: true);
             _controllerOutputLab.SetStatus(
                 stopped ? "Vibration test complete." : "Could not stop vibration cleanly.",
                 stopped ? null : stopError);
@@ -170,14 +149,10 @@ public partial class MainWindow
 
     private async void OutputLab_StopRumbleRequested(object? sender, EventArgs e)
     {
-        if (_controllerOutputLab is null || _liveSession is null)
-        {
-            return;
-        }
-
+        if (_controllerOutputLab is null || _liveSession is null) return;
         _outputPulseCancellation?.Cancel();
         _controllerOutputLab.SetBusy(true, "Stopping vibration…");
-        (bool success, string? error) = await SendRumbleResponsiveAsync(0, 0);
+        (bool success, string? error) = await ResetRumbleResponsiveAsync(allowAfterRejection: true);
         _controllerOutputLab.SetBusy(false);
         _controllerOutputLab.SetStatus(
             success ? "Vibration stopped." : "Vibration stop was rejected; live input remains active.",
@@ -187,40 +162,26 @@ public partial class MainWindow
 
     private async void OutputLab_LightbarRequested(object? sender, OutputLightbarRequestedEventArgs e)
     {
-        if (_controllerOutputLab is null || _liveSession is null)
-        {
-            return;
-        }
-
+        if (_controllerOutputLab is null || _liveSession is null) return;
         ControllerDevice? device = DeviceComboBox.SelectedItem as ControllerDevice;
-        if (!ConfirmControlledAction(
-                $"Set controller lightbar to RGB({e.Red}, {e.Green}, {e.Blue}).",
-                device))
-        {
-            return;
-        }
+        if (!ConfirmControlledAction($"Set controller lightbar to RGB({e.Red}, {e.Green}, {e.Blue}).", device)) return;
 
         _controllerOutputLab.SetBusy(true, "Sending lightbar color…");
         (bool success, string? error) = await SendLightbarResponsiveAsync(e.Red, e.Green, e.Blue);
         _controllerOutputLab.SetBusy(false);
         _controllerOutputLab.SetStatus(
-            success
-                ? $"Lightbar sent · #{e.Red:X2}{e.Green:X2}{e.Blue:X2}"
-                : "Lightbar unavailable on this HID path; live input remains active.",
+            success ? $"Lightbar sent · #{e.Red:X2}{e.Green:X2}{e.Blue:X2} · {_liveSession.LastOutputWriteStatus}"
+                    : "Lightbar unavailable on this HID path; live input remains active.",
             success ? null : error);
         RefreshOutputLabAvailability();
     }
 
     private async void OutputLab_ResetOutputRequested(object? sender, EventArgs e)
     {
-        if (_controllerOutputLab is null || _liveSession is null)
-        {
-            return;
-        }
-
+        if (_controllerOutputLab is null || _liveSession is null) return;
         _outputPulseCancellation?.Cancel();
         _controllerOutputLab.SetBusy(true, "Resetting output…");
-        (bool success, string? error) = await ResetOutputResponsiveAsync();
+        (bool success, string? error) = await ResetOutputResponsiveAsync(allowAfterRejection: true);
         _controllerOutputLab.SetBusy(false);
         _controllerOutputLab.SetStatus(
             success ? "Controller output reset to neutral." : "Output reset failed; live input remains active.",
