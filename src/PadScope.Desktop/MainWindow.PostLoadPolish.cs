@@ -22,6 +22,7 @@ public partial class MainWindow
             InstallAdvancedLivePolish(this);
             _modernLiveDashboard?.EnsureControllerPolish();
             PolishWorkspaceNavigationRuntime();
+            InstallScanListPanelControls();
             HookExtendedDashboardTelemetry();
             _postLoadPolishInstalled = true;
         }
@@ -72,11 +73,21 @@ public partial class MainWindow
         }
 
         Style compactStyle = CreateWorkspaceTabStyle();
-        workspaceTabs.Margin = new Thickness(4, 2, 4, 0);
+        workspaceTabs.Margin = new Thickness(4, 7, 4, 0);
+        workspaceTabs.Padding = new Thickness(0, 0, 0, 4);
+        workspaceTabs.HorizontalContentAlignment = HorizontalAlignment.Stretch;
+        workspaceTabs.VerticalContentAlignment = VerticalAlignment.Stretch;
+
         foreach (TabItem tab in workspaceTabs.Items.OfType<TabItem>())
         {
             tab.Style = compactStyle;
-            tab.Margin = new Thickness(0, 0, 9, 0);
+            tab.Height = 40;
+            tab.Padding = new Thickness(18, 8, 18, 8);
+            tab.Margin = new Thickness(0, 0, 12, 7);
+            tab.MinWidth = string.Equals(tab.Header?.ToString(), "Advanced HID tools", StringComparison.Ordinal)
+                ? 158
+                : 112;
+
             if (tab.Content is ScrollViewer scroll)
             {
                 scroll.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
