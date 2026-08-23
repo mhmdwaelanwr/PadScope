@@ -12,6 +12,12 @@ public partial class MainWindow
     private DispatcherTimer? _modernDashboardTimer;
     private string _modernDeviceFingerprint = string.Empty;
 
+    private ContentControl? _liveWorkspaceContent;
+    private Button? _overviewWorkspaceButton;
+    private Button? _advancedWorkspaceButton;
+    private UIElement? _overviewWorkspacePage;
+    private UIElement? _advancedWorkspacePage;
+
     private void InstallModernLiveDashboard()
     {
         if (_modernLiveDashboard is not null)
@@ -58,7 +64,7 @@ public partial class MainWindow
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(14),
             Padding = new Thickness(10),
-            Margin = new Thickness(4, 8, 4, 12),
+            Margin = new Thickness(4, 0, 4, 12),
             Child = legacyContent
         };
 
@@ -70,29 +76,12 @@ public partial class MainWindow
             Content = advancedSurface
         };
 
-        TabItem overviewTab = new()
-        {
-            Header = "Overview",
-            Content = overviewScroll
-        };
-        TabItem advancedTab = new()
-        {
-            Header = "Advanced HID tools",
-            ToolTip = "Capture/replay, raw HID, lightbar, detailed motion data and manual output controls",
-            Content = advancedScroll
-        };
+        _overviewWorkspacePage = overviewScroll;
+        _advancedWorkspacePage = advancedScroll;
 
-        TabControl workspaceTabs = new()
-        {
-            Margin = new Thickness(0, 2, 0, 0),
-            HorizontalContentAlignment = HorizontalAlignment.Stretch,
-            VerticalContentAlignment = VerticalAlignment.Stretch
-        };
-        workspaceTabs.Items.Add(overviewTab);
-        workspaceTabs.Items.Add(advancedTab);
-        workspaceTabs.SelectedIndex = 0;
-
-        liveTab.Content = workspaceTabs;
+        Grid workspaceHost = CreateLiveWorkspaceHost();
+        liveTab.Content = workspaceHost;
+        SwitchLiveWorkspace(showAdvanced: false);
 
         RefreshModernDashboard(forceDeviceRefresh: true);
 
@@ -104,6 +93,132 @@ public partial class MainWindow
         _modernDashboardTimer.Start();
 
         Closed += (_, _) => _modernDashboardTimer?.Stop();
+    }
+
+    /// <summary>
+    /// Builds a dedicated two-row workspace instead of nesting a TabControl inside
+    /// the main TabControl. WPF's nested TabPanel was the source of the clipped
+    /// border/underline and content overlap seen at different DPI/window sizes.
+    /// </summary>
+    private Grid CreateLiveWorkspaceHost()
+    {
+        Grid host = new()
+        {
+            Margin = new Thickness(4, 8, 4, 0),
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch,
+            ClipToBounds = false
+        };
+        host.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        host.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+        Border navigationRail = new()
+        {
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top,
+            Padding = new Thickness(4),
+            Margin = new Thickness(0, 0, 0, 14),
+            CornerRadius = new CornerRadius(15),
+            BorderThickness = new Thickness(1)
+        };
+        navigationRail.SetResourceReference(Border.BackgroundProperty, "B_CardAlt");
+        navigationRail.SetResourceReference(Border.BorderBrushProperty, "B_Border");
+
+        StackPanel navigationButtons = new()
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        _overviewWorkspaceButton = CreateWorkspaceNavigationButton(
+            "Overview",
+            minWidth: 112,
+            "Live controller overview and telemetry");
+        _advancedWorkspaceButton = CreateWorkspaceNavigationButton(
+            "Advanced HID tools",
+            minWidth: 168,
+            "Capture/replay, raw HID, lightbar, detailed motion data and manual output controls");
+
+        _overviewWorkspaceButton.Margin = new Thickness(0, 0, 6, 0);
+        _overviewWorkspaceButton.Click += (_, _) => SwitchLiveWorkspace(showAdvanced: false);
+        _advancedWorkspaceButton.Click += (_, _) => SwitchLiveWorkspace(showAdvanced: true);
+
+        navigationButtons.Children.Add(_overviewWorkspaceButton);
+        navigationButtons.Children.Add(_advancedWorkspaceButton);
+        navigationRail.Child = navigationButtons;
+        host.Children.Add(navigationRail);
+
+        _liveWorkspaceContent = new ContentControl
+        {
+            HorizontalContentAlignment = HorizontalAlignment.Stretch,
+            VerticalContentAlignment = VerticalAlignment.Stretch,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch,
+            Margin = new Thickness(0),
+            Padding = new Thickness(0),
+            ClipToBounds = true
+        };
+        Grid.SetRow(_liveWorkspaceContent, 1);
+        host.Children.Add(_liveWorkspaceContent);
+
+        return host;
+    }
+
+    private Button CreateWorkspaceNavigationButton(string label, double minWidth, string toolTip)
+    {
+        Button button = new()
+        {
+            Content = label,
+            Style = (Style)FindResource("Sec"),
+            Height = 38,
+            MinWidth = minWidth,
+            Padding = new Thickness(16, 0, 16, 0),
+            Margin = new Thickness(0),
+            FontSize = 12.5,
+            FontWeight = FontWeights.SemiBold,
+            ToolTip = toolTip,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        return button;
+    }
+
+    private void SwitchLiveWorkspace(bool showAdvanced)
+    {
+        if (_liveWorkspaceContent is null ||
+            _overviewWorkspaceButton is null ||
+            _advancedWorkspaceButton is null ||
+            _overviewWorkspacePage is null ||
+            _advancedWorkspacePage is null)
+        {
+            return;
+        }
+
+        _liveWorkspaceContent.Content = showAdvanced
+            ? _advancedWorkspacePage
+            : _overviewWorkspacePage;
+
+        SetWorkspaceNavigationState(_overviewWorkspaceButton, isSelected: !showAdvanced);
+        SetWorkspaceNavigationState(_advancedWorkspaceButton, isSelected: showAdvanced);
+    }
+
+    private static void SetWorkspaceNavigationState(Button button, bool isSelected)
+    {
+        if (isSelected)
+        {
+            button.SetResourceReference(Control.BackgroundProperty, "B_PrimarySoft");
+            button.SetResourceReference(Control.BorderBrushProperty, "B_Primary");
+            button.SetResourceReference(Control.ForegroundProperty, "B_Text");
+            button.BorderThickness = new Thickness(1);
+        }
+        else
+        {
+            button.Background = Brushes.Transparent;
+            button.BorderBrush = Brushes.Transparent;
+            button.SetResourceReference(Control.ForegroundProperty, "B_TextDim");
+            button.BorderThickness = new Thickness(1);
+        }
     }
 
     private void PrepareLegacyLiveTools()
