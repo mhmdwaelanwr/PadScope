@@ -1,0 +1,320 @@
+<UserControl x:Class="PadScope.Desktop.ModernLiveDashboard"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             MinHeight="500"
+             FontFamily="{DynamicResource PadScopeBodyFont}">
+    <UserControl.Resources>
+        <Style x:Key="DashboardCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource B_Card}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="18" />
+            <Setter Property="Padding" Value="16" />
+        </Style>
+        <Style x:Key="DashboardSubCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource B_CardAlt}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="13" />
+            <Setter Property="Padding" Value="11" />
+        </Style>
+        <Style x:Key="DashboardLabel" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource B_TextDim}" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <Style x:Key="DashboardTitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+            <Setter Property="FontFamily" Value="{DynamicResource PadScopeDisplayFont}" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="FontSize" Value="15" />
+        </Style>
+        <Style x:Key="TinyPill" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource B_PrimarySoft}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="7,4" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Style="{StaticResource DashboardCard}" Padding="14,11">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="420" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Border Width="38" Height="38" CornerRadius="11" Background="{DynamicResource B_PrimarySoft}" VerticalAlignment="Center">
+                    <TextBlock Text="🎮" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                    <TextBlock Text="LIVE CONTROLLER" Style="{StaticResource DashboardLabel}" />
+                    <ComboBox x:Name="DevicePicker" Margin="0,4,0,0" DisplayMemberPath="DisplayName" SelectionChanged="DevicePicker_SelectionChanged" />
+                </StackPanel>
+                <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Bottom">
+                    <Button x:Name="StartButton" Content="Start live" MinWidth="96" Click="StartButton_Click" />
+                    <Button x:Name="StopButton" Content="Stop" Style="{DynamicResource Sec}" MinWidth="72" Margin="7,0,0,0" Click="StopButton_Click" />
+                </StackPanel>
+                <StackPanel Grid.Column="5" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <TextBlock x:Name="SessionStateText" Text="Waiting for live input" Style="{StaticResource DashboardLabel}" HorizontalAlignment="Right" />
+                    <TextBlock x:Name="DeviceIdentityText" Text="Scan and select a controller" Foreground="{DynamicResource B_Text}" FontSize="12" FontWeight="SemiBold" Margin="0,3,0,0" HorizontalAlignment="Right" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.35*" MinWidth="500" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="1*" MinWidth="390" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0" Style="{StaticResource DashboardCard}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Controller Visualizer" Style="{StaticResource DashboardTitle}" />
+                            <TextBlock Text="Buttons, sticks and touch state from native HID input" Style="{StaticResource DashboardLabel}" Margin="0,3,0,0" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Border Style="{StaticResource TinyPill}" Margin="0,0,6,0">
+                                <TextBlock x:Name="BatteryPillText" Text="Battery --" Foreground="{DynamicResource B_TextDim}" FontSize="10.5" />
+                            </Border>
+                            <Border Style="{StaticResource TinyPill}">
+                                <TextBlock x:Name="ReportIdText" Text="Report --" Foreground="{DynamicResource B_TextDim}" FontSize="10.5" />
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+
+                    <Viewbox Grid.Row="1" Stretch="Uniform" Margin="0,8,0,2">
+                        <Canvas Width="540" Height="330">
+                            <Path Data="M 128,82 C 175,52 365,52 412,82" Stroke="{DynamicResource B_Border}" StrokeThickness="8" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                            <Path Data="M 92,78 C 61,78 43,103 44,145 L 53,223 C 57,262 70,291 93,299 C 116,307 130,286 143,264 L 173,218 C 186,198 200,190 224,190 L 316,190 C 340,190 354,198 367,218 L 397,264 C 410,286 424,307 447,299 C 470,291 483,262 487,223 L 496,145 C 497,103 479,78 448,78 C 417,78 398,88 370,98 C 340,109 313,113 270,113 C 227,113 200,109 170,98 C 142,88 123,78 92,78 Z"
+                                  Fill="{DynamicResource B_CardAlt}" Stroke="{DynamicResource B_Border}" StrokeThickness="3" />
+
+                            <Border Canvas.Left="102" Canvas.Top="58" Width="94" Height="28" CornerRadius="10" Background="{DynamicResource B_Card}" BorderBrush="{DynamicResource B_Border}" BorderThickness="1">
+                                <TextBlock Text="L1 / L2" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource B_TextDim}" FontSize="10" FontWeight="SemiBold" />
+                            </Border>
+                            <Border Canvas.Left="344" Canvas.Top="58" Width="94" Height="28" CornerRadius="10" Background="{DynamicResource B_Card}" BorderBrush="{DynamicResource B_Border}" BorderThickness="1">
+                                <TextBlock Text="R1 / R2" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource B_TextDim}" FontSize="10" FontWeight="SemiBold" />
+                            </Border>
+
+                            <Border Canvas.Left="188" Canvas.Top="82" Width="164" Height="76" CornerRadius="13" Background="{DynamicResource B_Background}" BorderBrush="{DynamicResource B_PrimaryDim}" BorderThickness="1.2">
+                                <Grid>
+                                    <Border Height="5" Margin="24,8,24,0" VerticalAlignment="Top" CornerRadius="3" Background="{DynamicResource B_BrandGradient}" />
+                                    <TextBlock Text="TOUCHPAD" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{DynamicResource B_TextDim}" FontSize="9.5" FontWeight="SemiBold" />
+                                </Grid>
+                            </Border>
+
+                            <Rectangle x:Name="DpadUpShape" Canvas.Left="126" Canvas.Top="128" Width="25" Height="38" RadiusX="5" RadiusY="5" Fill="{DynamicResource B_Background}" Stroke="{DynamicResource B_Border}" />
+                            <Rectangle x:Name="DpadDownShape" Canvas.Left="126" Canvas.Top="184" Width="25" Height="38" RadiusX="5" RadiusY="5" Fill="{DynamicResource B_Background}" Stroke="{DynamicResource B_Border}" />
+                            <Rectangle x:Name="DpadLeftShape" Canvas.Left="98" Canvas.Top="156" Width="38" Height="25" RadiusX="5" RadiusY="5" Fill="{DynamicResource B_Background}" Stroke="{DynamicResource B_Border}" />
+                            <Rectangle x:Name="DpadRightShape" Canvas.Left="141" Canvas.Top="156" Width="38" Height="25" RadiusX="5" RadiusY="5" Fill="{DynamicResource B_Background}" Stroke="{DynamicResource B_Border}" />
+
+                            <Ellipse x:Name="TriangleShape" Canvas.Left="400" Canvas.Top="126" Width="30" Height="30" Fill="{DynamicResource B_Background}" Stroke="#34D399" StrokeThickness="2" />
+                            <TextBlock Canvas.Left="409" Canvas.Top="132" Text="△" Foreground="#34D399" FontSize="14" IsHitTestVisible="False" />
+                            <Ellipse x:Name="CircleShape" Canvas.Left="431" Canvas.Top="158" Width="30" Height="30" Fill="{DynamicResource B_Background}" Stroke="#FB7185" StrokeThickness="2" />
+                            <TextBlock Canvas.Left="440" Canvas.Top="164" Text="○" Foreground="#FB7185" FontSize="14" IsHitTestVisible="False" />
+                            <Ellipse x:Name="CrossShape" Canvas.Left="400" Canvas.Top="190" Width="30" Height="30" Fill="{DynamicResource B_Background}" Stroke="#60A5FA" StrokeThickness="2" />
+                            <TextBlock Canvas.Left="409" Canvas.Top="196" Text="×" Foreground="#60A5FA" FontSize="14" IsHitTestVisible="False" />
+                            <Ellipse x:Name="SquareShape" Canvas.Left="369" Canvas.Top="158" Width="30" Height="30" Fill="{DynamicResource B_Background}" Stroke="#F472B6" StrokeThickness="2" />
+                            <TextBlock Canvas.Left="378" Canvas.Top="164" Text="□" Foreground="#F472B6" FontSize="13" IsHitTestVisible="False" />
+
+                            <Ellipse Canvas.Left="174" Canvas.Top="207" Width="70" Height="70" Fill="{DynamicResource B_Background}" Stroke="{DynamicResource B_Border}" StrokeThickness="3" />
+                            <Ellipse Canvas.Left="183" Canvas.Top="216" Width="52" Height="52" Fill="{DynamicResource B_Card}" Stroke="{DynamicResource B_PrimaryDim}" StrokeThickness="3" />
+                            <Ellipse x:Name="ControllerLeftStickDot" Canvas.Left="205" Canvas.Top="238" Width="8" Height="8" Fill="{DynamicResource B_Primary}" />
+                            <Ellipse Canvas.Left="296" Canvas.Top="207" Width="70" Height="70" Fill="{DynamicResource B_Background}" Stroke="{DynamicResource B_Border}" StrokeThickness="3" />
+                            <Ellipse Canvas.Left="305" Canvas.Top="216" Width="52" Height="52" Fill="{DynamicResource B_Card}" Stroke="{DynamicResource B_Primary}" StrokeThickness="3" />
+                            <Ellipse x:Name="ControllerRightStickDot" Canvas.Left="327" Canvas.Top="238" Width="8" Height="8" Fill="{DynamicResource B_Primary}" />
+
+                            <TextBlock Canvas.Left="232" Canvas.Top="168" Text="SHARE" Foreground="{DynamicResource B_TextDim}" FontSize="7.5" />
+                            <TextBlock Canvas.Left="278" Canvas.Top="168" Text="OPTIONS" Foreground="{DynamicResource B_TextDim}" FontSize="7.5" />
+                            <Ellipse x:Name="PsShape" Canvas.Left="255" Canvas.Top="210" Width="30" Height="30" Fill="{DynamicResource B_Background}" Stroke="{DynamicResource B_PrimaryDim}" StrokeThickness="2" />
+                            <TextBlock Canvas.Left="264" Canvas.Top="216" Text="P" Foreground="{DynamicResource B_Text}" FontSize="12" FontWeight="Bold" IsHitTestVisible="False" />
+                        </Canvas>
+                    </Viewbox>
+
+                    <Grid Grid.Row="2" Margin="2,4,2,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Style="{StaticResource DashboardSubCard}" Padding="10,7">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="8" Height="8" Fill="{DynamicResource B_Success}" Margin="0,0,7,0" />
+                                <TextBlock x:Name="PressedButtonsText" Text="No buttons pressed" Foreground="{DynamicResource B_Text}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="2" Style="{StaticResource DashboardSubCard}" Padding="10,7">
+                            <TextBlock x:Name="MotionSummaryText" Text="Gyro / touch waiting for reports" Foreground="{DynamicResource B_TextDim}" FontSize="11" TextTrimming="CharacterEllipsis" />
+                        </Border>
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Column="2">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1.05*" />
+                    <RowDefinition Height="12" />
+                    <RowDefinition Height="0.95*" />
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource DashboardCard}" Padding="13">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Analog Sticks" Style="{StaticResource DashboardTitle}" Foreground="{DynamicResource B_Success}" />
+                                <TextBlock Text="Position &amp; center offset" Style="{StaticResource DashboardLabel}" Margin="0,2,0,0" />
+                            </StackPanel>
+                            <Grid Grid.Row="1" Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="8" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                    <Canvas x:Name="LeftStickCanvas" Width="92" Height="92">
+                                        <Ellipse Width="90" Height="90" Fill="{DynamicResource B_Background}" Stroke="{DynamicResource B_Border}" StrokeThickness="1.2" />
+                                        <Line X1="45" Y1="8" X2="45" Y2="82" Stroke="{DynamicResource B_Border}" />
+                                        <Line X1="8" Y1="45" X2="82" Y2="45" Stroke="{DynamicResource B_Border}" />
+                                        <Ellipse Canvas.Left="8" Canvas.Top="8" Width="74" Height="74" Stroke="{DynamicResource B_PrimarySoft}" />
+                                        <Ellipse x:Name="LeftStickDot" Canvas.Left="41" Canvas.Top="41" Width="9" Height="9" Fill="{DynamicResource B_Success}" />
+                                    </Canvas>
+                                    <TextBlock x:Name="LeftStickText" Text="+0.00, +0.00" Foreground="{DynamicResource B_Text}" FontSize="10.5" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                                    <TextBlock x:Name="LeftStickOffsetText" Text="offset --" Foreground="{DynamicResource B_Success}" FontSize="9.5" HorizontalAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                    <Canvas x:Name="RightStickCanvas" Width="92" Height="92">
+                                        <Ellipse Width="90" Height="90" Fill="{DynamicResource B_Background}" Stroke="{DynamicResource B_Border}" StrokeThickness="1.2" />
+                                        <Line X1="45" Y1="8" X2="45" Y2="82" Stroke="{DynamicResource B_Border}" />
+                                        <Line X1="8" Y1="45" X2="82" Y2="45" Stroke="{DynamicResource B_Border}" />
+                                        <Ellipse Canvas.Left="8" Canvas.Top="8" Width="74" Height="74" Stroke="{DynamicResource B_PrimarySoft}" />
+                                        <Ellipse x:Name="RightStickDot" Canvas.Left="41" Canvas.Top="41" Width="9" Height="9" Fill="{DynamicResource B_Primary}" />
+                                    </Canvas>
+                                    <TextBlock x:Name="RightStickText" Text="+0.00, +0.00" Foreground="{DynamicResource B_Text}" FontSize="10.5" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                                    <TextBlock x:Name="RightStickOffsetText" Text="offset --" Foreground="{DynamicResource B_Primary}" FontSize="9.5" HorizontalAlignment="Center" />
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource DashboardCard}" Padding="13">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="Triggers" Style="{StaticResource DashboardTitle}" Foreground="{DynamicResource B_PrimaryDim}" />
+                                <TextBlock Text="Analog pressure 0—100%" Style="{StaticResource DashboardLabel}" Margin="0,2,0,0" />
+                            </StackPanel>
+                            <Grid Grid.Row="1" Margin="0,11,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel HorizontalAlignment="Center">
+                                    <Border Width="62" Height="108" CornerRadius="13" Background="{DynamicResource B_Background}" BorderBrush="{DynamicResource B_Border}" BorderThickness="1" Padding="8">
+                                        <ProgressBar x:Name="LeftTriggerBar" Minimum="0" Maximum="255" Orientation="Vertical" Width="24" Height="86" />
+                                    </Border>
+                                    <TextBlock x:Name="LeftTriggerText" Text="L2  0%" Foreground="{DynamicResource B_Text}" FontWeight="SemiBold" FontSize="10.5" Margin="0,6,0,0" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                    <Border Width="62" Height="108" CornerRadius="13" Background="{DynamicResource B_Background}" BorderBrush="{DynamicResource B_Border}" BorderThickness="1" Padding="8">
+                                        <ProgressBar x:Name="RightTriggerBar" Minimum="0" Maximum="255" Orientation="Vertical" Width="24" Height="86" />
+                                    </Border>
+                                    <TextBlock x:Name="RightTriggerText" Text="R2  0%" Foreground="{DynamicResource B_Text}" FontWeight="SemiBold" FontSize="10.5" Margin="0,6,0,0" />
+                                </StackPanel>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource DashboardCard}" Padding="13">
+                        <StackPanel>
+                            <TextBlock Text="Signal Health" Style="{StaticResource DashboardTitle}" Foreground="{DynamicResource B_Primary}" />
+                            <TextBlock Text="Native HID report timing" Style="{StaticResource DashboardLabel}" Margin="0,2,0,8" />
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="POLLING" Style="{StaticResource DashboardLabel}" />
+                                    <TextBlock x:Name="PollingRateText" Text="-- Hz" Foreground="{DynamicResource B_Text}" FontSize="19" FontWeight="SemiBold" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="AVG INTERVAL" Style="{StaticResource DashboardLabel}" />
+                                    <TextBlock x:Name="AverageIntervalText" Text="-- ms" Foreground="{DynamicResource B_Text}" FontSize="19" FontWeight="SemiBold" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="JitterText" Text="Jitter -- ms" Foreground="{DynamicResource B_TextDim}" FontSize="10.5" />
+                                <TextBlock x:Name="SpikeText" Grid.Column="1" Text="Spikes --" Foreground="{DynamicResource B_TextDim}" FontSize="10.5" HorizontalAlignment="Right" />
+                            </Grid>
+                            <Border Margin="0,9,0,0" Padding="8,6" CornerRadius="8" Background="{DynamicResource B_Background}" BorderBrush="{DynamicResource B_Border}" BorderThickness="1">
+                                <TextBlock x:Name="RawPreviewText" Text="RAW  --" Foreground="{DynamicResource B_TextDim}" FontFamily="Consolas" FontSize="9.5" TextTrimming="CharacterEllipsis" />
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource DashboardCard}" Padding="13">
+                        <StackPanel>
+                            <TextBlock Text="Vibration Test" Style="{StaticResource DashboardTitle}" Foreground="{DynamicResource B_Warning}" />
+                            <TextBlock Text="Controlled DS4 output — confirmation still required" Style="{StaticResource DashboardLabel}" TextWrapping="Wrap" Margin="0,2,0,10" />
+                            <UniformGrid Rows="2" Columns="2">
+                                <Button x:Name="HeavyRumbleButton" Content="Heavy" Margin="0,0,5,5" Click="HeavyRumble_Click" />
+                                <Button x:Name="LightRumbleButton" Content="Light" Style="{DynamicResource Sec}" Margin="5,0,0,5" Click="LightRumble_Click" />
+                                <Button x:Name="BalancedRumbleButton" Content="Balanced" Style="{DynamicResource Sec}" Margin="0,5,5,0" Click="BalancedRumble_Click" />
+                                <Button x:Name="ResetRumbleButton" Content="Stop" Style="{DynamicResource Sec}" Margin="5,5,0,0" Click="ResetRumble_Click" />
+                            </UniformGrid>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>
