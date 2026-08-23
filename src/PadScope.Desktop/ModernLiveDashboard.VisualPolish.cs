@@ -23,7 +23,10 @@ public partial class ModernLiveDashboard
     {
         DevicePicker.IsEnabled = !busy;
         StartButton.IsEnabled = !busy && DevicePicker.Items.Count > 0;
-        StopButton.IsEnabled = !busy && StopButton.IsEnabled;
+        if (busy)
+        {
+            StopButton.IsEnabled = false;
+        }
         StartButton.Content = busy ? "Opening…" : "Start live";
         if (!string.IsNullOrWhiteSpace(status))
         {
@@ -45,8 +48,6 @@ public partial class ModernLiveDashboard
 
         _controllerVisualPolishApplied = true;
 
-        // Retire the old combined shoulder labels; separate controls read more like
-        // a real controller and can light independently from live HID state.
         foreach (Border border in FindVisualChildren<Border>(canvas))
         {
             string text = FindVisualChildren<TextBlock>(border)
@@ -66,8 +67,6 @@ public partial class ModernLiveDashboard
             }
         }
 
-        // Add subtle inner grip rails so the silhouette feels like a physical pad,
-        // not just a flat outline.
         Path leftGrip = new()
         {
             Data = Geometry.Parse("M 86,104 C 72,145 72,229 94,272 C 103,289 112,292 123,279"),
@@ -112,8 +111,6 @@ public partial class ModernLiveDashboard
         _l3Visual = AddStickClickRing(canvas, 174, 207, ResolveBrush("B_PrimaryDim"));
         _r3Visual = AddStickClickRing(canvas, 296, 207, ResolveBrush("B_Primary"));
 
-        // Existing face buttons remain color-coded, but stronger outlines improve
-        // readability in both themes and at Windows display scaling >100%.
         foreach (Ellipse face in new[] { TriangleShape, CircleShape, CrossShape, SquareShape })
         {
             face.StrokeThickness = 2.6;
