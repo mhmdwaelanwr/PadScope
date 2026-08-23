@@ -15,7 +15,7 @@ public partial class App : Application
             {
                 if (MainWindow is PadScope.Desktop.MainWindow window)
                 {
-                    window.InstallResponsiveHidBehavior();
+                    window.InstallStabilityHotfix();
                 }
             }));
     }
