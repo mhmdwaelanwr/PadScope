@@ -26,11 +26,27 @@ Useful concepts studied:
 
 No source code or assets were copied into PadScope.
 
+### Linux `hid-playstation` — GPL-2.0
+
+The Linux kernel DualShock 4 driver was used as a protocol-behavior reference for facts such as:
+- native DS4 USB and Bluetooth input/output report identifiers and packet sizes;
+- Bluetooth output CRC framing;
+- the DS4 Bluetooth hardware-control byte and polling-interval field;
+- independent validity flags for motors and the lightbar.
+
+PadScope does **not** copy kernel implementation code. These observable protocol facts are represented by PadScope's own report builder and tests.
+
 ### DS4Windows — GPL family
 
 Repositories/forks and public documentation around DS4Windows were used only to understand expected DualShock behavior, deadzone/calibration concepts, controller output behavior and user-facing terminology.
 
+A particularly useful behavioral observation is that Windows controller stacks may expose two practical HID output paths: an interrupt output write and a HID control-transfer output report. PadScope implements its own small Windows `HidD_SetOutputReport` wrapper and adaptive fallback logic rather than copying DS4Windows source.
+
 Because GPL code is copyleft and PadScope is MIT-licensed, GPL implementation code is **not copied or translated line-for-line** into PadScope. PadScope's analyzers, WPF UI, HID report handling and output test logic are independently written.
+
+### `ds4-tool` and other public DS4 utilities
+
+Small public DS4 utilities were used to cross-check observable transport behavior, especially the distinction between Bluetooth control-output paths and USB interrupt-output paths. PadScope's implementation remains independent and keeps all Windows HID transport code inside its own `PadScope.Hid` layer.
 
 ### Browser gamepad testers — MIT/GPL variants
 

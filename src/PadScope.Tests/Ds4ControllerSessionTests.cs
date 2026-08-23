@@ -81,6 +81,68 @@ public sealed class Ds4ControllerSessionTests
     }
 
     [Fact]
+    public void ValidBluetoothInput_OverridesMisclassifiedUsbForOutput()
+    {
+        FakeHidInputReader reader = new();
+        using Ds4ControllerSession session = new(reader, Device(ConnectionType.Usb));
+        session.TryStart(out _);
+
+        byte[] report = BluetoothReport();
+        WriteBluetoothInputCrc(report);
+        reader.Inject(report, DateTimeOffset.UnixEpoch);
+
+        Assert.Equal(ConnectionType.Bluetooth, session.EffectiveConnectionType);
+        Assert.True(session.TrySendRumble(12, 34, out _));
+        byte[] packet = Assert.Single(reader.Writes);
+        Assert.Equal(Ds4OutputReportBuilder.BluetoothOutputReportId, packet[0]);
+        Assert.Equal(Ds4OutputReportBuilder.BluetoothOutputReportLength, packet.Length);
+    }
+
+    [Fact]
+    public void ValidUsbInput_OverridesMisclassifiedBluetoothForOutput()
+    {
+        FakeHidInputReader reader = new();
+        using Ds4ControllerSession session = new(reader, Device(ConnectionType.Bluetooth));
+        session.TryStart(out _);
+
+        reader.Inject(UsbReport(), DateTimeOffset.UnixEpoch);
+
+        Assert.Equal(ConnectionType.Usb, session.EffectiveConnectionType);
+        Assert.True(session.TrySendRumble(12, 34, out _));
+        byte[] packet = Assert.Single(reader.Writes);
+        Assert.Equal(Ds4OutputReportBuilder.UsbOutputReportId, packet[0]);
+        Assert.Equal(Ds4OutputReportBuilder.UsbOutputReportLength, packet.Length);
+    }
+
+    [Fact]
+    public void InvalidBluetoothCrc_DoesNotChangeEffectiveTransport()
+    {
+        FakeHidInputReader reader = new();
+        using Ds4ControllerSession session = new(reader, Device(ConnectionType.Usb));
+        session.TryStart(out _);
+
+        reader.Inject(BluetoothReport(), DateTimeOffset.UnixEpoch);
+
+        Assert.Equal(ConnectionType.Usb, session.EffectiveConnectionType);
+    }
+
+    [Fact]
+    public void ResetRumble_SendsMotorOnlyNeutralPacket()
+    {
+        FakeHidInputReader reader = new();
+        using Ds4ControllerSession session = new(reader, Device(ConnectionType.Usb));
+        session.TryStart(out _);
+
+        Assert.True(session.TryResetRumble(out string? error));
+
+        Assert.Null(error);
+        byte[] packet = Assert.Single(reader.Writes);
+        Assert.Equal(0x01, packet[1]);
+        Assert.Equal(0, packet[4]);
+        Assert.Equal(0, packet[5]);
+    }
+
+    [Fact]
     public void Dispose_UnsubscribesAndStopsReader()
     {
         FakeHidInputReader reader = new();
