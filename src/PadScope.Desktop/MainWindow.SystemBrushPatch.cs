@@ -19,13 +19,19 @@ public partial class MainWindow
     {
         if (sender is MainWindow window)
         {
-            window.Dispatcher.BeginInvoke(window.ApplySystemBrushPatch, DispatcherPriority.Background);
+            window.Dispatcher.BeginInvoke(
+                new Action(() =>
+                {
+                    window.ApplyRuntimeUiFixes();
+                    window.ApplySystemBrushPatch();
+                }),
+                DispatcherPriority.Background);
         }
     }
 
     private void ApplySystemBrushPatch()
     {
-        Brush selectedBackground = new SolidColorBrush(Color.FromRgb(3, 105, 161));
+        Brush selectedBackground = (Brush)FindResource("B_PrimaryDim");
         Brush selectedText = Brushes.White;
 
         foreach (DependencyObject item in PatchWalk(this))
