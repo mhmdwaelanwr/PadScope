@@ -1,7 +1,7 @@
 <UserControl x:Class="PadScope.Desktop.ControllerDiagnosticsLab"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             MinHeight="760"
+             MinHeight="1040"
              HorizontalAlignment="Stretch"
              VerticalAlignment="Top"
              UseLayoutRounding="True"
@@ -48,7 +48,7 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel>
                     <TextBlock Text="Controller Diagnostics Lab" Style="{StaticResource LabTitle}" FontSize="19" />
-                    <TextBlock Text="Native HID drift, range, polling, touchpad and motor diagnostics — measured locally in PadScope."
+                    <TextBlock Text="Native HID drift, range, polling, touchpad, raw-input and motor diagnostics — measured locally in PadScope."
                                Style="{StaticResource LabLabel}" Margin="0,4,0,0" TextWrapping="Wrap" />
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
@@ -73,6 +73,8 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="12" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
             <!-- Stick drift + circularity -->
@@ -85,7 +87,7 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel>
                             <TextBlock Text="Stick Drift &amp; Range Lab" Style="{StaticResource LabTitle}" Foreground="{DynamicResource B_Success}" />
-                            <TextBlock Text="3-second hands-off drift test plus full-rotation range/circularity capture."
+                            <TextBlock Text="Hands-off center analysis plus full-rotation range/circularity capture."
                                        Style="{StaticResource LabLabel}" Margin="0,3,0,0" />
                         </StackPanel>
                         <WrapPanel Grid.Column="1" HorizontalAlignment="Right">
@@ -113,22 +115,30 @@
                             <StackPanel>
                                 <TextBlock Text="LEFT STICK" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="11" />
                                 <Canvas x:Name="LeftRangeCanvas" Width="230" Height="230" HorizontalAlignment="Center" Margin="0,6,0,4" />
-                                <UniformGrid Columns="2" Margin="0,4,0,0">
+                                <UniformGrid Columns="3" Margin="0,4,0,0">
                                     <StackPanel>
                                         <TextBlock Text="DRIFT" Style="{StaticResource LabLabel}" />
-                                        <TextBlock x:Name="LeftDriftText" Text="--" Style="{StaticResource Metric}" FontSize="16" />
+                                        <TextBlock x:Name="LeftDriftText" Text="--" Style="{StaticResource Metric}" FontSize="15" />
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="JITTER" Style="{StaticResource LabLabel}" />
+                                        <TextBlock x:Name="LeftJitterText" Text="--" Style="{StaticResource Metric}" FontSize="15" />
                                     </StackPanel>
                                     <StackPanel>
                                         <TextBlock Text="DEADZONE" Style="{StaticResource LabLabel}" />
-                                        <TextBlock x:Name="LeftDeadzoneText" Text="--" Style="{StaticResource Metric}" FontSize="16" />
+                                        <TextBlock x:Name="LeftDeadzoneText" Text="--" Style="{StaticResource Metric}" FontSize="15" />
                                     </StackPanel>
                                     <StackPanel Margin="0,8,0,0">
-                                        <TextBlock Text="RANGE COVERAGE" Style="{StaticResource LabLabel}" />
+                                        <TextBlock Text="RANGE" Style="{StaticResource LabLabel}" />
                                         <TextBlock x:Name="LeftCoverageText" Text="--" Foreground="{DynamicResource B_Success}" FontWeight="SemiBold" FontSize="13" />
                                     </StackPanel>
                                     <StackPanel Margin="0,8,0,0">
-                                        <TextBlock Text="CIRCULARITY ERROR" Style="{StaticResource LabLabel}" />
+                                        <TextBlock Text="CIRCULARITY" Style="{StaticResource LabLabel}" />
                                         <TextBlock x:Name="LeftCircularityText" Text="--" Foreground="{DynamicResource B_Text}" FontWeight="SemiBold" FontSize="13" />
+                                    </StackPanel>
+                                    <StackPanel Margin="0,8,0,0">
+                                        <TextBlock Text="STATUS" Style="{StaticResource LabLabel}" />
+                                        <TextBlock x:Name="LeftStatusText" Text="Not tested" Foreground="{DynamicResource B_TextDim}" FontWeight="SemiBold" FontSize="12" />
                                     </StackPanel>
                                 </UniformGrid>
                             </StackPanel>
@@ -138,27 +148,57 @@
                             <StackPanel>
                                 <TextBlock Text="RIGHT STICK" HorizontalAlignment="Center" FontWeight="SemiBold" FontSize="11" />
                                 <Canvas x:Name="RightRangeCanvas" Width="230" Height="230" HorizontalAlignment="Center" Margin="0,6,0,4" />
-                                <UniformGrid Columns="2" Margin="0,4,0,0">
+                                <UniformGrid Columns="3" Margin="0,4,0,0">
                                     <StackPanel>
                                         <TextBlock Text="DRIFT" Style="{StaticResource LabLabel}" />
-                                        <TextBlock x:Name="RightDriftText" Text="--" Style="{StaticResource Metric}" FontSize="16" />
+                                        <TextBlock x:Name="RightDriftText" Text="--" Style="{StaticResource Metric}" FontSize="15" />
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="JITTER" Style="{StaticResource LabLabel}" />
+                                        <TextBlock x:Name="RightJitterText" Text="--" Style="{StaticResource Metric}" FontSize="15" />
                                     </StackPanel>
                                     <StackPanel>
                                         <TextBlock Text="DEADZONE" Style="{StaticResource LabLabel}" />
-                                        <TextBlock x:Name="RightDeadzoneText" Text="--" Style="{StaticResource Metric}" FontSize="16" />
+                                        <TextBlock x:Name="RightDeadzoneText" Text="--" Style="{StaticResource Metric}" FontSize="15" />
                                     </StackPanel>
                                     <StackPanel Margin="0,8,0,0">
-                                        <TextBlock Text="RANGE COVERAGE" Style="{StaticResource LabLabel}" />
+                                        <TextBlock Text="RANGE" Style="{StaticResource LabLabel}" />
                                         <TextBlock x:Name="RightCoverageText" Text="--" Foreground="{DynamicResource B_Success}" FontWeight="SemiBold" FontSize="13" />
                                     </StackPanel>
                                     <StackPanel Margin="0,8,0,0">
-                                        <TextBlock Text="CIRCULARITY ERROR" Style="{StaticResource LabLabel}" />
+                                        <TextBlock Text="CIRCULARITY" Style="{StaticResource LabLabel}" />
                                         <TextBlock x:Name="RightCircularityText" Text="--" Foreground="{DynamicResource B_Text}" FontWeight="SemiBold" FontSize="13" />
+                                    </StackPanel>
+                                    <StackPanel Margin="0,8,0,0">
+                                        <TextBlock Text="STATUS" Style="{StaticResource LabLabel}" />
+                                        <TextBlock x:Name="RightStatusText" Text="Not tested" Foreground="{DynamicResource B_TextDim}" FontWeight="SemiBold" FontSize="12" />
                                     </StackPanel>
                                 </UniformGrid>
                             </StackPanel>
                         </Border>
                     </Grid>
+
+                    <Border Style="{StaticResource LabSubCard}" Margin="0,12,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="160" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="58" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="DEADZONE PREVIEW" Style="{StaticResource LabLabel}" />
+                                <TextBlock Text="Preview only — does not remap" Style="{StaticResource LabLabel}" FontSize="9" />
+                            </StackPanel>
+                            <Slider x:Name="DeadzonePreviewSlider" Grid.Column="1" Minimum="0" Maximum="35" Value="5"
+                                    Margin="10,0" ValueChanged="DeadzonePreviewSlider_ValueChanged" />
+                            <TextBlock x:Name="DeadzonePreviewValueText" Grid.Column="2" Text="5.0%" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                            <Button Grid.Column="3" Content="Use recommended" Style="{DynamicResource Sec}" MinWidth="112" Height="30" Margin="10,0,0,0"
+                                    Click="UseRecommendedDeadzoneButton_Click" />
+                        </Grid>
+                    </Border>
+                    <TextBlock x:Name="DeadzonePreviewOutputText" Text="Preview: waiting for live stick data"
+                               Style="{StaticResource LabLabel}" Margin="2,7,0,0" TextWrapping="Wrap" />
                 </StackPanel>
             </Border>
 
@@ -222,8 +262,10 @@
                             </StackPanel>
                         </Border>
                     </UniformGrid>
-                    <TextBlock Text="Measures intervals between native HID reports. This is report cadence, not end-to-end button latency."
+                    <TextBlock x:Name="PollingQualityText" Text="Start the test to classify report stability."
                                Style="{StaticResource LabLabel}" TextWrapping="Wrap" Margin="0,10,0,0" />
+                    <TextBlock Text="Measures intervals between native HID reports. This is report cadence, not end-to-end button latency."
+                               Style="{StaticResource LabLabel}" TextWrapping="Wrap" Margin="0,4,0,0" />
                 </StackPanel>
             </Border>
 
@@ -234,7 +276,7 @@
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                         <StackPanel>
                             <TextBlock Text="Vibration Motor Lab" Style="{StaticResource LabTitle}" Foreground="{DynamicResource B_Warning}" />
-                            <TextBlock Text="Independent low/high-frequency motor control with timed safe reset." Style="{StaticResource LabLabel}" Margin="0,3,0,0" />
+                            <TextBlock Text="Adaptive USB/Bluetooth output with timed motor-only reset." Style="{StaticResource LabLabel}" Margin="0,3,0,0" />
                         </StackPanel>
                         <TextBlock x:Name="VibrationStatusText" Grid.Column="1" Text="Output gated"
                                    Foreground="{DynamicResource B_TextDim}" FontSize="11" VerticalAlignment="Center" />
@@ -273,6 +315,8 @@
                         <Button x:Name="StopVibrationButton" Content="Stop" Style="{DynamicResource Sec}" MinWidth="78" Height="38"
                                 Margin="8,0,0,0" Click="StopVibrationButton_Click" />
                     </WrapPanel>
+                    <TextBlock x:Name="VibrationOutputDetailText" Text="No output write attempted yet."
+                               Style="{StaticResource LabLabel}" TextWrapping="Wrap" Margin="0,10,0,0" />
                 </StackPanel>
             </Border>
 
@@ -280,7 +324,7 @@
             <Border Grid.Column="2" Grid.Row="2" Style="{StaticResource LabCard}">
                 <StackPanel>
                     <TextBlock Text="Touchpad &amp; Input Health" Style="{StaticResource LabTitle}" Foreground="#60A5FA" />
-                    <TextBlock Text="Press detection and live contact coordinates." Style="{StaticResource LabLabel}" Margin="0,3,0,0" />
+                    <TextBlock Text="Press detection, live contact coordinates and report health." Style="{StaticResource LabLabel}" Margin="0,3,0,0" />
 
                     <Border Style="{StaticResource LabSubCard}" Margin="0,14,0,10" Padding="14">
                         <Grid>
@@ -303,6 +347,54 @@
                             Click="ResetTouchCountButton_Click" />
                     <TextBlock x:Name="InputHealthText" Text="Waiting for live HID data..." Style="{StaticResource LabLabel}"
                                TextWrapping="Wrap" Margin="0,12,0,0" />
+                </StackPanel>
+            </Border>
+
+            <!-- Raw HID inspector -->
+            <Border Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="4" Style="{StaticResource LabCard}">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Raw HID Inspector" Style="{StaticResource LabTitle}" Foreground="#22D3EE" />
+                            <TextBlock Text="Decoded DS4 fields plus the exact report bytes seen by PadScope."
+                                       Style="{StaticResource LabLabel}" Margin="0,3,0,0" />
+                        </StackPanel>
+                        <TextBlock x:Name="RawReportText" Grid.Column="1" Text="Report --" FontWeight="SemiBold"
+                                   Foreground="{DynamicResource B_TextDim}" VerticalAlignment="Center" />
+                    </Grid>
+
+                    <Grid Margin="0,14,0,10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0" Style="{StaticResource LabSubCard}">
+                            <StackPanel>
+                                <TextBlock Text="AXES" Style="{StaticResource LabLabel}" />
+                                <TextBlock x:Name="RawAxesText" Text="LX --  LY --  RX --  RY --" Margin="0,4,0,0" FontFamily="Consolas" FontSize="12" />
+                                <TextBlock x:Name="RawTriggersText" Text="L2 --  R2 --" Margin="0,4,0,0" FontFamily="Consolas" FontSize="12" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="2" Style="{StaticResource LabSubCard}">
+                            <StackPanel>
+                                <TextBlock Text="BUTTONS / POWER" Style="{StaticResource LabLabel}" />
+                                <TextBlock x:Name="RawButtonsText" Text="No data" Margin="0,4,0,0" TextWrapping="Wrap" FontSize="12" />
+                                <TextBlock x:Name="RawBatteryText" Text="Battery --" Margin="0,4,0,0" FontSize="12" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="4" Style="{StaticResource LabSubCard}">
+                            <StackPanel>
+                                <TextBlock Text="MOTION" Style="{StaticResource LabLabel}" />
+                                <TextBlock x:Name="RawMotionText" Text="Gyro -- · Accel --" Margin="0,4,0,0" TextWrapping="Wrap" FontFamily="Consolas" FontSize="11" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <TextBlock Text="RAW REPORT HEX" Style="{StaticResource LabLabel}" />
+                    <Border Style="{StaticResource LabSubCard}" Margin="0,5,0,0" Padding="10">
+                        <TextBlock x:Name="RawHexText" Text="Waiting for a live report..." FontFamily="Consolas" FontSize="11"
+                                   Foreground="{DynamicResource B_TextDim}" TextWrapping="Wrap" />
+                    </Border>
                 </StackPanel>
             </Border>
         </Grid>
