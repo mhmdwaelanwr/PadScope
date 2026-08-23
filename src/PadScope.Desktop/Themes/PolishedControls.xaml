@@ -1,0 +1,223 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <FontFamily x:Key="PadScopeBodyFont">Segoe UI Variable Text, Segoe UI</FontFamily>
+    <FontFamily x:Key="PadScopeDisplayFont">Segoe UI Variable Display, Segoe UI Semibold, Segoe UI</FontFamily>
+
+    <Style x:Key="PolishedTabControlStyle" TargetType="{x:Type TabControl}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="FontFamily" Value="{StaticResource PadScopeBodyFont}" />
+    </Style>
+
+    <Style x:Key="PolishedTabItemStyle" TargetType="{x:Type TabItem}">
+        <Setter Property="Foreground" Value="{DynamicResource B_TextDim}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Padding" Value="17,9" />
+        <Setter Property="Margin" Value="0,0,9,0" />
+        <Setter Property="MinWidth" Value="88" />
+        <Setter Property="FontFamily" Value="{StaticResource PadScopeBodyFont}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type TabItem}">
+                    <Grid Margin="0,0,0,6" SnapsToDevicePixels="True">
+                        <Border x:Name="TabSurface"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="1"
+                                CornerRadius="15"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter ContentSource="Header"
+                                              RecognizesAccessKey="True"
+                                              HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
+                        </Border>
+
+                        <Border x:Name="AccentLine"
+                                Width="38"
+                                Height="3"
+                                Margin="0,0,0,1"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Bottom"
+                                Background="Transparent"
+                                CornerRadius="2" />
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="TabSurface" Property="Background" Value="{DynamicResource B_CardAlt}" />
+                            <Setter TargetName="TabSurface" Property="BorderBrush" Value="{DynamicResource B_Border}" />
+                            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="TabSurface" Property="Background" Value="{DynamicResource B_PrimarySoft}" />
+                            <Setter TargetName="TabSurface" Property="BorderBrush" Value="{DynamicResource B_PrimaryDim}" />
+                            <Setter TargetName="AccentLine" Property="Background" Value="{DynamicResource B_Primary}" />
+                            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="PolishedComboBoxItemStyle" TargetType="{x:Type ComboBoxItem}">
+        <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="FontFamily" Value="{StaticResource PadScopeBodyFont}" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="Padding" Value="10,7" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ComboBoxItem}">
+                    <Border x:Name="ItemSurface"
+                            Margin="3,2"
+                            Padding="{TemplateBinding Padding}"
+                            Background="{TemplateBinding Background}"
+                            CornerRadius="8">
+                        <ContentPresenter VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="ItemSurface" Property="Background" Value="{DynamicResource B_SurfaceHover}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="ItemSurface" Property="Background" Value="{DynamicResource B_PrimarySoft}" />
+                            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.45" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="PolishedComboBoxStyle" TargetType="{x:Type ComboBox}">
+        <Setter Property="Background" Value="{DynamicResource B_CardAlt}" />
+        <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="11,6" />
+        <Setter Property="MinHeight" Value="38" />
+        <Setter Property="FontFamily" Value="{StaticResource PadScopeBodyFont}" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="ItemContainerStyle" Value="{StaticResource PolishedComboBoxItemStyle}" />
+        <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ComboBox}">
+                    <Grid SnapsToDevicePixels="True">
+                        <ToggleButton x:Name="DropDownToggle"
+                                      Focusable="False"
+                                      ClickMode="Press"
+                                      Background="{TemplateBinding Background}"
+                                      BorderBrush="{TemplateBinding BorderBrush}"
+                                      BorderThickness="{TemplateBinding BorderThickness}"
+                                      IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}">
+                            <ToggleButton.Template>
+                                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                    <Border x:Name="ToggleSurface"
+                                            Background="{TemplateBinding Background}"
+                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                            BorderThickness="{TemplateBinding BorderThickness}"
+                                            CornerRadius="10">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="38" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Grid.Column="1"
+                                                    Margin="0,5,5,5"
+                                                    Background="{DynamicResource B_PrimarySoft}"
+                                                    CornerRadius="7">
+                                                <Path Width="10"
+                                                      Height="6"
+                                                      HorizontalAlignment="Center"
+                                                      VerticalAlignment="Center"
+                                                      Data="M 0 0 L 5 5 L 10 0 Z"
+                                                      Fill="{DynamicResource B_TextDim}"
+                                                      Stretch="Fill" />
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter TargetName="ToggleSurface" Property="BorderBrush" Value="{DynamicResource B_Primary}" />
+                                            <Setter TargetName="ToggleSurface" Property="Background" Value="{DynamicResource B_SurfaceHover}" />
+                                        </Trigger>
+                                        <Trigger Property="IsChecked" Value="True">
+                                            <Setter TargetName="ToggleSurface" Property="BorderBrush" Value="{DynamicResource B_Primary}" />
+                                        </Trigger>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter TargetName="ToggleSurface" Property="Opacity" Value="0.48" />
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </ToggleButton.Template>
+                        </ToggleButton>
+
+                        <ContentPresenter x:Name="SelectionContent"
+                                          Margin="12,0,44,0"
+                                          HorizontalAlignment="Left"
+                                          VerticalAlignment="Center"
+                                          IsHitTestVisible="False"
+                                          Content="{TemplateBinding SelectionBoxItem}"
+                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                          ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}">
+                            <ContentPresenter.Resources>
+                                <Style TargetType="{x:Type TextBlock}">
+                                    <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+                                    <Setter Property="FontFamily" Value="{StaticResource PadScopeBodyFont}" />
+                                </Style>
+                            </ContentPresenter.Resources>
+                        </ContentPresenter>
+
+                        <Popup x:Name="PART_Popup"
+                               Placement="Bottom"
+                               AllowsTransparency="True"
+                               Focusable="False"
+                               IsOpen="{TemplateBinding IsDropDownOpen}"
+                               PopupAnimation="Fade">
+                            <Border x:Name="DropDownSurface"
+                                    Margin="0,6,0,0"
+                                    MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
+                                    MaxWidth="720"
+                                    Background="{DynamicResource B_Card}"
+                                    BorderBrush="{DynamicResource B_Border}"
+                                    BorderThickness="1"
+                                    CornerRadius="11"
+                                    Padding="3">
+                                <ScrollViewer MaxHeight="280"
+                                              CanContentScroll="True"
+                                              SnapsToDevicePixels="True">
+                                    <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" />
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="DropDownToggle" Property="BorderBrush" Value="{DynamicResource B_Primary}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource B_TextDim}" />
+                            <Setter Property="Opacity" Value="0.72" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>
