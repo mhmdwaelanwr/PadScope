@@ -4,6 +4,7 @@
     <FontFamily x:Key="PadScopeBodyFont">Segoe UI Variable Text, Segoe UI</FontFamily>
     <FontFamily x:Key="PadScopeDisplayFont">Segoe UI Variable Display, Segoe UI Semibold, Segoe UI</FontFamily>
 
+    <!-- Navigation: keep every tab inside its own hit box with generous spacing. -->
     <Style x:Key="PolishedTabControlStyle" TargetType="{x:Type TabControl}">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
@@ -14,38 +15,36 @@
     <Style x:Key="PolishedTabItemStyle" TargetType="{x:Type TabItem}">
         <Setter Property="Foreground" Value="{DynamicResource B_TextDim}" />
         <Setter Property="Background" Value="Transparent" />
-        <Setter Property="Padding" Value="17,9" />
-        <Setter Property="Margin" Value="0,0,9,0" />
-        <Setter Property="MinWidth" Value="88" />
+        <Setter Property="Padding" Value="18,10" />
+        <Setter Property="Margin" Value="0,0,15,0" />
+        <Setter Property="MinWidth" Value="96" />
         <Setter Property="FontFamily" Value="{StaticResource PadScopeBodyFont}" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type TabItem}">
-                    <Grid Margin="0,0,0,6" SnapsToDevicePixels="True">
+                    <Grid SnapsToDevicePixels="True">
                         <Border x:Name="TabSurface"
                                 Background="Transparent"
                                 BorderBrush="Transparent"
                                 BorderThickness="1"
-                                CornerRadius="15"
+                                CornerRadius="14"
                                 Padding="{TemplateBinding Padding}">
                             <ContentPresenter ContentSource="Header"
                                               RecognizesAccessKey="True"
                                               HorizontalAlignment="Center"
                                               VerticalAlignment="Center" />
                         </Border>
-
                         <Border x:Name="AccentLine"
-                                Width="38"
                                 Height="3"
-                                Margin="0,0,0,1"
-                                HorizontalAlignment="Center"
+                                Margin="24,0,24,4"
+                                HorizontalAlignment="Stretch"
                                 VerticalAlignment="Bottom"
                                 Background="Transparent"
-                                CornerRadius="2" />
+                                CornerRadius="2"
+                                IsHitTestVisible="False" />
                     </Grid>
-
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
                             <Setter TargetName="TabSurface" Property="Background" Value="{DynamicResource B_CardAlt}" />
@@ -67,6 +66,7 @@
         </Setter>
     </Style>
 
+    <!-- Combo boxes: never fall back to the white native WPF surface in dark mode. -->
     <Style x:Key="PolishedComboBoxItemStyle" TargetType="{x:Type ComboBoxItem}">
         <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
         <Setter Property="Background" Value="Transparent" />
@@ -87,13 +87,14 @@
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsHighlighted" Value="True">
                             <Setter TargetName="ItemSurface" Property="Background" Value="{DynamicResource B_SurfaceHover}" />
+                            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
                         </Trigger>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter TargetName="ItemSurface" Property="Background" Value="{DynamicResource B_PrimarySoft}" />
                             <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
-                            <Setter Property="Opacity" Value="0.45" />
+                            <Setter Property="Opacity" Value="0.48" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -140,8 +141,7 @@
                                                     Margin="0,5,5,5"
                                                     Background="{DynamicResource B_PrimarySoft}"
                                                     CornerRadius="7">
-                                                <Path Width="10"
-                                                      Height="6"
+                                                <Path Width="10" Height="6"
                                                       HorizontalAlignment="Center"
                                                       VerticalAlignment="Center"
                                                       Data="M 0 0 L 5 5 L 10 0 Z"
@@ -159,7 +159,8 @@
                                             <Setter TargetName="ToggleSurface" Property="BorderBrush" Value="{DynamicResource B_Primary}" />
                                         </Trigger>
                                         <Trigger Property="IsEnabled" Value="False">
-                                            <Setter TargetName="ToggleSurface" Property="Opacity" Value="0.48" />
+                                            <Setter TargetName="ToggleSurface" Property="Background" Value="{DynamicResource B_CardAlt}" />
+                                            <Setter TargetName="ToggleSurface" Property="Opacity" Value="0.62" />
                                         </Trigger>
                                     </ControlTemplate.Triggers>
                                 </ControlTemplate>
@@ -188,8 +189,7 @@
                                Focusable="False"
                                IsOpen="{TemplateBinding IsDropDownOpen}"
                                PopupAnimation="Fade">
-                            <Border x:Name="DropDownSurface"
-                                    Margin="0,6,0,0"
+                            <Border Margin="0,6,0,0"
                                     MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"
                                     MaxWidth="720"
                                     Background="{DynamicResource B_Card}"
@@ -205,19 +205,100 @@
                             </Border>
                         </Popup>
                     </Grid>
-
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsKeyboardFocusWithin" Value="True">
                             <Setter TargetName="DropDownToggle" Property="BorderBrush" Value="{DynamicResource B_Primary}" />
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{DynamicResource B_TextDim}" />
-                            <Setter Property="Opacity" Value="0.72" />
+                            <Setter Property="Opacity" Value="0.76" />
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
+    </Style>
+
+    <!-- Data grids: custom cells remove the native active/inactive white selection layer. -->
+    <Style x:Key="PolishedDataGridStyle" TargetType="{x:Type DataGrid}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="GridLinesVisibility" Value="None" />
+        <Setter Property="HeadersVisibility" Value="Column" />
+        <Setter Property="RowBackground" Value="Transparent" />
+        <Setter Property="AlternatingRowBackground" Value="{DynamicResource B_CardAlt}" />
+        <Setter Property="CanUserAddRows" Value="False" />
+        <Setter Property="CanUserDeleteRows" Value="False" />
+        <Setter Property="SelectionMode" Value="Single" />
+        <Setter Property="SelectionUnit" Value="FullRow" />
+        <Setter Property="RowHeight" Value="38" />
+        <Setter Property="FontFamily" Value="{StaticResource PadScopeBodyFont}" />
+    </Style>
+
+    <Style x:Key="PolishedDataGridRowStyle" TargetType="{x:Type DataGridRow}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Style.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+                <Setter Property="Background" Value="{DynamicResource B_SurfaceHover}" />
+            </Trigger>
+            <Trigger Property="IsSelected" Value="True">
+                <Setter Property="Background" Value="{DynamicResource B_PrimarySoft}" />
+                <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+            </Trigger>
+            <MultiTrigger>
+                <MultiTrigger.Conditions>
+                    <Condition Property="IsSelected" Value="True" />
+                    <Condition Property="IsKeyboardFocusWithin" Value="False" />
+                </MultiTrigger.Conditions>
+                <Setter Property="Background" Value="{DynamicResource B_PrimarySoft}" />
+                <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+            </MultiTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="PolishedDataGridCellStyle" TargetType="{x:Type DataGridCell}">
+        <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="8,5" />
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type DataGridCell}">
+                    <Border x:Name="CellSurface"
+                            Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter VerticalAlignment="Center" />
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="CellSurface" Property="Background" Value="Transparent" />
+                            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource B_Text}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style x:Key="PolishedDataGridColumnHeaderStyle" TargetType="{x:Type DataGridColumnHeader}">
+        <Setter Property="Background" Value="{DynamicResource B_CardAlt}" />
+        <Setter Property="Foreground" Value="{DynamicResource B_TextDim}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="Padding" Value="10,7" />
+        <Setter Property="BorderBrush" Value="{DynamicResource B_Border}" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
     </Style>
 
 </ResourceDictionary>
