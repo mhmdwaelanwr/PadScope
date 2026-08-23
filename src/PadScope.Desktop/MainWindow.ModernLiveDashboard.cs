@@ -69,7 +69,7 @@ public partial class MainWindow
         liveTab.Content = new ScrollViewer
         {
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-            HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
             Content = stack
         };
 
@@ -112,9 +112,10 @@ public partial class MainWindow
         dashboard.SetSessionState(running, running ? LiveStatusText.Text : "Waiting for live input");
         dashboard.SetOutputEnabled(running && PulseRumbleButton.IsEnabled);
 
-        if (_latestState is not null)
+        Ds4InputState? state = _latestState;
+        if (state is not null)
         {
-            dashboard.UpdateTelemetry(_latestState, _latestTiming);
+            dashboard.UpdateTelemetry(state, _latestTiming);
         }
     }
 
@@ -132,13 +133,13 @@ public partial class MainWindow
         }
 
         DeviceComboBox.SelectedItem = device;
-        StartInputButton_Click(_modernLiveDashboard, new RoutedEventArgs());
+        StartInputButton_Click(this, new RoutedEventArgs());
         RefreshModernDashboard(forceDeviceRefresh: false);
     }
 
     private void ModernDashboard_StopRequested(object? sender, EventArgs e)
     {
-        StopInputButton_Click(_modernLiveDashboard ?? this, new RoutedEventArgs());
+        StopInputButton_Click(this, new RoutedEventArgs());
         RefreshModernDashboard(forceDeviceRefresh: false);
     }
 
@@ -157,7 +158,7 @@ public partial class MainWindow
 
         RumbleSmallSlider.Value = e.SmallMotor;
         RumbleLargeSlider.Value = e.LargeMotor;
-        PulseRumbleButton_Click(_modernLiveDashboard ?? this, new RoutedEventArgs());
+        PulseRumbleButton_Click(this, new RoutedEventArgs());
     }
 
     private void ModernDashboard_ResetRumbleRequested(object? sender, EventArgs e)
@@ -167,6 +168,6 @@ public partial class MainWindow
             return;
         }
 
-        ResetOutputButton_Click(_modernLiveDashboard ?? this, new RoutedEventArgs());
+        ResetOutputButton_Click(this, new RoutedEventArgs());
     }
 }
